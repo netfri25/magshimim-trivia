@@ -5,9 +5,11 @@ use std::sync::{Arc, Mutex};
 
 use crate::handler::{Handler, LoginRequestHandler};
 
+type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
+
 pub struct Communicator {
     socket: TcpListener,
-    clients: HashMap<SocketAddr, Arc<Mutex<dyn Handler>>>,
+    clients: Arc<Mutex<Clients>>,
 }
 
 impl Communicator {
@@ -30,11 +32,12 @@ impl Communicator {
 
             eprintln!("[LOG] connected {:?}", client);
 
-            let handler = Arc::new(Mutex::new(LoginRequestHandler));
+            let handler = Box::new(LoginRequestHandler);
             let addr = client.peer_addr().unwrap();
-            self.clients.insert(addr, handler.clone());
+            self.clients.lock().unwrap().insert(addr, handler);
+            let clients = self.clients.clone();
             std::thread::spawn(move || {
-                if let Err(err) = Self::handle_new_client(client, handler) {
+                if let Err(err) = Self::handle_new_client(client, clients) {
                     eprintln!("[ERROR] communication error: {err}");
                 }
             });
@@ -43,7 +46,7 @@ impl Communicator {
 
     fn handle_new_client(
         mut client: TcpStream,
-        handler: Arc<Mutex<dyn Handler>>,
+        _clients: Arc<Mutex<Clients>>,
     ) -> std::io::Result<()> {
         let mut buf = [0; 5];
         client.read_exact(&mut buf)?;
