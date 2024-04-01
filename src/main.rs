@@ -5,6 +5,8 @@ mod handler;
 mod server;
 use crate::server::Server;
 
+mod messages;
+
 mod db;
 
 fn main() {
