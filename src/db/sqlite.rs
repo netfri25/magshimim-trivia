@@ -43,7 +43,7 @@ impl Database for SqliteDatabase {
         let mut exists = false;
         self.conn.iterate(statement, |_| {
             exists = true; // mark as found
-            false // don't process anymore
+            true // don't care if it will continue or not
         })?;
 
         Ok(exists)
@@ -58,13 +58,13 @@ impl Database for SqliteDatabase {
             .limit(1)
             .to_string(query::SqliteQueryBuilder);
 
-        let mut matching = false;
+        let mut exists = false;
         self.conn.iterate(statement, |_| {
-            matching = true; // mark as found
-            false // don't process anymore
+            exists = true; // mark as found
+            true // don't care if it will continue or not
         })?;
 
-        Ok(matching)
+        Ok(exists)
     }
 
     /// doesn't check whether the user exists or not
@@ -101,5 +101,34 @@ impl User {
             .col(query::ColumnDef::new(User::Password).text().unique_key().not_null())
             .col(query::ColumnDef::new(User::Email).text().not_null())
             .to_owned()
+    }
+}
+
+mod tests {
+    struct RemoveDB<'a>(&'a str);
+    impl Drop for RemoveDB<'_> {
+        fn drop(&mut self) {
+            std::fs::remove_file(self.0).ok();
+        }
+    }
+
+    #[test]
+    fn signup() {
+        use crate::db::Database;
+        use super::SqliteDatabase;
+
+        const DB_PATH: &str = "test-db.sqlite";
+
+        // because of the `Drop` implementation, it will assure us that the DB_PATH file will be
+        // removed at the end of this function / when it panics
+        let _remove_db = RemoveDB(DB_PATH);
+
+        let mut db = SqliteDatabase::connect(DB_PATH).unwrap();
+        db.open().unwrap();
+        assert!(!db.user_exists("me").unwrap());
+        db.add_user("me", "password1234", "main@example.com").unwrap();
+        assert!(db.user_exists("me").unwrap());
+        assert!(db.password_matches("me", "password1234").unwrap());
+        assert!(!db.password_matches("me", "jqwemnedfk").unwrap());
     }
 }
