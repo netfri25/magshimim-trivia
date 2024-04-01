@@ -18,6 +18,6 @@ impl Handler for LoginRequestHandler {
         eprintln!("username: {username}");
         eprintln!("password: {password}");
 
-        todo!("handle login request")
+        Ok(RequestResult::new_error("not yet implemented"))
     }
 }
