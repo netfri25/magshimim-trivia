@@ -67,3 +67,25 @@ impl RequestResult {
         Self::without_handler(Response::new_error(msg))
     }
 }
+
+mod tests {
+    #[test]
+    fn serde() {
+        use std::io::Cursor;
+        use super::Response;
+
+        let to_test = [
+            Response::Error { msg: "some error".into() },
+            Response::Login { status: 3 },
+            Response::Signup { status: 12 },
+        ];
+
+        for original_response in to_test {
+            let mut buf = Vec::new();
+            original_response.write_to(&mut buf).unwrap();
+            let mut reader = Cursor::new(buf);
+            let parsed_response = Response::read_from(&mut reader).unwrap();
+            assert_eq!(original_response, parsed_response);
+        }
+    }
+}

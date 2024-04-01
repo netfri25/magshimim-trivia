@@ -35,7 +35,6 @@ impl Server {
 }
 
 mod tests {
-
     #[test]
     fn try_login() {
         use crate::messages::{Request, Response};

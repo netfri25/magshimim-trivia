@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Request {
     Login {
         username: String,
@@ -63,5 +63,34 @@ impl RequestInfo {
 
     pub fn new_now(kind: Request) -> Self {
         Self::new(kind, Instant::now())
+    }
+}
+
+mod tests {
+    #[test]
+    fn serde() {
+        use std::io::Cursor;
+        use super::Request;
+
+        let to_test = [
+            Request::Signup {
+                username: "user1234".into(),
+                password: "pass1234".into(),
+                email: "example@mail.com".into(),
+            },
+
+            Request::Login {
+                username: "user1234".into(),
+                password: "pass1234".into(),
+            },
+        ];
+
+        for original_response in to_test {
+            let mut buf = Vec::new();
+            original_response.write_to(&mut buf).unwrap();
+            let mut reader = Cursor::new(buf);
+            let parsed_response = Request::read_from(&mut reader).unwrap();
+            assert_eq!(original_response, parsed_response);
+        }
     }
 }
