@@ -45,11 +45,11 @@ impl Communicator {
         mut client: TcpStream,
         handler: Arc<Mutex<dyn Handler>>,
     ) -> std::io::Result<()> {
-        write!(&mut client, "Hello")?;
         let mut buf = [0; 5];
         client.read_exact(&mut buf)?;
         let text = String::from_utf8_lossy(&buf);
         eprintln!("[LOG] from client: {}", text);
+        write!(&mut client, "{}", text)?;
         Ok(())
     }
 }
