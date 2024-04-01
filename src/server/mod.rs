@@ -39,21 +39,24 @@ impl Server {
     }
 }
 
+mod tests {
+    #[test]
+    fn hello_hello() {
+        use super::Server;
+        use std::io::{Read, Write};
+        use std::net::TcpStream;
 
-#[test]
-fn hello_hello() {
-    use std::net::TcpStream;
-    use std::io::{Write, Read};
+        const ADDR: &str = "127.0.0.1:6969";
 
-    const ADDR: &str = "127.0.0.1:6969";
-    let server = Server::build(ADDR).unwrap();
-    std::thread::spawn(move || server.run());
+        let server = Server::build(ADDR).unwrap();
+        std::thread::spawn(move || server.run());
 
-    let mut client = TcpStream::connect(ADDR).unwrap();
-    write!(&mut client, "Hello").unwrap();
+        let mut client = TcpStream::connect(ADDR).unwrap();
+        write!(&mut client, "Hello").unwrap();
 
-    let mut buf = [0; 5];
-    client.read_exact(&mut buf).unwrap();
-    let text = String::from_utf8_lossy(&buf);
-    assert_eq!(text, "Hello");
+        let mut buf = [0; 5];
+        client.read_exact(&mut buf).unwrap();
+        let text = String::from_utf8_lossy(&buf);
+        assert_eq!(text, "Hello");
+    }
 }
