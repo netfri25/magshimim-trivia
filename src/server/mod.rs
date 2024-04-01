@@ -1,5 +1,5 @@
-use std::net::ToSocketAddrs;
 use std::io::Write;
+use std::net::ToSocketAddrs;
 
 mod communicator;
 use communicator::Communicator;
@@ -15,14 +15,10 @@ impl Server {
     }
 
     pub fn run(mut self) {
-        std::thread::spawn(move || {
-            self.comm.start_handle_requests()
-        });
+        std::thread::spawn(move || self.comm.start_handle_requests());
 
         let mut line = String::new();
         loop {
-            print!("> ");
-            std::io::stdout().flush().ok();
             line.clear();
             if let Err(err) = std::io::stdin().read_line(&mut line) {
                 eprintln!("[ERROR] stdin error: {}", err);
