@@ -4,6 +4,7 @@ use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::{Arc, Mutex};
 
 use crate::handler::{Handler, LoginRequestHandler};
+use crate::messages::{Request, RequestKind, RequestResult};
 
 type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
 
@@ -46,13 +47,25 @@ impl Communicator {
 
     fn handle_new_client(
         mut client: TcpStream,
-        _clients: Arc<Mutex<Clients>>,
+        clients: Arc<Mutex<Clients>>,
     ) -> std::io::Result<()> {
-        let mut buf = [0; 5];
-        client.read_exact(&mut buf)?;
-        let text = String::from_utf8_lossy(&buf);
-        eprintln!("[LOG] from client: {}", text);
-        write!(&mut client, "{}", text)?;
-        Ok(())
+        let addr = client.peer_addr()?;
+        loop {
+            // using little-endian for the data length
+            let request = Request::read_from(&mut client)?;
+
+            let RequestResult { response, new_handler } = {
+                let mut clients_mx = clients.lock().unwrap();
+                let handler = clients_mx.get_mut(&addr).expect("client must have an handler");
+                handler.handle(request)?
+            };
+
+            response.write_to(&mut client)?;
+
+            if let Some(handler) = new_handler {
+                let mut clients_mx = clients.lock().unwrap();
+                clients_mx.insert(addr, handler);
+            }
+        }
     }
 }
