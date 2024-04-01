@@ -1,5 +1,5 @@
 pub mod login;
 pub use login::LoginRequestHandler;
 
-pub trait Handler {
+pub trait Handler: Send {
 }
