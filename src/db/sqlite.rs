@@ -79,9 +79,7 @@ impl Database for SqliteDatabase {
     }
 }
 
-
-// Table definitions
-
+// Users table definition
 #[derive(query::Iden)]
 enum User {
     Table,
