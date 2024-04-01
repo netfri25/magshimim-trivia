@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::{Arc, Mutex};
 
 use crate::handler::{Handler, LoginRequestHandler};
-use crate::messages::{Request, RequestKind, RequestResult};
+use crate::messages::{Request, RequestResult, RequestInfo};
 
 type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
 
@@ -53,11 +52,12 @@ impl Communicator {
         loop {
             // using little-endian for the data length
             let request = Request::read_from(&mut client)?;
+            let request_info = RequestInfo::new_now(request);
 
             let RequestResult { response, new_handler } = {
                 let mut clients_mx = clients.lock().unwrap();
                 let handler = clients_mx.get_mut(&addr).expect("client must have an handler");
-                handler.handle(request)?
+                handler.handle(request_info)?
             };
 
             response.write_to(&mut client)?;

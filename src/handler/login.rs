@@ -1,16 +1,16 @@
-use crate::messages::{Request, RequestKind, RequestResult};
+use crate::messages::{Request, RequestResult, RequestInfo};
 
 use super::Handler;
 
 pub struct LoginRequestHandler;
 
 impl Handler for LoginRequestHandler {
-    fn relevant(&self, request: &Request) -> bool {
-        request.kind.is_login()
+    fn relevant(&self, request_info: &RequestInfo) -> bool {
+        request_info.data.is_login()
     }
 
-    fn handle(&mut self, request: Request) -> std::io::Result<RequestResult> {
-        let RequestKind::Login { username, password } = request.kind else {
+    fn handle(&mut self, request: RequestInfo) -> std::io::Result<RequestResult> {
+        let Request::Login { username, password } = request.data else {
             return Ok(RequestResult::new_error("Invalid request"));
         };
 

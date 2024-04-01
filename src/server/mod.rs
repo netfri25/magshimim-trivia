@@ -35,9 +35,12 @@ impl Server {
 }
 
 mod tests {
+    use crate::messages::Response;
+
     #[test]
-    fn hello_hello() {
-        use super::Server;
+    fn try_login() {
+        use crate::messages::Request;
+        use crate::server::Server;
         use std::io::{Read, Write};
         use std::net::TcpStream;
 
@@ -47,11 +50,14 @@ mod tests {
         std::thread::spawn(move || server.run());
 
         let mut client = TcpStream::connect(ADDR).unwrap();
-        write!(&mut client, "Hello").unwrap();
+        let username = "user1234".to_string();
+        let password = "pass1234".to_string();
+        let request = Request::Login { username, password };
 
-        let mut buf = [0; 5];
-        client.read_exact(&mut buf).unwrap();
-        let text = String::from_utf8_lossy(&buf);
-        assert_eq!(text, "Hello");
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::new_error("not yet implemented");
+
+        assert_eq!(response, expected);
     }
 }
