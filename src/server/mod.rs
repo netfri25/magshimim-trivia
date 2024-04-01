@@ -35,13 +35,11 @@ impl Server {
 }
 
 mod tests {
-    use crate::messages::Response;
 
     #[test]
     fn try_login() {
-        use crate::messages::Request;
+        use crate::messages::{Request, Response};
         use crate::server::Server;
-        use std::io::{Read, Write};
         use std::net::TcpStream;
 
         const ADDR: &str = "127.0.0.1:6969";
