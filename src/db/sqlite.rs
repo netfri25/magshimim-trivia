@@ -105,25 +105,12 @@ impl User {
 }
 
 mod tests {
-    struct RemoveDB<'a>(&'a str);
-    impl Drop for RemoveDB<'_> {
-        fn drop(&mut self) {
-            std::fs::remove_file(self.0).ok();
-        }
-    }
-
     #[test]
     fn signup() {
         use crate::db::Database;
         use super::SqliteDatabase;
 
-        const DB_PATH: &str = "test-db.sqlite";
-
-        // because of the `Drop` implementation, it will assure us that the DB_PATH file will be
-        // removed at the end of this function / when it panics
-        let _remove_db = RemoveDB(DB_PATH);
-
-        let mut db = SqliteDatabase::connect(DB_PATH).unwrap();
+        let mut db = SqliteDatabase::connect(":memory:").unwrap();
         db.open().unwrap();
         assert!(!db.user_exists("me").unwrap());
         db.add_user("me", "password1234", "main@example.com").unwrap();
