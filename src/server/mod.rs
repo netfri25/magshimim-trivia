@@ -45,30 +45,35 @@ impl Server {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::OnceLock;
+    use std::net::TcpStream;
+
+    use crate::db::SqliteDatabase;
+    use crate::messages::{Request, Response};
+
+    use super::*;
+
     const ADDR: &str = "127.0.0.1:6969";
 
+    static START_SERVER: OnceLock<()> = OnceLock::new();
+
     fn start_server() {
-        use crate::server::Server;
-        use crate::db::SqliteDatabase;
 
-        let Ok(db) = SqliteDatabase::connect(":memory:") else {
-            return;
-        };
+        START_SERVER.get_or_init(|| {
+            let Ok(db) = SqliteDatabase::connect(":memory:") else {
+                return;
+            };
 
-        let Ok(server) = Server::build(ADDR, db) else {
-            return;
-        };
+            let Ok(server) = Server::build(ADDR, db) else {
+                return;
+            };
 
-        std::thread::spawn(move || server.run());
+            std::thread::spawn(move || server.run());
+        });
     }
 
     #[test]
     fn try_login() {
-        use crate::messages::{Request, Response};
-        use std::net::TcpStream;
-
-        const ADDR: &str = "127.0.0.1:6969";
-
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
@@ -85,9 +90,6 @@ mod tests {
 
     #[test]
     fn signup_and_login() {
-        use crate::messages::{Request, Response};
-        use std::net::TcpStream;
-
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
@@ -109,6 +111,33 @@ mod tests {
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
         let expected = Response::Login { status: 1 };
+        assert_eq!(response, expected);
+    }
+
+    #[test]
+    fn double_signup() {
+        start_server();
+
+        let mut client = TcpStream::connect(ADDR).unwrap();
+
+        let request = Request::Signup {
+            username: "double".to_string(),
+            password: "pass1234".to_string(),
+            email: "email@example.com".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Signup { status: 1 };
+        assert_eq!(response, expected);
+
+        let request = Request::Signup {
+            username: "double".to_string(),
+            password: "pass1234".to_string(),
+            email: "email@example.com".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Error { msg: "username already exists".into() };
         assert_eq!(response, expected);
     }
 }

@@ -34,7 +34,10 @@ impl Handler for LoginRequestHandler {
             },
 
             Request::Signup { username, password, email } => {
-                login_manager.lock().unwrap().signup(username, &password, &email)?;
+                if let Some(err) = login_manager.lock().unwrap().signup(username, &password, &email)? {
+                    return Ok(RequestResult::new_error(err));
+                }
+
                 let response = Response::Signup { status: 1 };
                 RequestResult::without_handler(response) // no need to switch an handler
             },

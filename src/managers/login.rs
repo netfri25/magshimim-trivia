@@ -17,10 +17,15 @@ impl LoginManager {
         }
     }
 
-    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> anyhow::Result<()> {
+    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> anyhow::Result<Option<String>> {
         let username = username.into();
+
+        if self.db.lock().unwrap().user_exists(&username)? {
+            return Ok(Some("username already exists".into())) // no error, but the user already exists
+        }
+
         self.db.lock().unwrap().add_user(&username, password, email)?;
-        Ok(())
+        Ok(None) // everything is ok
     }
 
     // TODO: return proper types to represent the outcome better
