@@ -49,7 +49,7 @@ mod tests {
     use std::net::TcpStream;
 
     use crate::db::SqliteDatabase;
-    use crate::messages::{Request, Response};
+    use crate::messages::{Request, Response, StatusCode};
 
     use super::*;
 
@@ -101,7 +101,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup { status: 1 };
+        let expected = Response::Signup { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -110,7 +110,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login { status: 1 };
+        let expected = Response::Login { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
     }
 
@@ -127,7 +127,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup { status: 1 };
+        let expected = Response::Signup { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
 
         let request = Request::Signup {
@@ -154,7 +154,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup { status: 1 };
+        let expected = Response::Signup { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -163,7 +163,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login { status: 1 };
+        let expected = Response::Login { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
 
         // disconnect from the server
@@ -177,7 +177,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login { status: 1 };
+        let expected = Response::Login { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
     }
 
@@ -194,7 +194,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup { status: 1 };
+        let expected = Response::Signup { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -203,7 +203,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login { status: 1 };
+        let expected = Response::Login { status: StatusCode::ResponseOk };
         assert_eq!(response, expected);
 
         let mut client = TcpStream::connect(ADDR).unwrap();

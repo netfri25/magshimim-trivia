@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::messages::{Request, RequestInfo, RequestResult, Response};
+use crate::messages::{Request, RequestInfo, RequestResult, Response, StatusCode};
 
 use super::{Handler, MenuRequestHandler, RequestHandlerFactory};
 
@@ -28,8 +28,7 @@ impl Handler for LoginRequestHandler {
                     return Ok(RequestResult::new_error(err));
                 }
 
-                // TODO: proper status codes
-                let response = Response::Login { status: 1 };
+                let response = Response::Login { status: StatusCode::ResponseOk };
                 RequestResult::new(response, MenuRequestHandler)
             },
 
@@ -38,7 +37,7 @@ impl Handler for LoginRequestHandler {
                     return Ok(RequestResult::new_error(err));
                 }
 
-                let response = Response::Signup { status: 1 };
+                let response = Response::Signup { status: StatusCode::ResponseOk };
                 RequestResult::without_handler(response) // no need to switch an handler
             },
 

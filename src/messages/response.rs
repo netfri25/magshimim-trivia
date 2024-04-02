@@ -4,15 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::handler::Handler;
 
-// TODO replace the `status` field with a proper type that can be serialized into a number
+use super::StatusCode;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Response {
     Error { msg: String },
 
-    Login { status: u64 },
+    Login { status: StatusCode },
 
-    Signup { status: u64 },
+    Signup { status: StatusCode },
 }
 
 impl Response {
@@ -72,6 +72,8 @@ impl RequestResult {
 
 #[cfg(test)]
 mod tests {
+    use crate::messages::StatusCode;
+
     #[test]
     fn serde() {
         use std::io::Cursor;
@@ -79,8 +81,8 @@ mod tests {
 
         let to_test = [
             Response::Error { msg: "some error".into() },
-            Response::Login { status: 3 },
-            Response::Signup { status: 12 },
+            Response::Login { status: StatusCode::ResponseOk },
+            Response::Signup { status: StatusCode::ResponseOk },
         ];
 
         for original_response in to_test {
