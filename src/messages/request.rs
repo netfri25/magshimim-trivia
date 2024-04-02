@@ -66,6 +66,7 @@ impl RequestInfo {
     }
 }
 
+#[cfg(test)]
 mod tests {
     #[test]
     fn serde() {

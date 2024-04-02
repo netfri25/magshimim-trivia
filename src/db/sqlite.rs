@@ -102,6 +102,7 @@ impl User {
     }
 }
 
+#[cfg(test)]
 mod tests {
     #[test]
     fn signup() {
