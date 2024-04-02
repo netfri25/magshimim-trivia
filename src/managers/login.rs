@@ -31,7 +31,7 @@ impl LoginManager {
         }
 
         if !self.db.lock().unwrap().user_exists(&username)? {
-            return Ok(Some("user doesn't exists in the database".into()));
+            return Ok(Some("user doesn't exist".into()));
         }
 
         if !self.db.lock().unwrap().password_matches(&username, password)? {

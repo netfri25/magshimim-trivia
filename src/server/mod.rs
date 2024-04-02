@@ -14,7 +14,8 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn build(addr: impl ToSocketAddrs, db: impl Database + 'static) -> anyhow::Result<Self> {
+    pub fn build(addr: impl ToSocketAddrs, mut db: impl Database + 'static) -> anyhow::Result<Self> {
+        db.open()?;
         let db = Arc::new(Mutex::new(db));
         let factory = Arc::new(RequestHandlerFactory::new(db.clone()));
         let comm = Communicator::build(addr, factory.clone())?;
@@ -63,7 +64,7 @@ mod tests {
 
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error("not yet implemented");
+        let expected = Response::new_error("user doesn't exist");
 
         assert_eq!(response, expected);
     }
