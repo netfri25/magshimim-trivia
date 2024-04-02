@@ -96,7 +96,7 @@ impl User {
             .if_not_exists()
             .col(query::ColumnDef::new(User::Id).integer().primary_key().not_null().auto_increment())
             .col(query::ColumnDef::new(User::Username).text().unique_key().not_null())
-            .col(query::ColumnDef::new(User::Password).text().unique_key().not_null())
+            .col(query::ColumnDef::new(User::Password).text().not_null())
             .col(query::ColumnDef::new(User::Email).text().not_null())
             .to_owned()
     }
