@@ -13,7 +13,7 @@ pub struct Communicator {
 }
 
 impl Communicator {
-    pub fn build(addr: impl ToSocketAddrs) -> std::io::Result<Self> {
+    pub fn build(addr: impl ToSocketAddrs) -> anyhow::Result<Self> {
         let socket = TcpListener::bind(addr)?;
         let clients = Default::default();
         Ok(Self { socket, clients })
@@ -47,7 +47,7 @@ impl Communicator {
     fn handle_new_client(
         mut client: TcpStream,
         clients: Arc<Mutex<Clients>>,
-    ) -> std::io::Result<()> {
+    ) -> anyhow::Result<()> {
         let addr = client.peer_addr()?;
         loop {
             // using little-endian for the data length

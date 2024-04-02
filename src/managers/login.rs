@@ -4,8 +4,6 @@ use crate::db::Database;
 
 use super::logged_user::LoggedUser;
 
-type ManagerResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
-
 pub struct LoginManager {
     db: Arc<Mutex<dyn Database + Send + Sync>>,
     connected: Vec<LoggedUser>,
@@ -19,7 +17,7 @@ impl LoginManager {
         }
     }
 
-    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> ManagerResult<()> {
+    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> anyhow::Result<()> {
         let username = username.into();
         self.db.lock().unwrap().add_user(&username, password, email)?;
         Ok(())

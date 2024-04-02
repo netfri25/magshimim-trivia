@@ -28,7 +28,7 @@ impl Request {
         matches!(self, Self::Login { .. })
     }
 
-    pub fn read_from(reader: &mut impl Read) -> std::io::Result<Self> {
+    pub fn read_from(reader: &mut impl Read) -> anyhow::Result<Self> {
         let mut buf_data_len = [0; 4];
         reader.read_exact(&mut buf_data_len)?;
         let data_len = u32::from_le_bytes(buf_data_len);
@@ -41,7 +41,7 @@ impl Request {
         Ok(request)
     }
 
-    pub fn write_to(&self, writer: &mut impl Write) -> std::io::Result<()> {
+    pub fn write_to(&self, writer: &mut impl Write) -> anyhow::Result<()> {
         let json = serde_json::to_vec(&self)?;
         let len = json.len() as u32;
         let len_bytes = len.to_le_bytes();

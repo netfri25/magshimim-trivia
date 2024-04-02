@@ -9,7 +9,7 @@ impl Handler for LoginRequestHandler {
         request_info.data.is_login()
     }
 
-    fn handle(&mut self, request: RequestInfo) -> std::io::Result<RequestResult> {
+    fn handle(&mut self, request: RequestInfo) -> anyhow::Result<RequestResult> {
         let Request::Login { username, password } = request.data else {
             return Ok(RequestResult::new_error("Invalid request"));
         };

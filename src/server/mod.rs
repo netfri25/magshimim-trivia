@@ -8,7 +8,7 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn build(addr: impl ToSocketAddrs) -> std::io::Result<Self> {
+    pub fn build(addr: impl ToSocketAddrs) -> anyhow::Result<Self> {
         let comm = Communicator::build(addr)?;
         Ok(Self { comm })
     }

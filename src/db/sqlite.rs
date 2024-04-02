@@ -3,21 +3,21 @@ use std::path::Path;
 use sea_query as query;
 use sqlite::{ConnectionThreadSafe, Connection};
 
-use super::{DBResult, Database};
+use super::Database;
 
 pub struct SqliteDatabase {
     conn: ConnectionThreadSafe,
 }
 
 impl SqliteDatabase {
-    pub fn connect(path: impl AsRef<Path>) -> DBResult<Self> {
+    pub fn connect(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let conn = Connection::open_thread_safe(path)?;
         Ok(Self { conn })
     }
 }
 
 impl Database for SqliteDatabase {
-    fn open(&mut self) -> DBResult<()> {
+    fn open(&mut self) -> anyhow::Result<()> {
         // already opens the connection on creation
         // to design it like the cpp way where you have uninitialized variables (the
         // database connection) is unsafe, and I don't really want to deal with unsafe.
@@ -28,11 +28,11 @@ impl Database for SqliteDatabase {
         Ok(())
     }
 
-    fn close(self) -> DBResult<()> {
+    fn close(self) -> anyhow::Result<()> {
         Ok(()) // drop the connection and return without any errors
     }
 
-    fn user_exists(&self, username: &str) -> DBResult<bool> {
+    fn user_exists(&self, username: &str) -> anyhow::Result<bool> {
         let statement = query::Query::select()
             .column(User::Username)
             .from(User::Table)
@@ -49,7 +49,7 @@ impl Database for SqliteDatabase {
         Ok(exists)
     }
 
-    fn password_matches(&self, username: &str, password: &str) -> DBResult<bool> {
+    fn password_matches(&self, username: &str, password: &str) -> anyhow::Result<bool> {
         let statement = query::Query::select()
             .columns([User::Username, User::Password])
             .from(User::Table)
@@ -68,7 +68,7 @@ impl Database for SqliteDatabase {
     }
 
     /// doesn't check whether the user exists or not
-    fn add_user(&mut self, username: &str, password: &str, email: &str) -> DBResult<()> {
+    fn add_user(&mut self, username: &str, password: &str, email: &str) -> anyhow::Result<()> {
         let statement = query::Query::insert()
             .into_table(User::Table)
             .columns([User::Username, User::Password, User::Email])
