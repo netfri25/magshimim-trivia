@@ -140,4 +140,81 @@ mod tests {
         let expected = Response::Error { msg: "username already exists".into() };
         assert_eq!(response, expected);
     }
+
+    #[test]
+    fn signup_login_logut_login() {
+        start_server();
+
+        let mut client = TcpStream::connect(ADDR).unwrap();
+
+        let request = Request::Signup {
+            username: "multiple-login".to_string(),
+            password: "pass1234".to_string(),
+            email: "email@example.com".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Signup { status: 1 };
+        assert_eq!(response, expected);
+
+        let request = Request::Login {
+            username: "multiple-login".to_string(),
+            password: "pass1234".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Login { status: 1 };
+        assert_eq!(response, expected);
+
+        // disconnect from the server
+        drop(client);
+
+        let mut client = TcpStream::connect(ADDR).unwrap();
+
+        let request = Request::Login {
+            username: "multiple-login".to_string(),
+            password: "pass1234".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Login { status: 1 };
+        assert_eq!(response, expected);
+    }
+
+    #[test]
+    fn signup_double_login() {
+        start_server();
+
+        let mut client = TcpStream::connect(ADDR).unwrap();
+
+        let request = Request::Signup {
+            username: "login-abuser".to_string(),
+            password: "pass1234".to_string(),
+            email: "email@example.com".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Signup { status: 1 };
+        assert_eq!(response, expected);
+
+        let request = Request::Login {
+            username: "login-abuser".to_string(),
+            password: "pass1234".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Login { status: 1 };
+        assert_eq!(response, expected);
+
+        let mut client = TcpStream::connect(ADDR).unwrap();
+
+        let request = Request::Login {
+            username: "login-abuser".to_string(),
+            password: "pass1234".to_string(),
+        };
+        request.write_to(&mut client).unwrap();
+        let response = Response::read_from(&mut client).unwrap();
+        let expected = Response::Error { msg: "user already connected".to_string() };
+        assert_eq!(response, expected);
+    }
 }

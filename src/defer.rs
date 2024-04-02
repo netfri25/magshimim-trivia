@@ -1,8 +1,8 @@
-pub struct Defer<F: FnOnce()>(pub F);
+pub struct Defer<F: FnMut()>(pub F);
 
 impl<F> Drop for Defer<F>
 where
-    F: FnOnce()
+    F: FnMut()
 {
     fn drop(&mut self) {
         (self.0)()

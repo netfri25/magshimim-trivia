@@ -7,6 +7,7 @@ use crate::db::SqliteDatabase;
 mod messages;
 mod managers;
 mod handler;
+mod defer;
 
 fn main() {
     let db = SqliteDatabase::connect(":memory:").unwrap();
