@@ -1,7 +1,7 @@
 pub mod sqlite;
 pub use sqlite::SqliteDatabase;
 
-pub trait Database {
+pub trait Database: Send {
     fn open(&mut self) -> anyhow::Result<()>;
 
     // consumes the connection, meaning that it can't be used anymore

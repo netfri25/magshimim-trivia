@@ -5,12 +5,12 @@ use crate::db::Database;
 use super::logged_user::LoggedUser;
 
 pub struct LoginManager {
-    db: Arc<Mutex<dyn Database + Send + Sync>>,
+    db: Arc<Mutex<dyn Database>>,
     connected: Vec<LoggedUser>,
 }
 
 impl LoginManager {
-    pub fn new(db: Arc<Mutex<dyn Database + Send + Sync>>) -> Self {
+    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
         Self {
             db,
             connected: Default::default(),
