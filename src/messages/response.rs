@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::handler::Handler;
 
+// TODO replace the `status` field with a proper type that can be serialized into a number
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Response {
     Error { msg: String },
@@ -48,8 +50,8 @@ pub struct RequestResult {
 }
 
 impl RequestResult {
-    pub fn new(response: Response, new_handler: Option<impl Handler + 'static>) -> Self {
-        let new_handler = new_handler.map(|h| Box::new(h) as Box<dyn Handler>);
+    pub fn new(response: Response, new_handler: impl Handler + 'static) -> Self {
+        let new_handler = Some(Box::new(new_handler) as Box<dyn Handler>);
         Self {
             response,
             new_handler,
@@ -68,6 +70,7 @@ impl RequestResult {
     }
 }
 
+#[cfg(test)]
 mod tests {
     #[test]
     fn serde() {

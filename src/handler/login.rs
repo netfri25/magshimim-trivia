@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
-use super::{Handler, RequestHandlerFactory};
+use super::{Handler, MenuRequestHandler, RequestHandlerFactory};
 
 pub struct LoginRequestHandler {
     factory: Arc<RequestHandlerFactory>,
@@ -24,11 +24,13 @@ impl Handler for LoginRequestHandler {
 
         let result = match request.data {
             Request::Login { username, password } => {
-                if let Some(response) = login_manager.lock().unwrap().login(username, &password)? {
-                    return Ok(RequestResult::new_error(response));
+                if let Some(err) = login_manager.lock().unwrap().login(username, &password)? {
+                    return Ok(RequestResult::new_error(err));
                 }
 
-                todo!("move to the next manager")
+                // TODO: proper status codes
+                let response = Response::Login { status: 1 };
+                RequestResult::new(response, MenuRequestHandler)
             },
 
             Request::Signup { username, password, email } => {

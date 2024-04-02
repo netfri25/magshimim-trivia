@@ -1,6 +1,9 @@
 pub mod login;
 pub use login::LoginRequestHandler;
 
+pub mod menu;
+pub use menu::MenuRequestHandler;
+
 pub mod factory;
 pub use factory::RequestHandlerFactory;
 
