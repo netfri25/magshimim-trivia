@@ -35,7 +35,7 @@ impl Communicator {
 
             eprintln!("[LOG] connected {:?}", client);
 
-            let handler = Box::new(LoginRequestHandler::new(self.factory.clone()));
+            let handler = self.factory.create_login_request_handler();
             let addr = client.peer_addr().unwrap();
             self.clients.lock().unwrap().insert(addr, handler);
             let me = self.clone();

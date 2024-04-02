@@ -22,7 +22,7 @@ impl Server {
         Ok(Self { comm, db, factory })
     }
 
-    pub fn run(mut self) {
+    pub fn run(self) {
         std::thread::spawn(move || self.comm.start_handle_requests());
 
         let mut line = String::new();

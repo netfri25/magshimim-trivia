@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{db::Database, managers::LoginManager};
 
-use super::Handler;
+use super::{Handler, LoginRequestHandler};
 
 pub struct RequestHandlerFactory {
     login_manager: Arc<Mutex<LoginManager>>,
@@ -16,8 +16,8 @@ impl RequestHandlerFactory {
         Self { db, login_manager }
     }
 
-    pub fn create_login_request_handler(&self) -> Box<dyn Handler> {
-        todo!("create login request handler")
+    pub fn create_login_request_handler(self: &Arc<Self>) -> Box<dyn Handler> {
+        Box::new(LoginRequestHandler::new(self.clone()))
     }
 
     pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager>> {
