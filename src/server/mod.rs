@@ -73,7 +73,7 @@ mod tests {
     }
 
     #[test]
-    fn try_login() {
+    fn login_without_signup() {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
@@ -89,7 +89,7 @@ mod tests {
     }
 
     #[test]
-    fn signup_and_login() {
+    fn signup_login() {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
@@ -115,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn double_signup() {
+    fn signup_signuo() {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
@@ -182,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn signup_double_login() {
+    fn signup_login_login() {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
