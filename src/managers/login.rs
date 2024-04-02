@@ -23,8 +23,23 @@ impl LoginManager {
         Ok(())
     }
 
-    pub fn login(&mut self, username: impl Into<String>) {
+    // TODO: return proper types to represent the outcome better
+    pub fn login(&mut self, username: impl Into<String>, password: &str) -> anyhow::Result<Option<String>> {
+        let username = username.into();
+        if self.connected.iter().any(|user| user.username() == username) {
+            return Ok(Some("user already connected".into()));
+        }
+
+        if !self.db.lock().unwrap().user_exists(&username)? {
+            return Ok(Some("user doesn't exists in the database".into()));
+        }
+
+        if !self.db.lock().unwrap().password_matches(&username, password)? {
+            return Ok(Some("invalid password".into()))
+        }
+
         self.connected.push(LoggedUser::new(username));
+        Ok(None)
     }
 
     pub fn logut(&mut self, username: &str) {

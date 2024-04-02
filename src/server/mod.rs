@@ -10,14 +10,14 @@ use crate::handler::RequestHandlerFactory;
 pub struct Server {
     comm: Communicator,
     db: Arc<Mutex<dyn Database>>,
-    factory: RequestHandlerFactory,
+    factory: Arc<RequestHandlerFactory>,
 }
 
 impl Server {
     pub fn build(addr: impl ToSocketAddrs, db: impl Database + 'static) -> anyhow::Result<Self> {
-        let comm = Communicator::build(addr)?;
         let db = Arc::new(Mutex::new(db));
-        let factory = RequestHandlerFactory::new(db.clone());
+        let factory = Arc::new(RequestHandlerFactory::new(db.clone()));
+        let comm = Communicator::build(addr, factory.clone())?;
         Ok(Self { comm, db, factory })
     }
 

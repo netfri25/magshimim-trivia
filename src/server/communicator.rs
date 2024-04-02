@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::{Arc, Mutex};
 
-use crate::handler::{Handler, LoginRequestHandler};
+use crate::handler::{Handler, LoginRequestHandler, RequestHandlerFactory};
 use crate::messages::{Request, RequestResult, RequestInfo};
 
 type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
@@ -10,13 +10,14 @@ type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
 pub struct Communicator {
     socket: TcpListener,
     clients: Arc<Mutex<Clients>>,
+    factory: Arc<RequestHandlerFactory>,
 }
 
 impl Communicator {
-    pub fn build(addr: impl ToSocketAddrs) -> anyhow::Result<Self> {
+    pub fn build(addr: impl ToSocketAddrs, factory: Arc<RequestHandlerFactory>) -> anyhow::Result<Self> {
         let socket = TcpListener::bind(addr)?;
         let clients = Default::default();
-        Ok(Self { socket, clients })
+        Ok(Self { socket, clients, factory })
     }
 
     pub fn start_handle_requests(&mut self) {
@@ -32,7 +33,7 @@ impl Communicator {
 
             eprintln!("[LOG] connected {:?}", client);
 
-            let handler = Box::new(LoginRequestHandler);
+            let handler = Box::new(LoginRequestHandler::new(self.factory.clone()));
             let addr = client.peer_addr().unwrap();
             self.clients.lock().unwrap().insert(addr, handler);
             let clients = self.clients.clone();

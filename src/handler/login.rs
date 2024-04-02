@@ -1,8 +1,18 @@
+use std::sync::Arc;
+
 use crate::messages::{Request, RequestResult, RequestInfo};
 
-use super::Handler;
+use super::{Handler, RequestHandlerFactory};
 
-pub struct LoginRequestHandler;
+pub struct LoginRequestHandler {
+    factory: Arc<RequestHandlerFactory>,
+}
+
+impl LoginRequestHandler {
+    pub fn new(factory: Arc<RequestHandlerFactory>) -> Self {
+        Self { factory }
+    }
+}
 
 impl Handler for LoginRequestHandler {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
@@ -14,10 +24,11 @@ impl Handler for LoginRequestHandler {
             return Ok(RequestResult::new_error("Invalid request"));
         };
 
-        eprintln!("time since got request: {:?}", request.time.elapsed());
-        eprintln!("username: {username}");
-        eprintln!("password: {password}");
+        let login_manager = self.factory.get_login_manager();
+        if let Some(response) = login_manager.lock().unwrap().login(username, &password)? {
+            return Ok(RequestResult::new_error(response));
+        }
 
-        Ok(RequestResult::new_error("not yet implemented"))
+        todo!("move to the next manager")
     }
 }

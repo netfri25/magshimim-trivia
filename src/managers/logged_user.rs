@@ -15,3 +15,9 @@ impl LoggedUser {
     }
 }
 
+
+impl PartialEq<str> for LoggedUser {
+    fn eq(&self, other: &str) -> bool {
+        self.username() == other
+    }
+}
