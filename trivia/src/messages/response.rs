@@ -60,8 +60,8 @@ pub struct RequestResult {
 }
 
 impl RequestResult {
-    pub fn new(response: Response, new_handler: impl Handler + 'static) -> Self {
-        let new_handler = Some(Box::new(new_handler) as Box<dyn Handler>);
+    pub fn new(response: Response, new_handler: Box<dyn Handler>) -> Self {
+        let new_handler = Some(new_handler);
         Self {
             response,
             new_handler,
