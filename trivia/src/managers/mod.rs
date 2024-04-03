@@ -6,4 +6,5 @@ pub use login::LoginManager;
 pub mod menu;
 pub use menu::MenuManager;
 
-mod logged_user;
+pub mod room;
+pub use room::RoomManager;
