@@ -286,6 +286,7 @@ enum Statistics {
     TotalAnswers,
     AverageAnswerTime, // in seconds
     TotalGames,
+    UserId,
 }
 
 impl Statistics {
@@ -298,6 +299,12 @@ impl Statistics {
             .col(query::ColumnDef::new(Statistics::TotalAnswers).integer().not_null())
             .col(query::ColumnDef::new(Statistics::AverageAnswerTime).double().not_null())
             .col(query::ColumnDef::new(Statistics::TotalGames).integer().not_null())
+            .col(query::ColumnDef::new(Statistics::UserId).integer().not_null())
+            .foreign_key(
+                query::ForeignKey::create()
+                    .from(Statistics::Table, Statistics::UserId)
+                    .to(User::Table, User::Id)
+            )
             .to_owned()
     }
 }
