@@ -115,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn signup_signuo() {
+    fn signup_signup() {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
