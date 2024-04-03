@@ -1,6 +1,11 @@
 pub mod sqlite;
 pub use sqlite::SqliteDatabase;
 
+pub mod question;
+pub use question::Question;
+
+pub mod opentdb;
+
 pub trait Database: Send {
     fn open(&mut self) -> anyhow::Result<()>;
 
