@@ -79,6 +79,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore = "prevent API spamming"]
     pub fn correct_parsing() {
         get_questions(2).unwrap();
     }

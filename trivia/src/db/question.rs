@@ -57,3 +57,10 @@ pub struct PossibleAnswers<'a> {
     pub correct_answer: &'a str,
     pub incorrect_answers: &'a [String],
 }
+
+#[derive(Debug, Default, Clone)]
+pub struct QuestionData {
+    pub question: String,
+    pub correct_answer: String,
+    pub incorrect_answers: Vec<String>
+}

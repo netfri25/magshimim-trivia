@@ -5,6 +5,7 @@ use query::Iden;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
 use super::{opentdb, Database};
+use super::question::QuestionData;
 
 pub struct SqliteDatabase {
     conn: ConnectionThreadSafe,
@@ -135,8 +136,49 @@ impl Database for SqliteDatabase {
         Ok(())
     }
 
-    fn get_questions(&self, amount: u8) -> Vec<super::Question> {
-        todo!()
+    fn get_questions(&self, amount: u8) -> anyhow::Result<Vec<QuestionData>> {
+        let select_question_query = query::Query::select()
+            .columns([Question::Content, Question::Id])
+            .from(Question::Table)
+            .order_by_expr(query::Func::random().into(), query::Order::Asc)
+            .limit(amount.into())
+            .to_string(query::SqliteQueryBuilder);
+
+        let mut output = Vec::new();
+
+        let mut questions_iter = self.conn.prepare(select_question_query)?;
+        while let State::Row = questions_iter.next()? {
+            let question_content = questions_iter.read::<String, _>(Question::Content.to_string().as_str())?;
+            let question_id = questions_iter.read::<i64, _>(Question::Id.to_string().as_str())?;
+
+            let get_answers_query = query::Query::select()
+                .columns([Answer::Correct, Answer::Content])
+                .from(Answer::Table)
+                .and_where(query::Expr::col(Answer::QuestionId).is(question_id))
+                .to_string(query::SqliteQueryBuilder);
+
+            let mut question = QuestionData {
+                question: question_content,
+                correct_answer: String::new(),
+                incorrect_answers: Vec::new(),
+            };
+
+            let mut answers_iter = self.conn.prepare(get_answers_query)?;
+            while let State::Row = answers_iter.next()? {
+                let answer_content = answers_iter.read::<String, _>(Answer::Content.to_string().as_str())?;
+                let answer_correct = answers_iter.read::<i64, _>(Answer::Correct.to_string().as_str())? == 1;
+
+                if answer_correct {
+                    question.correct_answer = answer_content;
+                } else {
+                    question.incorrect_answers.push(answer_content)
+                }
+            }
+
+            output.push(question);
+        }
+
+        Ok(output)
     }
 }
 
@@ -252,10 +294,12 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "prevent API spamming"]
     fn populate_questions() -> anyhow::Result<()> {
-        let mut db = SqliteDatabase::connect("test.sqlite")?;
+        let mut db = SqliteDatabase::connect(":memory:")?;
         db.open()?;
         db.populate_questions(100)?;
-        Ok(())
+        let questions = db.get_questions(10)?;
+        panic!("{:#?}", questions)
     }
 }

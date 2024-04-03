@@ -2,9 +2,10 @@ pub mod sqlite;
 pub use sqlite::SqliteDatabase;
 
 pub mod question;
-pub use question::Question;
+use question::QuestionData;
 
 pub mod opentdb;
+
 
 pub trait Database: Send {
     fn open(&mut self) -> anyhow::Result<()>;
@@ -16,5 +17,5 @@ pub trait Database: Send {
     fn password_matches(&self, username: &str, password: &str) -> anyhow::Result<bool>;
     fn add_user(&mut self, username: &str, password: &str, email: &str) -> anyhow::Result<()>;
 
-    fn get_questions(&self, amount: u8) -> Vec<Question>;
+    fn get_questions(&self, amount: u8) -> anyhow::Result<Vec<QuestionData>>;
 }
