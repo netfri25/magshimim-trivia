@@ -76,6 +76,7 @@ impl Database for SqliteDatabase {
             User::create_table_statement(),
             Question::create_table_statement(),
             Answer::create_table_statement(),
+            Statistics::create_table_statement(),
         ];
 
         for statement in statements {
@@ -273,6 +274,30 @@ impl Answer {
                     .from(Answer::Table, Answer::QuestionId)
                     .to(Question::Table, Question::Id),
             )
+            .to_owned()
+    }
+}
+
+#[derive(query::Iden)]
+enum Statistics {
+    Table,
+    Id,
+    CorrectAnswers,
+    TotalAnswers,
+    AverageAnswerTime, // in seconds
+    TotalGames,
+}
+
+impl Statistics {
+    fn create_table_statement() -> query::TableCreateStatement {
+        query::Table::create()
+            .table(Statistics::Table)
+            .if_not_exists()
+            .col(query::ColumnDef::new(Statistics::Id).integer().not_null().primary_key().auto_increment())
+            .col(query::ColumnDef::new(Statistics::CorrectAnswers).integer().not_null())
+            .col(query::ColumnDef::new(Statistics::TotalAnswers).integer().not_null())
+            .col(query::ColumnDef::new(Statistics::AverageAnswerTime).double().not_null())
+            .col(query::ColumnDef::new(Statistics::TotalGames).integer().not_null())
             .to_owned()
     }
 }
