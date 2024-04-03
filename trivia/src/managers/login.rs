@@ -1,5 +1,7 @@
 use std::sync::{Arc, Mutex};
 
+use serde::{Deserialize, Serialize};
+
 use crate::db::Database;
 
 pub struct LoginManager {
@@ -55,7 +57,7 @@ impl LoginManager {
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LoggedUser {
     username: String,
 }

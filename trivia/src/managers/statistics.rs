@@ -1,6 +1,8 @@
 use std::time::Duration;
 use std::sync::{Arc, Mutex};
 
+use serde::{Deserialize, Serialize};
+
 use crate::db::{Database, Score};
 
 
@@ -34,6 +36,7 @@ impl StatisticsManager {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Statistics {
     pub correct_answers: i64,
     pub total_answers: i64,

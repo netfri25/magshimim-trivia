@@ -2,17 +2,27 @@ use std::io::{Read, Write};
 
 use serde::{Deserialize, Serialize};
 
+use crate::db::Score;
+use crate::managers::statistics::Statistics;
+use crate::managers::room::{Room, RoomID};
 use crate::handler::Handler;
 
 use super::StatusCode;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Response {
     Error { msg: String },
-
     Login { status: StatusCode },
-
     Signup { status: StatusCode },
+    Logout,
+    Rooms(Vec<Room>),
+    PlayersInRoom(Vec<String>),
+    JoinRoom,
+    CreateRoom(RoomID),
+    HighScore {
+        user_statistics: Statistics,
+        high_scores: [Score; 5],
+    }
 }
 
 impl Response {

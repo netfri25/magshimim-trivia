@@ -1,7 +1,9 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::io::{Read, Write};
 
 use serde::{Serialize, Deserialize};
+
+use crate::managers::room::RoomID;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Request {
@@ -9,12 +11,22 @@ pub enum Request {
         username: String,
         password: String,
     },
-
     Signup {
         username: String,
         password: String,
         email: String,
     },
+    PlayersInRoom(RoomID),
+    JoinRoom(RoomID),
+    CreateRoom {
+        name: String,
+        max_users: usize,
+        questions: usize,
+        answer_timeout: Duration,
+    },
+    HighScore,
+    Logout,
+    Room,
 }
 
 impl Request {
