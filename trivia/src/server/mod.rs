@@ -7,13 +7,13 @@ use communicator::Communicator;
 use crate::db::Database;
 use crate::handler::RequestHandlerFactory;
 
-pub struct Server {
+pub struct TriviaServer {
     comm: Communicator,
     db: Arc<Mutex<dyn Database>>,
     factory: Arc<RequestHandlerFactory>,
 }
 
-impl Server {
+impl TriviaServer {
     pub fn build(addr: impl ToSocketAddrs, mut db: impl Database + 'static) -> anyhow::Result<Self> {
         db.open()?;
         let db = Arc::new(Mutex::new(db));
@@ -64,7 +64,7 @@ mod tests {
                 return;
             };
 
-            let Ok(server) = Server::build(ADDR, db) else {
+            let Ok(server) = TriviaServer::build(ADDR, db) else {
                 return;
             };
 
