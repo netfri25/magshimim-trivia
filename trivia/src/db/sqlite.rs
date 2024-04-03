@@ -299,7 +299,7 @@ mod tests {
         let mut db = SqliteDatabase::connect(":memory:")?;
         db.open()?;
         db.populate_questions(100)?;
-        let questions = db.get_questions(10)?;
-        panic!("{:#?}", questions)
+        db.get_questions(10)?;
+        Ok(())
     }
 }
