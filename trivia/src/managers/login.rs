@@ -2,8 +2,6 @@ use std::sync::{Arc, Mutex};
 
 use crate::db::Database;
 
-use super::logged_user::LoggedUser;
-
 pub struct LoginManager {
     db: Arc<Mutex<dyn Database>>,
     connected: Vec<LoggedUser>,
@@ -54,5 +52,27 @@ impl LoginManager {
 
         // O(1) removal, but doesn't preserve ordering
         self.connected.swap_remove(index);
+    }
+}
+
+#[derive(PartialEq, Eq, Hash)]
+pub struct LoggedUser {
+    username: String,
+}
+
+impl LoggedUser {
+    pub fn new(username: impl Into<String>) -> Self {
+        let username = username.into();
+        Self { username }
+    }
+
+    pub fn username(&self) -> &str {
+        &self.username
+    }
+}
+
+impl PartialEq<str> for LoggedUser {
+    fn eq(&self, other: &str) -> bool {
+        self.username() == other
     }
 }
