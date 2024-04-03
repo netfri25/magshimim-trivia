@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{managers::login::LoggedUser, messages::{Request, RequestInfo, RequestResult, Response, StatusCode}};
 
-use super::{Handler, MenuRequestHandler, RequestHandlerFactory};
+use super::{Handler, RequestHandlerFactory};
 
 pub struct LoginRequestHandler {
     factory: Arc<RequestHandlerFactory>,
