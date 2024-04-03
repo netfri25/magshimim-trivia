@@ -26,8 +26,8 @@ impl RoomManager {
         self.rooms.remove(&id);
     }
 
-    pub fn is_room_active(&self, id: RoomID) -> bool {
-        self.rooms.get(&id).map(|room| room.room_data().is_active).unwrap_or(false)
+    pub fn room_state(&self, id: RoomID) -> Option<RoomState> {
+        self.rooms.get(&id).map(|room| room.room_data().state)
     }
 
     pub fn room(&self, id: RoomID) -> Option<&Room> {
@@ -72,6 +72,13 @@ impl Room {
     }
 }
 
+#[derive(Default, Clone, Copy)]
+pub enum RoomState {
+    #[default]
+    Waiting,
+    InGame,
+}
+
 #[derive(Default)]
 pub struct RoomData {
     pub room_id: RoomID,
@@ -79,7 +86,7 @@ pub struct RoomData {
     pub max_players: usize,
     pub questions_count: usize,
     pub time_per_question: Duration,
-    pub is_active: bool
+    pub state: RoomState
 }
 
 impl RoomData {
@@ -105,11 +112,7 @@ impl RoomData {
             max_players,
             questions_count,
             time_per_question,
-            is_active: false
+            state: RoomState::default(),
         }
-    }
-
-    pub fn set_active(&mut self, active: bool) {
-        self.is_active = active
     }
 }
