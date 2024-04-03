@@ -6,3 +6,6 @@ pub use menu::MenuManager;
 
 pub mod room;
 pub use room::RoomManager;
+
+pub mod statistics;
+pub use statistics::StatisticsManager;
