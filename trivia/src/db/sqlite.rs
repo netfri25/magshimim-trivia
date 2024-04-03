@@ -473,17 +473,6 @@ mod tests {
         Ok(())
     }
 
-// enum Statistics {
-//     Table,
-//     Id,
-//     CorrectAnswers,
-//     TotalAnswers,
-//     AverageAnswerTime, // in seconds
-//     TotalGames,
-//     Score,
-//     UserId,
-// }
-
     fn insert_stats(
         db: &mut SqliteDatabase,
         correct: i64,
