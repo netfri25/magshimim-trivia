@@ -23,7 +23,7 @@ impl MenuRequestHandler {
         todo!()
     }
 
-    fn get_players_in_rooms(request_info: RequestInfo) -> anyhow::Result<RequestResult> {
+    fn get_players_in_room(request_info: RequestInfo) -> anyhow::Result<RequestResult> {
         todo!()
     }
 
