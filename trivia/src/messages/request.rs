@@ -5,6 +5,8 @@ use serde::{Serialize, Deserialize};
 
 use crate::managers::room::RoomID;
 
+use super::Error;
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Request {
     Login {
@@ -70,7 +72,7 @@ impl Request {
         matches!(self, Self::RoomList)
     }
 
-    pub fn read_from(reader: &mut impl Read) -> anyhow::Result<Self> {
+    pub fn read_from(reader: &mut impl Read) -> Result<Self, Error> {
         let mut buf_data_len = [0; 4];
         reader.read_exact(&mut buf_data_len)?;
         let data_len = u32::from_le_bytes(buf_data_len);
@@ -83,7 +85,7 @@ impl Request {
         Ok(request)
     }
 
-    pub fn write_to(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+    pub fn write_to(&self, writer: &mut impl Write) -> Result<(), Error> {
         let json = serde_json::to_vec(&self)?;
         let len = json.len() as u32;
         let len_bytes = len.to_le_bytes();
