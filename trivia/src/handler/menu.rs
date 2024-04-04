@@ -7,7 +7,7 @@ use crate::managers::room::{RoomData, RoomID};
 use crate::managers::statistics::Statistics;
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
-use super::{Handler, RequestHandlerFactory};
+use super::{Error, Handler, RequestHandlerFactory};
 
 pub struct MenuRequestHandler {
     user: LoggedUser,
@@ -43,13 +43,13 @@ impl MenuRequestHandler {
         }
     }
 
-    fn get_personal_stats(&self) -> anyhow::Result<Statistics> {
+    fn get_personal_stats(&self) -> Result<Statistics, crate::db::Error> {
         let statistics_manager = self.factory.get_statistics_manager();
         let statistics_manager_lock = statistics_manager.lock().unwrap();
         statistics_manager_lock.get_user_statistics(self.user.username())
     }
 
-    fn get_high_scores(&self) -> anyhow::Result<[Score; 5]> {
+    fn get_high_scores(&self) -> Result<[Score; 5], crate::db::Error> {
         let statistics_manager = self.factory.get_statistics_manager();
         let statistics_manager_lock = statistics_manager.lock().unwrap();
         statistics_manager_lock.get_high_scores()
@@ -97,7 +97,7 @@ impl Handler for MenuRequestHandler {
         accepted.iter().any(|f| f(&request_info.data))
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> anyhow::Result<RequestResult> {
+    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
         match request_info.data {
             Request::PlayersInRoom(room_id) => Ok(self.get_players_in_room(room_id)),
             Request::JoinRoom(id) => Ok(self.join_room(id)),

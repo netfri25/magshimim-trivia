@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{managers::login::LoggedUser, messages::{Request, RequestInfo, RequestResult, Response, StatusCode}};
 
-use super::{Handler, RequestHandlerFactory};
+use super::{Error, Handler, RequestHandlerFactory};
 
 pub struct LoginRequestHandler {
     factory: Arc<RequestHandlerFactory>,
@@ -19,7 +19,7 @@ impl Handler for LoginRequestHandler {
         request_info.data.is_login() || request_info.data.is_signup()
     }
 
-    fn handle(&mut self, request: RequestInfo) -> anyhow::Result<RequestResult> {
+    fn handle(&mut self, request: RequestInfo) -> Result<RequestResult, Error> {
         let login_manager = self.factory.get_login_manager();
 
         let result = match request.data {
