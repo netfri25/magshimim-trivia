@@ -3,6 +3,7 @@ use std::io::{Read, Write};
 use serde::{Deserialize, Serialize};
 
 use crate::db::Score;
+use crate::managers::login::LoggedUser;
 use crate::managers::statistics::Statistics;
 use crate::managers::room::{Room, RoomID};
 use crate::handler::Handler;
@@ -15,8 +16,8 @@ pub enum Response {
     Login { status: StatusCode },
     Signup { status: StatusCode },
     Logout,
-    Rooms(Vec<Room>),
-    PlayersInRoom(Vec<String>),
+    RoomList(Vec<Room>),
+    PlayersInRoom(Vec<LoggedUser>),
     JoinRoom,
     CreateRoom(RoomID),
     Statistics {
