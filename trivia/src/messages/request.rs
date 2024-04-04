@@ -26,7 +26,7 @@ pub enum Request {
     },
     Statistics,
     Logout,
-    Room,
+    RoomList,
 }
 
 impl Request {
@@ -57,7 +57,7 @@ impl Request {
 
     #[must_use]
     pub fn is_statistics(&self) -> bool {
-        matches!(self, Self::HighScore)
+        matches!(self, Self::Statistics)
     }
 
     #[must_use]
@@ -66,8 +66,8 @@ impl Request {
     }
 
     #[must_use]
-    pub fn is_room(&self) -> bool {
-        matches!(self, Self::Room)
+    pub fn is_room_list(&self) -> bool {
+        matches!(self, Self::RoomList)
     }
 
     pub fn read_from(reader: &mut impl Read) -> anyhow::Result<Self> {
