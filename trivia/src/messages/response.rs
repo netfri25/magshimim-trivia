@@ -2,17 +2,28 @@ use std::io::{Read, Write};
 
 use serde::{Deserialize, Serialize};
 
+use crate::db::Score;
+use crate::managers::login::LoggedUser;
+use crate::managers::statistics::Statistics;
+use crate::managers::room::{Room, RoomID};
 use crate::handler::Handler;
 
 use super::StatusCode;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Response {
     Error { msg: String },
-
     Login { status: StatusCode },
-
     Signup { status: StatusCode },
+    Logout,
+    RoomList(Vec<Room>),
+    PlayersInRoom(Vec<LoggedUser>),
+    JoinRoom,
+    CreateRoom(RoomID),
+    Statistics {
+        user_statistics: Statistics,
+        high_scores: [Score; 5],
+    }
 }
 
 impl Response {
@@ -50,8 +61,8 @@ pub struct RequestResult {
 }
 
 impl RequestResult {
-    pub fn new(response: Response, new_handler: impl Handler + 'static) -> Self {
-        let new_handler = Some(Box::new(new_handler) as Box<dyn Handler>);
+    pub fn new(response: Response, new_handler: Box<dyn Handler>) -> Self {
+        let new_handler = Some(new_handler);
         Self {
             response,
             new_handler,

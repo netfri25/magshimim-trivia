@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::messages::{Request, RequestInfo, RequestResult, Response, StatusCode};
+use crate::{managers::login::LoggedUser, messages::{Request, RequestInfo, RequestResult, Response, StatusCode}};
 
-use super::{Handler, MenuRequestHandler, RequestHandlerFactory};
+use super::{Handler, RequestHandlerFactory};
 
 pub struct LoginRequestHandler {
     factory: Arc<RequestHandlerFactory>,
@@ -24,12 +24,13 @@ impl Handler for LoginRequestHandler {
 
         let result = match request.data {
             Request::Login { username, password } => {
-                if let Some(err) = login_manager.lock().unwrap().login(username, &password)? {
+                if let Some(err) = login_manager.lock().unwrap().login(username.clone(), &password)? {
                     return Ok(RequestResult::new_error(err));
                 }
 
+                let logged_user = LoggedUser::new(username);
                 let response = Response::Login { status: StatusCode::ResponseOk };
-                RequestResult::new(response, MenuRequestHandler)
+                RequestResult::new(response, self.factory.create_menu_request_handler(logged_user))
             },
 
             Request::Signup { username, password, email } => {

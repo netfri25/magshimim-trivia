@@ -2,9 +2,11 @@ use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use serde::{Deserialize, Serialize};
+
 use super::login::LoggedUser;
 
-pub type RoomID = usize;
+pub type RoomID = i64;
 
 #[derive(Default)]
 pub struct RoomManager {
@@ -37,9 +39,13 @@ impl RoomManager {
     pub fn room_mut(&mut self, id: RoomID) -> Option<&mut Room> {
         self.rooms.get_mut(&id)
     }
+
+    pub fn rooms(&self) -> impl Iterator<Item = &Room> {
+        self.rooms.values()
+    }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Room {
     data: RoomData,
     users: Vec<LoggedUser>,
@@ -72,14 +78,14 @@ impl Room {
     }
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 pub enum RoomState {
     #[default]
     Waiting,
     InGame,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RoomData {
     pub room_id: RoomID,
     pub name: String,
@@ -96,7 +102,7 @@ impl RoomData {
         questions_count: usize,
         time_per_question: Duration
     ) -> Self {
-        static ROOM_ID_COUNTER: Mutex<usize> = Mutex::new(0);
+        static ROOM_ID_COUNTER: Mutex<RoomID> = Mutex::new(0);
         let room_id;
         {
             let mut id_lock = ROOM_ID_COUNTER.lock().unwrap();

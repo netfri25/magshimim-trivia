@@ -1,9 +1,10 @@
 use std::sync::{Arc, Mutex};
 
 use crate::db::Database;
+use crate::managers::login::LoggedUser;
 use crate::managers::{LoginManager, RoomManager, StatisticsManager};
 
-use super::{Handler, LoginRequestHandler};
+use super::{Handler, LoginRequestHandler, MenuRequestHandler};
 
 pub struct RequestHandlerFactory {
     login_manager: Arc<Mutex<LoginManager>>,
@@ -32,6 +33,10 @@ impl RequestHandlerFactory {
         Box::new(LoginRequestHandler::new(self.clone()))
     }
 
+    pub fn create_menu_request_handler(self: &Arc<Self>, logged_user: LoggedUser) -> Box<dyn Handler> {
+        Box::new(MenuRequestHandler::new(self.clone(), logged_user))
+    }
+
     pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager>> {
         self.login_manager.clone()
     }
@@ -40,7 +45,7 @@ impl RequestHandlerFactory {
         self.room_manager.clone()
     }
 
-    pub fn get_statistics_manager(&self) -> Arc<Mutex<RoomManager>> {
-        self.room_manager.clone()
+    pub fn get_statistics_manager(&self) -> Arc<Mutex<StatisticsManager>> {
+        self.statistics_manager.clone()
     }
 }
