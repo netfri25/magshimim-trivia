@@ -39,9 +39,13 @@ impl RoomManager {
     pub fn room_mut(&mut self, id: RoomID) -> Option<&mut Room> {
         self.rooms.get_mut(&id)
     }
+
+    pub fn rooms(&self) -> impl Iterator<Item = &Room> {
+        self.rooms.values()
+    }
 }
 
-#[derive(Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Room {
     data: RoomData,
     users: Vec<LoggedUser>,
@@ -81,7 +85,7 @@ pub enum RoomState {
     InGame,
 }
 
-#[derive(Default, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RoomData {
     pub room_id: RoomID,
     pub name: String,

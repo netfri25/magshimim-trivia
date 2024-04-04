@@ -45,7 +45,7 @@ impl RequestHandlerFactory {
         self.room_manager.clone()
     }
 
-    pub fn get_statistics_manager(&self) -> Arc<Mutex<RoomManager>> {
-        self.room_manager.clone()
+    pub fn get_statistics_manager(&self) -> Arc<Mutex<StatisticsManager>> {
+        self.statistics_manager.clone()
     }
 }
