@@ -1,24 +1,24 @@
 use std::path::Path;
 use std::time::Duration;
 
-use sea_query as query;
 use query::Iden;
+use sea_query as query;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
-use super::{opentdb, Database, Score};
 use super::question::QuestionData;
+use super::{opentdb, Database, Error, Score};
 
 pub struct SqliteDatabase {
     conn: ConnectionThreadSafe,
 }
 
 impl SqliteDatabase {
-    pub fn connect(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+    pub fn connect(path: impl AsRef<Path>) -> Result<Self, Error> {
         let conn = Connection::open_thread_safe(path)?;
         Ok(Self { conn })
     }
 
-    pub fn populate_questions(&mut self, amount: u8) -> anyhow::Result<()> {
+    pub fn populate_questions(&mut self, amount: u8) -> Result<(), Error> {
         let questions = opentdb::get_questions(amount)?;
 
         for question in questions {
@@ -38,7 +38,7 @@ impl SqliteDatabase {
 
                 let mut statement = self.conn.prepare(&select_query)?;
                 let State::Row = statement.next()? else {
-                    anyhow::bail!("question doesn't exist after insertion");
+                    return Err(anyhow::anyhow!("question doesn't exist after insertion").into());
                 };
 
                 statement.read::<i64, _>(Question::Id.to_string().as_str())?
@@ -49,7 +49,11 @@ impl SqliteDatabase {
             let correct_answer_insert_query = query::Query::insert()
                 .into_table(Answer::Table)
                 .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
-                .values_panic([possible_answers.correct_answer.into(), true.into(), question_id.into()])
+                .values_panic([
+                    possible_answers.correct_answer.into(),
+                    true.into(),
+                    question_id.into(),
+                ])
                 .to_string(query::SqliteQueryBuilder);
             self.conn.execute(correct_answer_insert_query)?;
 
@@ -68,7 +72,7 @@ impl SqliteDatabase {
 }
 
 impl Database for SqliteDatabase {
-    fn open(&mut self) -> anyhow::Result<()> {
+    fn open(&mut self) -> Result<(), Error> {
         // already opens the connection on creation
         // to design it like the cpp way where you have uninitialized variables (the
         // database connection) is unsafe, and I don't really want to deal with unsafe.
@@ -88,11 +92,11 @@ impl Database for SqliteDatabase {
         Ok(())
     }
 
-    fn close(self) -> anyhow::Result<()> {
+    fn close(self) -> Result<(), Error> {
         Ok(()) // drop the connection and return without any errors
     }
 
-    fn user_exists(&self, username: &str) -> anyhow::Result<bool> {
+    fn user_exists(&self, username: &str) -> Result<bool, Error> {
         let statement = query::Query::select()
             .column(User::Username)
             .from(User::Table)
@@ -109,7 +113,7 @@ impl Database for SqliteDatabase {
         Ok(exists)
     }
 
-    fn password_matches(&self, username: &str, password: &str) -> anyhow::Result<bool> {
+    fn password_matches(&self, username: &str, password: &str) -> Result<bool, Error> {
         let statement = query::Query::select()
             .columns([User::Username, User::Password])
             .from(User::Table)
@@ -128,7 +132,7 @@ impl Database for SqliteDatabase {
     }
 
     /// doesn't check whether the user exists or not
-    fn add_user(&mut self, username: &str, password: &str, email: &str) -> anyhow::Result<()> {
+    fn add_user(&mut self, username: &str, password: &str, email: &str) -> Result<(), Error> {
         let statement = query::Query::insert()
             .into_table(User::Table)
             .columns([User::Username, User::Password, User::Email])
@@ -138,7 +142,7 @@ impl Database for SqliteDatabase {
         Ok(())
     }
 
-    fn get_questions(&self, amount: u8) -> anyhow::Result<Vec<QuestionData>> {
+    fn get_questions(&self, amount: u8) -> Result<Vec<QuestionData>, Error> {
         let select_question_query = query::Query::select()
             .columns([Question::Content, Question::Id])
             .from(Question::Table)
@@ -150,7 +154,8 @@ impl Database for SqliteDatabase {
 
         let mut questions_iter = self.conn.prepare(select_question_query)?;
         while let State::Row = questions_iter.next()? {
-            let question_content = questions_iter.read::<String, _>(Question::Content.to_string().as_str())?;
+            let question_content =
+                questions_iter.read::<String, _>(Question::Content.to_string().as_str())?;
             let question_id = questions_iter.read::<i64, _>(Question::Id.to_string().as_str())?;
 
             let get_answers_query = query::Query::select()
@@ -167,8 +172,10 @@ impl Database for SqliteDatabase {
 
             let mut answers_iter = self.conn.prepare(get_answers_query)?;
             while let State::Row = answers_iter.next()? {
-                let answer_content = answers_iter.read::<String, _>(Answer::Content.to_string().as_str())?;
-                let answer_correct = answers_iter.read::<i64, _>(Answer::Correct.to_string().as_str())? == 1;
+                let answer_content =
+                    answers_iter.read::<String, _>(Answer::Content.to_string().as_str())?;
+                let answer_correct =
+                    answers_iter.read::<i64, _>(Answer::Correct.to_string().as_str())? == 1;
 
                 if answer_correct {
                     question.correct_answer = answer_content;
@@ -185,112 +192,114 @@ impl Database for SqliteDatabase {
 
     // NOTE: LOTS of copy & paste, I can probably factor this out but it's not really necessary
 
-    fn get_player_average_answer_time(&self, username: &str) -> anyhow::Result<Duration> {
+    fn get_player_average_answer_time(&self, username: &str) -> Result<Duration, Error> {
         let statement = query::Query::select()
             .column(Statistics::AverageAnswerTime)
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
                 query::Expr::col((Statistics::Table, Statistics::UserId))
-                    .equals((User::Table, User::Id))
+                    .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
             .to_string(query::SqliteQueryBuilder);
 
         let mut iter = self.conn.prepare(statement)?;
         if let State::Done = iter.next()? {
-            anyhow::bail!("User doesn't exist");
+            return Err(Error::UserDoesntExist(username.to_string()));
         }
 
-        let average_answer_time = iter.read::<f64, _>(Statistics::AverageAnswerTime.to_string().as_str())?;
+        let average_answer_time =
+            iter.read::<f64, _>(Statistics::AverageAnswerTime.to_string().as_str())?;
         Ok(Duration::from_secs_f64(average_answer_time))
     }
 
-    fn get_correct_answers_count(&self, username: &str) -> anyhow::Result<i64> {
+    fn get_correct_answers_count(&self, username: &str) -> Result<i64, Error> {
         let statement = query::Query::select()
             .column(Statistics::CorrectAnswers)
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
                 query::Expr::col((Statistics::Table, Statistics::UserId))
-                    .equals((User::Table, User::Id))
+                    .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
             .to_string(query::SqliteQueryBuilder);
 
         let mut iter = self.conn.prepare(statement)?;
         if let State::Done = iter.next()? {
-            anyhow::bail!("User doesn't exist");
+            return Err(Error::UserDoesntExist(username.to_string()));
         }
 
-        let correct_answers = iter.read::<i64, _>(Statistics::CorrectAnswers.to_string().as_str())?;
+        let correct_answers =
+            iter.read::<i64, _>(Statistics::CorrectAnswers.to_string().as_str())?;
         Ok(correct_answers)
     }
 
-    fn get_total_answers_count(&self, username: &str) -> anyhow::Result<i64> {
+    fn get_total_answers_count(&self, username: &str) -> Result<i64, Error> {
         let statement = query::Query::select()
             .column(Statistics::TotalAnswers)
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
                 query::Expr::col((Statistics::Table, Statistics::UserId))
-                    .equals((User::Table, User::Id))
+                    .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
             .to_string(query::SqliteQueryBuilder);
 
         let mut iter = self.conn.prepare(statement)?;
         if let State::Done = iter.next()? {
-            anyhow::bail!("User doesn't exist");
+            return Err(Error::UserDoesntExist(username.to_string()));
         }
 
         let total_answers = iter.read::<i64, _>(Statistics::TotalAnswers.to_string().as_str())?;
         Ok(total_answers)
     }
 
-    fn get_games_count(&self, username: &str) -> anyhow::Result<i64> {
+    fn get_games_count(&self, username: &str) -> Result<i64, Error> {
         let statement = query::Query::select()
             .column(Statistics::TotalGames)
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
                 query::Expr::col((Statistics::Table, Statistics::UserId))
-                    .equals((User::Table, User::Id))
+                    .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
             .to_string(query::SqliteQueryBuilder);
 
         let mut iter = self.conn.prepare(statement)?;
         if let State::Done = iter.next()? {
-            anyhow::bail!("User doesn't exist");
+            return Err(Error::UserDoesntExist(username.to_string()));
         }
 
         let total_games = iter.read::<i64, _>(Statistics::TotalGames.to_string().as_str())?;
         Ok(total_games)
     }
 
-    fn get_score(&self, username: &str) -> anyhow::Result<super::Score> {
+    fn get_score(&self, username: &str) -> Result<super::Score, Error> {
         let statement = query::Query::select()
             .column(Statistics::Score)
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
                 query::Expr::col((Statistics::Table, Statistics::UserId))
-                    .equals((User::Table, User::Id))
+                    .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
             .to_string(query::SqliteQueryBuilder);
 
         let mut iter = self.conn.prepare(statement)?;
         if let State::Done = iter.next()? {
-            anyhow::bail!("User doesn't exist");
+            return Err(Error::UserDoesntExist(username.to_string()));
         }
 
         let total_games = iter.read::<Score, _>(Statistics::Score.to_string().as_str())?;
         Ok(total_games)
     }
 
-    fn get_five_highscores(&self) -> anyhow::Result<[super::Score; 5]> {
+    fn get_five_highscores(&self) -> Result<[super::Score; 5], Error> {
         let statement = query::Query::select()
             .column(Statistics::Score)
             .from(Statistics::Table)
@@ -372,7 +381,12 @@ impl Question {
                     .not_null()
                     .auto_increment(),
             )
-            .col(query::ColumnDef::new(Question::Content).text().not_null().unique_key())
+            .col(
+                query::ColumnDef::new(Question::Content)
+                    .text()
+                    .not_null()
+                    .unique_key(),
+            )
             .to_owned()
     }
 }
@@ -431,17 +445,43 @@ impl Statistics {
         query::Table::create()
             .table(Statistics::Table)
             .if_not_exists()
-            .col(query::ColumnDef::new(Statistics::Id).integer().not_null().primary_key().auto_increment())
-            .col(query::ColumnDef::new(Statistics::CorrectAnswers).integer().not_null())
-            .col(query::ColumnDef::new(Statistics::TotalAnswers).integer().not_null())
-            .col(query::ColumnDef::new(Statistics::AverageAnswerTime).double().not_null())
-            .col(query::ColumnDef::new(Statistics::TotalGames).integer().not_null())
+            .col(
+                query::ColumnDef::new(Statistics::Id)
+                    .integer()
+                    .not_null()
+                    .primary_key()
+                    .auto_increment(),
+            )
+            .col(
+                query::ColumnDef::new(Statistics::CorrectAnswers)
+                    .integer()
+                    .not_null(),
+            )
+            .col(
+                query::ColumnDef::new(Statistics::TotalAnswers)
+                    .integer()
+                    .not_null(),
+            )
+            .col(
+                query::ColumnDef::new(Statistics::AverageAnswerTime)
+                    .double()
+                    .not_null(),
+            )
+            .col(
+                query::ColumnDef::new(Statistics::TotalGames)
+                    .integer()
+                    .not_null(),
+            )
             .col(query::ColumnDef::new(Statistics::Score).double().not_null())
-            .col(query::ColumnDef::new(Statistics::UserId).integer().not_null())
+            .col(
+                query::ColumnDef::new(Statistics::UserId)
+                    .integer()
+                    .not_null(),
+            )
             .foreign_key(
                 query::ForeignKey::create()
                     .from(Statistics::Table, Statistics::UserId)
-                    .to(User::Table, User::Id)
+                    .to(User::Table, User::Id),
             )
             .to_owned()
     }
@@ -479,7 +519,7 @@ mod tests {
         total_answers: i64,
         avg_time: f64,
         total_games: i64,
-        user_id: i64
+        user_id: i64,
     ) -> anyhow::Result<()> {
         let score = calc_score(Duration::from_secs_f64(avg_time), correct, total_answers);
         let statement = query::Query::insert()
@@ -489,7 +529,7 @@ mod tests {
                 Statistics::AverageAnswerTime,
                 Statistics::TotalGames,
                 Statistics::Score,
-                Statistics::UserId
+                Statistics::UserId,
             ])
             .into_table(Statistics::Table)
             .values_panic([
@@ -516,12 +556,7 @@ mod tests {
             db.add_user(&username, "pass", "email@example.com")?;
         }
 
-        let stats = [
-            (10, 20, 2.2),
-            (12, 20, 1.3),
-            (15, 20, 2.6),
-            (17, 20, 3.2),
-        ];
+        let stats = [(10, 20, 2.2), (12, 20, 1.3), (15, 20, 2.6), (17, 20, 3.2)];
 
         for (user_id, stat) in stats.iter().enumerate() {
             let user_id = user_id + 1;

@@ -1,3 +1,5 @@
+use std::{io, string};
+
 use serde::Deserialize;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -6,12 +8,12 @@ use base64::Engine as _;
 
 use super::question::Question;
 
-pub fn get_questions(amount: u8) -> anyhow::Result<Vec<Question>> {
+pub fn get_questions(amount: u8) -> Result<Vec<Question>, Error> {
     let url = format!(
         "https://opentdb.com/api.php?amount={}&encode=base64",
         amount
     );
-    let resp_string = ureq::get(&url).call()?.into_string()?;
+    let resp_string = ureq::get(&url).call().map_err(Box::new)?.into_string()?;
     let mut resp_json: serde_json::Value = serde_json::from_str(&resp_string)?;
     decode_json_base64(&mut resp_json)?;
 
@@ -25,7 +27,7 @@ pub fn get_questions(amount: u8) -> anyhow::Result<Vec<Question>> {
     Ok(questions)
 }
 
-fn decode_json_base64(value: &mut serde_json::Value) -> anyhow::Result<()> {
+fn decode_json_base64(value: &mut serde_json::Value) -> Result<(), Error> {
     match value {
         serde_json::Value::String(s) => {
             let decoded = base64.decode(s.as_bytes())?;
@@ -83,4 +85,25 @@ mod tests {
     pub fn correct_parsing() {
         get_questions(2).unwrap();
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Decode(#[from] base64::DecodeError),
+
+    #[error(transparent)]
+    Utf8(#[from] string::FromUtf8Error),
+
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    Response(#[from] ResponseCode),
+
+    #[error(transparent)]
+    Io(#[from] io::Error),
+
+    #[error(transparent)]
+    Http(#[from] Box<ureq::Error>),
 }

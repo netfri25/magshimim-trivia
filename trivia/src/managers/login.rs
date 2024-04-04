@@ -17,7 +17,7 @@ impl LoginManager {
         }
     }
 
-    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> anyhow::Result<Option<String>> {
+    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> Result<Option<String>, crate::db::Error> {
         let username = username.into();
 
         if self.db.lock().unwrap().user_exists(&username)? {
@@ -29,7 +29,7 @@ impl LoginManager {
     }
 
     // TODO: return proper types to represent the outcome better
-    pub fn login(&mut self, username: impl Into<String>, password: &str) -> anyhow::Result<Option<String>> {
+    pub fn login(&mut self, username: impl Into<String>, password: &str) -> Result<Option<String>, crate::db::Error> {
         let username = username.into();
         if self.connected.iter().any(|user| user.username() == username) {
             return Ok(Some("user already connected".into()));
