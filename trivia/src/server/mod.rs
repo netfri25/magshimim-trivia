@@ -4,7 +4,7 @@ use std::net::ToSocketAddrs;
 mod communicator;
 use communicator::Communicator;
 
-use crate::db::Database;
+use crate::db::{self, Database};
 use crate::handler::RequestHandlerFactory;
 
 pub struct TriviaServer {
@@ -14,7 +14,7 @@ pub struct TriviaServer {
 }
 
 impl TriviaServer {
-    pub fn build(addr: impl ToSocketAddrs, mut db: impl Database + 'static) -> anyhow::Result<Self> {
+    pub fn build(addr: impl ToSocketAddrs, mut db: impl Database + 'static) -> Result<Self, Error> {
         db.open()?;
         let db = Arc::new(Mutex::new(db));
         let factory = Arc::new(RequestHandlerFactory::new(db.clone()));
@@ -217,4 +217,13 @@ mod tests {
         let expected = Response::Error { msg: "user already connected".to_string() };
         assert_eq!(response, expected);
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Communicator(#[from] communicator::Error),
+
+    #[error(transparent)]
+    DBError(#[from] db::Error),
 }
