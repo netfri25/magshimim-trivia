@@ -19,7 +19,7 @@ pub enum Response {
     PlayersInRoom(Vec<String>),
     JoinRoom,
     CreateRoom(RoomID),
-    HighScore {
+    Statistics {
         user_statistics: Statistics,
         high_scores: [Score; 5],
     }

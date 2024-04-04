@@ -24,7 +24,7 @@ pub enum Request {
         questions: usize,
         answer_timeout: Duration,
     },
-    HighScore,
+    Statistics,
     Logout,
     Room,
 }
