@@ -4,7 +4,7 @@ use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::{Arc, Mutex};
 
 use crate::defer::Defer;
-use crate::handler::{Handler, LoginRequestHandler, RequestHandlerFactory};
+use crate::handler::{Handler, RequestHandlerFactory};
 use crate::messages::{Request, RequestResult, RequestInfo};
 
 type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
