@@ -41,5 +41,8 @@ pub enum Error {
     InternalDBError(#[from] ::sqlite::Error),
 
     #[error(transparent)]
+    OpenTDB(#[from] opentdb::Error),
+
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
