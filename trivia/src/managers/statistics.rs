@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::{Database, Score};
+use crate::db::{self, Database, Score};
 
 
 pub struct StatisticsManager {
@@ -15,11 +15,11 @@ impl StatisticsManager {
         Self { db }
     }
 
-    pub fn get_high_scores(&self) -> anyhow::Result<[Score; 5]> {
-        self.db.lock().unwrap().get_five_highscores()
+    pub fn get_high_scores(&self) -> Result<[Score; 5], Error> {
+        Ok(self.db.lock().unwrap().get_five_highscores()?)
     }
 
-    pub fn get_user_statistics(&self, username: &str) -> anyhow::Result<Statistics> {
+    pub fn get_user_statistics(&self, username: &str) -> Result<Statistics, Error> {
         let correct_answers = self.db.lock().unwrap().get_correct_answers_count(username)?;
         let total_answers = self.db.lock().unwrap().get_total_answers_count(username)?;
         let average_answer_time = self.db.lock().unwrap().get_player_average_answer_time(username)?;
@@ -43,4 +43,10 @@ pub struct Statistics {
     pub average_answer_time: Duration,
     pub total_games: i64,
     pub score: Score,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    DBError(#[from] db::Error),
 }
