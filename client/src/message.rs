@@ -3,7 +3,7 @@ use derive_more::From;
 use trivia::messages::Response;
 
 use crate::connection;
-use crate::page::{login, register};
+use crate::page::{login, mainmenu, register};
 
 #[derive(From, Debug, Clone)]
 #[non_exhaustive]
@@ -17,4 +17,7 @@ pub enum Message {
 
     #[from]
     Register(register::Msg),
+
+    #[from]
+    MainMenu(mainmenu::Msg),
 }

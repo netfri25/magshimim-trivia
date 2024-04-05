@@ -7,6 +7,9 @@ pub use login::LoginPage;
 pub mod register;
 pub use register::RegisterPage;
 
+pub mod mainmenu;
+pub use mainmenu::MainMenuPage;
+
 pub trait Page {
     fn update(&mut self, message: Message) -> Action;
     fn view(&self) -> iced::Element<Message>;

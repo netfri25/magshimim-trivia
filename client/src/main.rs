@@ -6,7 +6,7 @@ mod message;
 use message::Message;
 
 mod page;
-use page::{LoginPage, Page};
+use page::{LoginPage, MainMenuPage, Page};
 
 mod action;
 use action::Action;
@@ -99,6 +99,8 @@ impl Application for Client {
             }
 
             Action::Command(cmd) => return cmd,
+
+            Action::Quit => std::process::exit(0),
 
             Action::Nothing => {}
         }

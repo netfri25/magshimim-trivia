@@ -43,8 +43,7 @@ impl Page for LoginPage {
                 Response::Login {
                     status: StatusCode::ResponseOk
                 } => {
-                    let (page, cmd) = MainMenuPage::new();
-                    return Action::switch_cmd(page, cmd);
+                    return Action::switch(MainMenuPage::default());
                 }
                 _ => eprintln!("response ignored: {:?}", response),
             }
