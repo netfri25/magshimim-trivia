@@ -97,6 +97,8 @@ impl Application for Client {
                 );
             }
 
+            Action::Command(cmd) => return cmd,
+
             Action::Nothing => {}
         }
 

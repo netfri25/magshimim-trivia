@@ -15,7 +15,9 @@ use super::{Page, RegisterPage};
 #[derive(Debug, Clone)]
 pub enum Msg {
     UsernameInput(String),
+    UsernameSubmit,
     PasswordInput(String),
+    PasswordSubmit,
     Login,
     Register,
 }
@@ -34,6 +36,8 @@ impl Page for LoginPage {
             return Action::Nothing;
         };
 
+        self.err.clear();
+
         if let Message::Response(response) = message {
             todo!("Tell the client that the user has logged in");
             return Action::Nothing;
@@ -44,17 +48,11 @@ impl Page for LoginPage {
         };
 
         match msg {
-            Msg::UsernameInput(username) => {
-                self.err.clear();
-                self.username = username;
-            }
+            Msg::UsernameInput(username) => self.username = username,
+            Msg::UsernameSubmit => return Action::Command(text_input::focus(text_input::Id::new("password"))),
 
-            Msg::PasswordInput(password) => {
-                self.err.clear();
-                self.password = password;
-            }
-
-            Msg::Login => {
+            Msg::PasswordInput(password) => self.password = password,
+            Msg::PasswordSubmit | Msg::Login => {
                 self.err.clear();
                 return Action::MakeRequest(Request::Login {
                     username: self.username.clone(),
@@ -88,9 +86,13 @@ impl Page for LoginPage {
 
         let input_fields = column![
             text_input("username:", &self.username)
+                .id(text_input::Id::new("username"))
+                .on_submit(Msg::UsernameSubmit.into())
                 .on_input(|input| Msg::UsernameInput(input).into()),
             text_input("password:", &self.password)
+                .id(text_input::Id::new("password"))
                 .secure(true)
+                .on_submit(Msg::PasswordSubmit.into())
                 .on_input(|input| Msg::PasswordInput(input).into()),
             container(buttons).padding(2.).center_y(),
         ]

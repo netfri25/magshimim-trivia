@@ -14,8 +14,11 @@ use super::{LoginPage, Page};
 #[derive(Debug, Clone)]
 pub enum Msg {
     UsernameInput(String),
+    UsernameSubmit,
     PasswordInput(String),
+    PasswordSubmit,
     EmailInput(String),
+    EmailSubmit,
     Register,
     Login,
 }
@@ -34,6 +37,8 @@ impl Page for RegisterPage {
             self.err = format!("Error: {}", err);
             return Action::Nothing;
         };
+
+        self.err.clear();
 
         if let Message::Response(response) = message {
             match response.as_ref() {
@@ -57,23 +62,13 @@ impl Page for RegisterPage {
         };
 
         match msg {
-            Msg::UsernameInput(username) => {
-                self.err.clear();
-                self.username = username;
-            }
+            Msg::UsernameInput(username) => self.username = username,
+            Msg::UsernameSubmit => return Action::Command(text_input::focus(text_input::Id::new("password"))),
+            Msg::PasswordInput(password) => self.password = password,
+            Msg::PasswordSubmit => return Action::Command(text_input::focus(text_input::Id::new("email"))),
+            Msg::EmailInput(email) => self.email = email,
 
-            Msg::PasswordInput(password) => {
-                self.err.clear();
-                self.password = password;
-            }
-
-            Msg::EmailInput(email) => {
-                self.err.clear();
-                self.email = email;
-            }
-
-            Msg::Register => {
-                self.err.clear();
+            Msg::EmailSubmit | Msg::Register => {
                 return Action::MakeRequest(Request::Signup {
                     username: self.username.clone(),
                     password: self.password.clone(),
@@ -114,11 +109,18 @@ impl Page for RegisterPage {
 
         let input_fields = column![
             text_input("username:", &self.username)
+                .id(text_input::Id::new("username"))
+                .on_submit(Msg::UsernameSubmit.into())
                 .on_input(|input| Msg::UsernameInput(input).into()),
             text_input("password:", &self.password)
+                .id(text_input::Id::new("password"))
                 .secure(true)
+                .on_submit(Msg::PasswordSubmit.into())
                 .on_input(|input| Msg::PasswordInput(input).into()),
-            text_input("email:", &self.email).on_input(|input| Msg::EmailInput(input).into()),
+            text_input("email:", &self.email)
+                .id(text_input::Id::new("email"))
+                .on_submit(Msg::EmailSubmit.into())
+                .on_input(|input| Msg::EmailInput(input).into()),
             container(buttons)
                 .padding(consts::BUTTONS_PADDING)
                 .center_y(),
