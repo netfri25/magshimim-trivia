@@ -3,61 +3,72 @@ use iced::{
 };
 
 use crate::message::Message;
-use crate::page::register;
 use crate::{action::Action, consts};
+
+use crate::page::login;
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     UsernameInput(String),
     PasswordInput(String),
-    Login,
+    EmailInput(String),
     Register,
+    Login,
 }
 
 #[derive(Default)]
 pub struct Page {
     username: String,
     password: String,
+    email: String,
 }
 
 impl super::Page for Page {
     fn update(&mut self, message: Message) -> Action {
-        let Message::Login(msg) = message else {
+        let Message::Register(msg) = message else {
             return Action::Nothing;
         };
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
             Msg::PasswordInput(password) => self.password = password,
-            Msg::Login => {
-                return Action::MakeRequest(trivia::messages::Request::Login {
+            Msg::EmailInput(email) => self.email = email,
+            Msg::Register => {
+                return Action::MakeRequest(trivia::messages::Request::Signup {
                     username: self.username.clone(),
                     password: self.password.clone(),
+                    email: self.email.clone(),
                 })
             }
-            Msg::Register => return Action::GoTo(Box::<register::Page>::default()),
+            Msg::Login => return Action::GoTo(Box::<login::Page>::default()),
         }
 
         Action::Nothing
     }
 
     fn view(&self) -> iced::Element<Message> {
-        let title = text("Login")
+        let title = text("Register")
             .size(consts::TITLE_SIZE)
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
-        let subtitle = text("Login with your Trivia Account")
+        let subtitle = text("Register a new Trivia Account")
             .size(consts::SUBTITLE_SIZE)
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center)
             .style(consts::SUBTITLE_COLOR);
 
-        let login_button = button("Login").on_press(Msg::Login.into());
-        let register_button = button("Register")
-            .on_press(Msg::Register.into())
-            .style(theme::Button::Secondary);
-        let buttons =
-            row![register_button, horizontal_space(), login_button].align_items(Alignment::Center);
+        let register_button = button("Register").on_press(Msg::Register.into());
+        let already_have_an_account_text = text("already have an account?")
+            .style(consts::ALREADY_HAVE_AN_ACCOUNT_COLOR)
+            .size(consts::ALREADY_HAVE_AN_ACCOUNT_SIZE);
+        let already_have_an_account_button = button(already_have_an_account_text)
+            .on_press(Msg::Login.into())
+            .style(theme::Button::Text);
+        let buttons = row![
+            already_have_an_account_button,
+            horizontal_space(),
+            register_button
+        ].align_items(Alignment::Center);
 
         let input_fields = column![
             text_input("username:", &self.username)
@@ -65,10 +76,11 @@ impl super::Page for Page {
             text_input("password:", &self.password)
                 .secure(true)
                 .on_input(|input| Msg::PasswordInput(input).into()),
-            container(buttons).padding(2.).center_y(),
+            text_input("email:", &self.email).on_input(|input| Msg::EmailInput(input).into()),
+            container(buttons).padding(consts::BUTTONS_PADDING).center_y()
         ]
-        .padding(consts::INPUT_FIELDS_PADDING)
         .spacing(consts::INPUT_FIELDS_SPACING)
+        .padding(consts::INPUT_FIELDS_PADDING)
         .max_width(consts::INPUT_FIELDS_MAX_WIDTH);
 
         let body = column![
@@ -83,7 +95,7 @@ impl super::Page for Page {
                 .width(Length::Fill)
                 .height(consts::INPUT_FIELDS_PORTION)
                 .center_x()
-                .center_y(),
+                .center_y()
         ];
 
         container(body)

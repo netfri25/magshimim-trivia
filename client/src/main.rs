@@ -9,6 +9,8 @@ use page::Page;
 mod action;
 use action::Action;
 
+mod consts;
+
 fn main() {
     let mut settings = Settings::default();
     settings.window.size = iced::Size::new(800., 600.);

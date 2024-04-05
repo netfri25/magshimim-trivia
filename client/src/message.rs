@@ -5,5 +5,5 @@ use derive_more::From;
 #[non_exhaustive]
 pub enum Message {
     Login(page::login::Msg),
-    Placeholder,
+    Register(page::register::Msg),
 }
