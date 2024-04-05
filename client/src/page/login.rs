@@ -5,7 +5,7 @@ use iced::{
 use crate::message::Message;
 use crate::{action::Action, consts};
 
-use super::{register::RegisterPage, Page};
+use super::{RegisterPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
