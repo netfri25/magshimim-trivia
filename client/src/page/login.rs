@@ -1,5 +1,5 @@
 use iced::{
-    alignment::Horizontal, theme, widget::{button, column, container, horizontal_space, row, text, text_input}, Alignment, Color, Length
+    alignment::Horizontal, theme, widget::{button, column, container, horizontal_space, row, text, text_input}, Alignment, Length
 };
 
 use crate::message::Message;
