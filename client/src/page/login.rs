@@ -3,8 +3,9 @@ use iced::{
 };
 
 use crate::message::Message;
-use crate::page::register;
 use crate::{action::Action, consts};
+
+use super::{register::RegisterPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -15,12 +16,12 @@ pub enum Msg {
 }
 
 #[derive(Default)]
-pub struct Page {
+pub struct LoginPage {
     username: String,
     password: String,
 }
 
-impl super::Page for Page {
+impl Page for LoginPage {
     fn update(&mut self, message: Message) -> Action {
         let Message::Login(msg) = message else {
             return Action::Nothing;
@@ -35,7 +36,7 @@ impl super::Page for Page {
                     password: self.password.clone(),
                 })
             }
-            Msg::Register => return Action::GoTo(Box::<register::Page>::default()),
+            Msg::Register => return Action::GoTo(Box::<RegisterPage>::default()),
         }
 
         Action::Nothing
