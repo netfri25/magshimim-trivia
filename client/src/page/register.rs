@@ -1,6 +1,10 @@
 use iced::{
-    alignment::Horizontal, theme, widget::{button, column, container, horizontal_space, row, text, text_input}, Alignment, Length
+    alignment::Horizontal,
+    theme,
+    widget::{button, column, container, horizontal_space, row, text, text_input},
+    Alignment, Length,
 };
+use trivia::messages::{Request, Response, StatusCode};
 
 use crate::message::Message;
 use crate::{action::Action, consts};
@@ -21,25 +25,62 @@ pub struct RegisterPage {
     username: String,
     password: String,
     email: String,
+    err: String,
 }
 
 impl Page for RegisterPage {
     fn update(&mut self, message: Message) -> Action {
+        if let Message::Error(err) = message {
+            self.err = format!("Error: {}", err);
+            return Action::Nothing;
+        };
+
+        if let Message::Response(response) = message {
+            match response.as_ref() {
+                Response::Signup {
+                    status: StatusCode::ResponseOk,
+                } => {
+                    return Action::GoTo(Box::new(LoginPage::new(
+                        self.username.clone(),
+                        self.password.clone(),
+                    )))
+                }
+
+                _ => eprintln!("response ignored: {:?}", response),
+            }
+
+            return Action::Nothing;
+        };
+
         let Message::Register(msg) = message else {
             return Action::Nothing;
         };
 
         match msg {
-            Msg::UsernameInput(username) => self.username = username,
-            Msg::PasswordInput(password) => self.password = password,
-            Msg::EmailInput(email) => self.email = email,
+            Msg::UsernameInput(username) => {
+                self.err.clear();
+                self.username = username;
+            }
+
+            Msg::PasswordInput(password) => {
+                self.err.clear();
+                self.password = password;
+            }
+
+            Msg::EmailInput(email) => {
+                self.err.clear();
+                self.email = email;
+            }
+
             Msg::Register => {
-                return Action::MakeRequest(trivia::messages::Request::Signup {
+                self.err.clear();
+                return Action::MakeRequest(Request::Signup {
                     username: self.username.clone(),
                     password: self.password.clone(),
                     email: self.email.clone(),
-                })
+                });
             }
+
             Msg::Login => return Action::GoTo(Box::<LoginPage>::default()),
         }
 
@@ -68,7 +109,8 @@ impl Page for RegisterPage {
             already_have_an_account_button,
             horizontal_space(),
             register_button
-        ].align_items(Alignment::Center);
+        ]
+        .align_items(Alignment::Center);
 
         let input_fields = column![
             text_input("username:", &self.username)
@@ -77,11 +119,19 @@ impl Page for RegisterPage {
                 .secure(true)
                 .on_input(|input| Msg::PasswordInput(input).into()),
             text_input("email:", &self.email).on_input(|input| Msg::EmailInput(input).into()),
-            container(buttons).padding(consts::BUTTONS_PADDING).center_y()
+            container(buttons)
+                .padding(consts::BUTTONS_PADDING)
+                .center_y(),
         ]
         .spacing(consts::INPUT_FIELDS_SPACING)
         .padding(consts::INPUT_FIELDS_PADDING)
         .max_width(consts::INPUT_FIELDS_MAX_WIDTH);
+
+        let err = text(&self.err)
+            .size(consts::ERR_SIZE)
+            .width(Length::Fill)
+            .horizontal_alignment(Horizontal::Center)
+            .style(consts::ERR_COLOR);
 
         let body = column![
             container(
@@ -95,7 +145,12 @@ impl Page for RegisterPage {
                 .width(Length::Fill)
                 .height(consts::INPUT_FIELDS_PORTION)
                 .center_x()
-                .center_y()
+                .center_y(),
+            container(err)
+                .width(Length::Fill)
+                .height(Length::FillPortion(1))
+                .center_x()
+                .center_y(),
         ];
 
         container(body)

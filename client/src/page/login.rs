@@ -1,11 +1,16 @@
 use iced::{
-    alignment::Horizontal, theme, widget::{button, column, container, horizontal_space, row, text, text_input}, Alignment, Length
+    alignment::Horizontal,
+    theme,
+    widget::{button, column, container, horizontal_space, row, text, text_input},
+    Alignment, Length,
 };
+use trivia::messages::Request;
 
+use crate::action::Action;
+use crate::consts;
 use crate::message::Message;
-use crate::{action::Action, consts};
 
-use super::{RegisterPage, Page};
+use super::{Page, RegisterPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -19,23 +24,44 @@ pub enum Msg {
 pub struct LoginPage {
     username: String,
     password: String,
+    err: String,
 }
 
 impl Page for LoginPage {
     fn update(&mut self, message: Message) -> Action {
+        if let Message::Error(err) = message {
+            self.err = format!("Error: {}", err);
+            return Action::Nothing;
+        };
+
+        if let Message::Response(response) = message {
+            todo!("Tell the client that the user has logged in");
+            return Action::Nothing;
+        }
+
         let Message::Login(msg) = message else {
             return Action::Nothing;
         };
 
         match msg {
-            Msg::UsernameInput(username) => self.username = username,
-            Msg::PasswordInput(password) => self.password = password,
+            Msg::UsernameInput(username) => {
+                self.err.clear();
+                self.username = username;
+            }
+
+            Msg::PasswordInput(password) => {
+                self.err.clear();
+                self.password = password;
+            }
+
             Msg::Login => {
-                return Action::MakeRequest(trivia::messages::Request::Login {
+                self.err.clear();
+                return Action::MakeRequest(Request::Login {
                     username: self.username.clone(),
                     password: self.password.clone(),
-                })
+                });
             }
+
             Msg::Register => return Action::GoTo(Box::<RegisterPage>::default()),
         }
 
@@ -72,6 +98,12 @@ impl Page for LoginPage {
         .spacing(consts::INPUT_FIELDS_SPACING)
         .max_width(consts::INPUT_FIELDS_MAX_WIDTH);
 
+        let err = text(&self.err)
+            .size(consts::ERR_SIZE)
+            .width(Length::Fill)
+            .horizontal_alignment(Horizontal::Center)
+            .style(consts::ERR_COLOR);
+
         let body = column![
             container(
                 column![title, subtitle]
@@ -85,6 +117,11 @@ impl Page for LoginPage {
                 .height(consts::INPUT_FIELDS_PORTION)
                 .center_x()
                 .center_y(),
+            container(err)
+                .width(Length::Fill)
+                .height(Length::FillPortion(1))
+                .center_x()
+                .center_y(),
         ];
 
         container(body)
@@ -93,5 +130,15 @@ impl Page for LoginPage {
             .center_x()
             .center_y()
             .into()
+    }
+}
+
+impl LoginPage {
+    pub fn new(username: String, password: String) -> Self {
+        Self {
+            username,
+            password,
+            ..Default::default()
+        }
     }
 }
