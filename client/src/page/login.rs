@@ -4,13 +4,13 @@ use iced::{
     widget::{button, column, container, horizontal_space, row, text, text_input},
     Alignment, Length,
 };
-use trivia::messages::Request;
+use trivia::messages::{Request, Response, StatusCode};
 
 use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{Page, RegisterPage};
+use super::{MainMenuPage, Page, RegisterPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -33,37 +33,46 @@ impl Page for LoginPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Error(err) = message {
             self.err = format!("Error: {}", err);
-            return Action::Nothing;
+            return Action::none();
         };
 
         self.err.clear();
 
         if let Message::Response(response) = message {
-            todo!("Tell the client that the user has logged in");
-            return Action::Nothing;
+            match response.as_ref() {
+                Response::Login {
+                    status: StatusCode::ResponseOk
+                } => {
+                    let (page, cmd) = MainMenuPage::new();
+                    return Action::switch_cmd(page, cmd);
+                }
+                _ => eprintln!("response ignored: {:?}", response),
+            }
+
+            return Action::none();
         }
 
         let Message::Login(msg) = message else {
-            return Action::Nothing;
+            return Action::none();
         };
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
-            Msg::UsernameSubmit => return Action::Command(text_input::focus(text_input::Id::new("password"))),
+            Msg::UsernameSubmit => return Action::cmd(text_input::focus(text_input::Id::new("password"))),
 
             Msg::PasswordInput(password) => self.password = password,
             Msg::PasswordSubmit | Msg::Login => {
                 self.err.clear();
-                return Action::MakeRequest(Request::Login {
+                return Action::request(Request::Login {
                     username: self.username.clone(),
                     password: self.password.clone(),
                 });
             }
 
-            Msg::Register => return Action::GoTo(Box::<RegisterPage>::default()),
+            Msg::Register => return Action::switch(RegisterPage::default()),
         }
 
-        Action::Nothing
+        Action::none()
     }
 
     fn view(&self) -> iced::Element<Message> {

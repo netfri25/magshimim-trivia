@@ -77,7 +77,10 @@ impl Application for Client {
 
         let action = self.page.update(message);
         match action {
-            Action::GoTo(new_page) => self.page = new_page,
+            Action::Switch(new_page, cmd) => {
+                self.page = new_page;
+                return cmd;
+            },
 
             Action::MakeRequest(req) => {
                 eprintln!("sending: {:?}", req);

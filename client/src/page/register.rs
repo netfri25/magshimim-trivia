@@ -35,7 +35,7 @@ impl Page for RegisterPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Error(err) = message {
             self.err = format!("Error: {}", err);
-            return Action::Nothing;
+            return Action::none();
         };
 
         self.err.clear();
@@ -45,41 +45,41 @@ impl Page for RegisterPage {
                 Response::Signup {
                     status: StatusCode::ResponseOk,
                 } => {
-                    return Action::GoTo(Box::new(LoginPage::new(
+                    return Action::switch(LoginPage::new(
                         self.username.clone(),
                         self.password.clone(),
-                    )))
+                    ))
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::Nothing;
+            return Action::none();
         };
 
         let Message::Register(msg) = message else {
-            return Action::Nothing;
+            return Action::none();
         };
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
-            Msg::UsernameSubmit => return Action::Command(text_input::focus(text_input::Id::new("password"))),
+            Msg::UsernameSubmit => return Action::cmd(text_input::focus(text_input::Id::new("password"))),
             Msg::PasswordInput(password) => self.password = password,
-            Msg::PasswordSubmit => return Action::Command(text_input::focus(text_input::Id::new("email"))),
+            Msg::PasswordSubmit => return Action::cmd(text_input::focus(text_input::Id::new("email"))),
             Msg::EmailInput(email) => self.email = email,
 
             Msg::EmailSubmit | Msg::Register => {
-                return Action::MakeRequest(Request::Signup {
+                return Action::request(Request::Signup {
                     username: self.username.clone(),
                     password: self.password.clone(),
                     email: self.email.clone(),
                 });
             }
 
-            Msg::Login => return Action::GoTo(Box::<LoginPage>::default()),
+            Msg::Login => return Action::switch(LoginPage::default()),
         }
 
-        Action::Nothing
+        Action::none()
     }
 
     fn view(&self) -> iced::Element<Message> {
