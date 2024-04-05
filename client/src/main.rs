@@ -25,13 +25,11 @@ fn main() {
     Client::run(settings).unwrap();
 }
 
-// TODO: add TcpStream connection (maybe async?)
 struct Client {
     page: Box<dyn Page>,
     conn: Connection,
 }
 
-// TODO: convert to Application
 impl Application for Client {
     type Message = Message;
     type Executor = iced::executor::Default;
