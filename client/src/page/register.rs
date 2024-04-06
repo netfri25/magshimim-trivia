@@ -28,18 +28,10 @@ pub struct RegisterPage {
     username: String,
     password: String,
     email: String,
-    err: String,
 }
 
 impl Page for RegisterPage {
     fn update(&mut self, message: Message) -> Action {
-        if let Message::Error(err) = message {
-            self.err = format!("Error: {}", err);
-            return Action::none();
-        };
-
-        self.err.clear();
-
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::Signup {
@@ -129,12 +121,6 @@ impl Page for RegisterPage {
         .padding(consts::INPUT_FIELDS_PADDING)
         .max_width(consts::INPUT_FIELDS_MAX_WIDTH);
 
-        let err = text(&self.err)
-            .size(consts::ERR_SIZE)
-            .width(Length::Fill)
-            .horizontal_alignment(Horizontal::Center)
-            .style(consts::ERR_COLOR);
-
         let body = column![
             container(
                 column![title, subtitle]
@@ -146,11 +132,6 @@ impl Page for RegisterPage {
             container(input_fields)
                 .width(Length::Fill)
                 .height(consts::INPUT_FIELDS_PORTION)
-                .center_x()
-                .center_y(),
-            container(err)
-                .width(Length::Fill)
-                .height(Length::FillPortion(1))
                 .center_x()
                 .center_y(),
         ];

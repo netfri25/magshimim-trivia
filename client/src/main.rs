@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use iced::{Application, Command, Settings};
+use iced::{alignment::Horizontal, widget::{container, text, column}, Application, Command, Length, Settings};
 
 mod message;
 use message::Message;
@@ -25,11 +25,10 @@ fn main() {
     Client::run(settings).unwrap();
 }
 
-// TODO: move the error handling to here, instead of handling it in every page
-
 struct Client {
     page: Box<dyn Page>,
     conn: Connection,
+    err: String,
 }
 
 impl Application for Client {
@@ -52,7 +51,7 @@ impl Application for Client {
             },
         );
 
-        (Self { conn, page }, cmd)
+        (Self { conn, page, err: String::default() }, cmd)
     }
 
     fn title(&self) -> String {
@@ -64,18 +63,23 @@ impl Application for Client {
         match &message {
             Message::Connected => {
                 eprintln!("connected to server!");
+                return Command::none();
             }
 
             Message::Error(err) => {
+                self.err = format!("Error: {}", err);
                 eprintln!("[ERROR]: {}", err);
+                return Command::none();
             }
 
             Message::Response(response) => {
-                eprintln!("server responded: {:?}", response);
+                eprintln!("[RECV]: {:?}", response);
             }
 
             _ => {},
         };
+
+        self.err.clear();
 
         let action = self.page.update(message);
         match action {
@@ -85,7 +89,7 @@ impl Application for Client {
             },
 
             Action::MakeRequest(req) => {
-                eprintln!("sending: {:?}", req);
+                eprintln!("[SEND]: {:?}", req);
                 return Command::perform(
                     {
                         let conn = self.conn.clone();
@@ -111,7 +115,20 @@ impl Application for Client {
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
-        self.page.view()
+        let page = self.page.view();
+
+        let err = text(&self.err)
+            .size(consts::ERR_SIZE)
+            .width(Length::Fill)
+            .horizontal_alignment(Horizontal::Center)
+            .style(consts::ERR_COLOR);
+
+        container(column![page, err].padding(2).spacing(5))
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .center_x()
+            .center_y()
+            .into()
     }
 
     fn theme(&self) -> iced::Theme {

@@ -26,18 +26,10 @@ pub enum Msg {
 pub struct LoginPage {
     username: String,
     password: String,
-    err: String,
 }
 
 impl Page for LoginPage {
     fn update(&mut self, message: Message) -> Action {
-        if let Message::Error(err) = message {
-            self.err = format!("Error: {}", err);
-            return Action::none();
-        };
-
-        self.err.clear();
-
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::Login {
@@ -61,7 +53,6 @@ impl Page for LoginPage {
 
             Msg::PasswordInput(password) => self.password = password,
             Msg::PasswordSubmit | Msg::Login => {
-                self.err.clear();
                 return Action::request(Request::Login {
                     username: self.username.clone(),
                     password: self.password.clone(),
@@ -108,12 +99,6 @@ impl Page for LoginPage {
         .spacing(consts::INPUT_FIELDS_SPACING)
         .max_width(consts::INPUT_FIELDS_MAX_WIDTH);
 
-        let err = text(&self.err)
-            .size(consts::ERR_SIZE)
-            .width(Length::Fill)
-            .horizontal_alignment(Horizontal::Center)
-            .style(consts::ERR_COLOR);
-
         let body = column![
             container(
                 column![title, subtitle]
@@ -125,11 +110,6 @@ impl Page for LoginPage {
             container(input_fields)
                 .width(Length::Fill)
                 .height(consts::INPUT_FIELDS_PORTION)
-                .center_x()
-                .center_y(),
-            container(err)
-                .width(Length::Fill)
-                .height(Length::FillPortion(1))
                 .center_x()
                 .center_y(),
         ];
@@ -148,7 +128,6 @@ impl LoginPage {
         Self {
             username,
             password,
-            ..Default::default()
         }
     }
 }
