@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use iced::{alignment::Horizontal, widget::{container, text, column}, Application, Command, Length, Settings};
+use iced::{
+    alignment::Horizontal,
+    widget::{column, container, text},
+    Application, Command, Length, Settings,
+};
 
 mod message;
 use message::Message;
@@ -51,7 +55,14 @@ impl Application for Client {
             },
         );
 
-        (Self { conn, page, err: String::default() }, cmd)
+        (
+            Self {
+                conn,
+                page,
+                err: String::default(),
+            },
+            cmd,
+        )
     }
 
     fn title(&self) -> String {
@@ -76,7 +87,7 @@ impl Application for Client {
                 eprintln!("[RECV]: {:?}", response);
             }
 
-            _ => {},
+            _ => {}
         };
 
         self.err.clear();
@@ -86,7 +97,7 @@ impl Application for Client {
             Action::Switch(new_page, req) => {
                 self.page = new_page;
                 return self.make_request(req);
-            },
+            }
 
             Action::MakeRequest(req) => {
                 eprintln!("[SEND]: {:?}", req);
@@ -128,20 +139,21 @@ impl Application for Client {
 impl Client {
     pub fn make_request(&mut self, req: Option<Request>) -> Command<Message> {
         let Some(req) = req else {
-            return Command::none()
+            return Command::none();
         };
 
-        return Command::perform(
+        Command::perform(
             {
                 let conn = self.conn.clone();
                 async move { conn.send_recv(req).await }
             },
-
             |result| match result {
-                Ok(Response::Error { msg }) => Message::Error(Arc::new(connection::Error::ResponseErr(msg))),
+                Ok(Response::Error { msg }) => {
+                    Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
+                }
                 Ok(response) => Message::Response(Arc::new(response)),
                 Err(err) => Message::Error(Arc::new(err)),
-            }
-        );
+            },
+        )
     }
 }
