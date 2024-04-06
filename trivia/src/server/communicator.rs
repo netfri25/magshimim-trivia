@@ -1,11 +1,12 @@
 use std::cell::Cell;
 use std::collections::HashMap;
+use std::io;
 use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
 use std::sync::{Arc, Mutex};
 
 use crate::defer::Defer;
-use crate::handler::{Handler, LoginRequestHandler, RequestHandlerFactory};
-use crate::messages::{Request, RequestResult, RequestInfo};
+use crate::handler::{self, Handler, RequestHandlerFactory};
+use crate::messages::{self, Request, RequestInfo, RequestResult};
 
 type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
 
@@ -16,7 +17,7 @@ pub struct Communicator {
 }
 
 impl Communicator {
-    pub fn build(addr: impl ToSocketAddrs, factory: Arc<RequestHandlerFactory>) -> anyhow::Result<Self> {
+    pub fn build(addr: impl ToSocketAddrs, factory: Arc<RequestHandlerFactory>) -> Result<Self, Error> {
         let socket = TcpListener::bind(addr)?;
         let clients = Default::default();
         Ok(Self { socket, clients, factory })
@@ -51,7 +52,7 @@ impl Communicator {
     fn handle_new_client(
         self: Arc<Self>,
         mut client: TcpStream,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), Error> {
         let addr = client.peer_addr()?;
         let login_username: Cell<Option<String>> = Cell::new(None);
 
@@ -86,4 +87,16 @@ impl Communicator {
             }
         }
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+
+    #[error(transparent)]
+    Messages(#[from] messages::Error),
+
+    #[error(transparent)]
+    Handler(#[from] handler::Error),
 }

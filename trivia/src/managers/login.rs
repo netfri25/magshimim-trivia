@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use crate::db::Database;
+use serde::{Deserialize, Serialize};
 
-use super::logged_user::LoggedUser;
+use crate::db::Database;
 
 pub struct LoginManager {
     db: Arc<Mutex<dyn Database>>,
@@ -17,7 +17,7 @@ impl LoginManager {
         }
     }
 
-    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> anyhow::Result<Option<String>> {
+    pub fn signup(&mut self, username: impl Into<String>, password: &str, email: &str) -> Result<Option<String>, crate::db::Error> {
         let username = username.into();
 
         if self.db.lock().unwrap().user_exists(&username)? {
@@ -29,7 +29,7 @@ impl LoginManager {
     }
 
     // TODO: return proper types to represent the outcome better
-    pub fn login(&mut self, username: impl Into<String>, password: &str) -> anyhow::Result<Option<String>> {
+    pub fn login(&mut self, username: impl Into<String>, password: &str) -> Result<Option<String>, crate::db::Error> {
         let username = username.into();
         if self.connected.iter().any(|user| user.username() == username) {
             return Ok(Some("user already connected".into()));
@@ -54,5 +54,27 @@ impl LoginManager {
 
         // O(1) removal, but doesn't preserve ordering
         self.connected.swap_remove(index);
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct LoggedUser {
+    username: String,
+}
+
+impl LoggedUser {
+    pub fn new(username: impl Into<String>) -> Self {
+        let username = username.into();
+        Self { username }
+    }
+
+    pub fn username(&self) -> &str {
+        &self.username
+    }
+}
+
+impl PartialEq<str> for LoggedUser {
+    fn eq(&self, other: &str) -> bool {
+        self.username() == other
     }
 }

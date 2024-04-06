@@ -1,7 +1,11 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::io::{Read, Write};
 
 use serde::{Serialize, Deserialize};
+
+use crate::managers::room::RoomID;
+
+use super::Error;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Request {
@@ -9,12 +13,22 @@ pub enum Request {
         username: String,
         password: String,
     },
-
     Signup {
         username: String,
         password: String,
         email: String,
     },
+    PlayersInRoom(RoomID),
+    JoinRoom(RoomID),
+    CreateRoom {
+        name: String,
+        max_users: usize,
+        questions: usize,
+        answer_timeout: Duration,
+    },
+    Statistics,
+    Logout,
+    RoomList,
 }
 
 impl Request {
@@ -28,7 +42,37 @@ impl Request {
         matches!(self, Self::Login { .. })
     }
 
-    pub fn read_from(reader: &mut impl Read) -> anyhow::Result<Self> {
+    #[must_use]
+    pub fn is_players_in_room(&self) -> bool {
+        matches!(self, Self::PlayersInRoom(..))
+    }
+
+    #[must_use]
+    pub fn is_join_room(&self) -> bool {
+        matches!(self, Self::JoinRoom(..))
+    }
+
+    #[must_use]
+    pub fn is_create_room(&self) -> bool {
+        matches!(self, Self::CreateRoom { .. })
+    }
+
+    #[must_use]
+    pub fn is_statistics(&self) -> bool {
+        matches!(self, Self::Statistics)
+    }
+
+    #[must_use]
+    pub fn is_logout(&self) -> bool {
+        matches!(self, Self::Logout)
+    }
+
+    #[must_use]
+    pub fn is_room_list(&self) -> bool {
+        matches!(self, Self::RoomList)
+    }
+
+    pub fn read_from(reader: &mut impl Read) -> Result<Self, Error> {
         let mut buf_data_len = [0; 4];
         reader.read_exact(&mut buf_data_len)?;
         let data_len = u32::from_le_bytes(buf_data_len);
@@ -41,7 +85,7 @@ impl Request {
         Ok(request)
     }
 
-    pub fn write_to(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+    pub fn write_to(&self, writer: &mut impl Write) -> Result<(), Error> {
         let json = serde_json::to_vec(&self)?;
         let len = json.len() as u32;
         let len_bytes = len.to_le_bytes();
