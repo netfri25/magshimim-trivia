@@ -91,7 +91,7 @@ impl Application for Client {
                     },
 
                     |result| match result {
-                        Ok(Response::Error { msg }) => Message::Error(Arc::new(connection::Error::ResponseError(msg))),
+                        Ok(Response::Error { msg }) => Message::Error(Arc::new(connection::Error::ResponseErr(msg))),
                         Ok(response) => Message::Response(Arc::new(response)),
                         Err(err) => Message::Error(Arc::new(err)),
                     }

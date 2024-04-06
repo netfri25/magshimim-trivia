@@ -55,5 +55,5 @@ pub enum Error {
     NotConnected,
 
     #[error("{0}")]
-    ResponseError(String),
+    ResponseErr(String),
 }
