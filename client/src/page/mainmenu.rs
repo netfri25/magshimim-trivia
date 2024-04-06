@@ -6,7 +6,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{CreateRoomPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -27,17 +27,14 @@ impl Page for MainMenuPage {
         };
 
         match msg {
-            Msg::CreateRoom => todo!("create room page"),
+            Msg::CreateRoom => Action::switch(CreateRoomPage::default()),
             Msg::JoinRoom => todo!("join room page"),
             Msg::Statistics => todo!("statistics page"),
-            Msg::Quit => return Action::quit(),
+            Msg::Quit => Action::quit(),
         }
-
-        Action::none()
     }
 
     fn view(&self) -> iced::Element<Message> {
-        // TODO: add title
         let title = text("Trivia")
             .size(consts::TITLE_SIZE)
             .width(Length::Fill)

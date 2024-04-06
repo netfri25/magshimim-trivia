@@ -6,7 +6,7 @@ mod message;
 use message::Message;
 
 mod page;
-use page::{LoginPage, MainMenuPage, Page};
+use page::{LoginPage, Page};
 
 mod action;
 use action::Action;
@@ -24,6 +24,8 @@ fn main() {
     settings.flags = "127.0.0.1:6969";
     Client::run(settings).unwrap();
 }
+
+// TODO: move the error handling to here, instead of handling it in every page
 
 struct Client {
     page: Box<dyn Page>,
