@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-macroquad = "0.4.5"
+derive_more = { version = "0.99.17", features = ["from"], default-features = false }
+iced = { version = "0.12.1", default-features = false, features = ["tokio"] }
+thiserror = "1.0.58"
 trivia = { path = "../trivia" }
