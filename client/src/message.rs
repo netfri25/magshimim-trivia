@@ -3,7 +3,7 @@ use derive_more::From;
 use trivia::messages::Response;
 
 use crate::connection;
-use crate::page::{createroom, login, mainmenu, register};
+use crate::page::{createroom, joinroom, login, mainmenu, register};
 
 #[derive(From, Debug, Clone)]
 #[non_exhaustive]
@@ -23,4 +23,7 @@ pub enum Message {
 
     #[from]
     CreateRoom(createroom::Msg),
+
+    #[from]
+    JoinRoom(joinroom::Msg),
 }

@@ -6,7 +6,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{CreateRoomPage, Page};
+use super::{CreateRoomPage, JoinRoomPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -20,7 +20,6 @@ pub enum Msg {
 pub struct MainMenuPage;
 
 impl Page for MainMenuPage {
-    #[allow(unreachable_code)] // TODO: remove this later
     fn update(&mut self, message: Message) -> Action {
         let Message::MainMenu(msg) = message else {
             return Action::none();
@@ -28,7 +27,10 @@ impl Page for MainMenuPage {
 
         match msg {
             Msg::CreateRoom => Action::switch(CreateRoomPage::default()),
-            Msg::JoinRoom => todo!("join room page"),
+            Msg::JoinRoom => {
+                let (page, req) = JoinRoomPage::new();
+                Action::switch_and_request(page, req)
+            },
             Msg::Statistics => todo!("statistics page"),
             Msg::Quit => Action::quit(),
         }

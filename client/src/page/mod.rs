@@ -13,6 +13,9 @@ pub use mainmenu::MainMenuPage;
 pub mod createroom;
 pub use createroom::CreateRoomPage;
 
+pub mod joinroom;
+pub use joinroom::JoinRoomPage;
+
 pub trait Page {
     fn update(&mut self, message: Message) -> Action;
     fn view(&self) -> iced::Element<Message>;

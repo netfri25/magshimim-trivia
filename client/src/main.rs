@@ -13,7 +13,7 @@ use action::Action;
 
 mod connection;
 use connection::Connection;
-use trivia::messages::Response;
+use trivia::messages::{Request, Response};
 
 mod consts;
 
@@ -83,25 +83,14 @@ impl Application for Client {
 
         let action = self.page.update(message);
         match action {
-            Action::Switch(new_page, cmd) => {
+            Action::Switch(new_page, req) => {
                 self.page = new_page;
-                return cmd;
+                return self.make_request(req);
             },
 
             Action::MakeRequest(req) => {
                 eprintln!("[SEND]: {:?}", req);
-                return Command::perform(
-                    {
-                        let conn = self.conn.clone();
-                        async move { conn.send_recv(req).await }
-                    },
-
-                    |result| match result {
-                        Ok(Response::Error { msg }) => Message::Error(Arc::new(connection::Error::ResponseErr(msg))),
-                        Ok(response) => Message::Response(Arc::new(response)),
-                        Err(err) => Message::Error(Arc::new(err)),
-                    }
-                );
+                return self.make_request(Some(req));
             }
 
             Action::Command(cmd) => return cmd,
@@ -133,5 +122,26 @@ impl Application for Client {
 
     fn theme(&self) -> iced::Theme {
         iced::Theme::GruvboxDark
+    }
+}
+
+impl Client {
+    pub fn make_request(&mut self, req: Option<Request>) -> Command<Message> {
+        let Some(req) = req else {
+            return Command::none()
+        };
+
+        return Command::perform(
+            {
+                let conn = self.conn.clone();
+                async move { conn.send_recv(req).await }
+            },
+
+            |result| match result {
+                Ok(Response::Error { msg }) => Message::Error(Arc::new(connection::Error::ResponseErr(msg))),
+                Ok(response) => Message::Response(Arc::new(response)),
+                Err(err) => Message::Error(Arc::new(err)),
+            }
+        );
     }
 }
