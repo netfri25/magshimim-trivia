@@ -58,6 +58,7 @@ impl Communicator {
 
         let _defer = Defer(|| {
             if let Some(ref username) = login_username.take() {
+                eprintln!("[LOG] {:?} disconnected", username);
                 self.factory.get_login_manager().lock().unwrap().logut(username)
             }
         });
