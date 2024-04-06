@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use iced::alignment::{Horizontal, Vertical};
 use iced::widget::{
-    button, column, container, horizontal_space, row, slider, text, text_input, Slider,
+    button, column, container, horizontal_space, row, slider, text, text_input,
 };
 use iced::{Alignment, Length};
 use trivia::messages::{Request, Response};
