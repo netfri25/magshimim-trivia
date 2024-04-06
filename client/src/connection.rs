@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 use std::net::{TcpStream, ToSocketAddrs};
 
+use trivia::messages::{Request, Response};
+
 #[derive(Debug, Default, Clone)]
 pub struct Connection {
     stream: Arc<Mutex<Option<TcpStream>>>
@@ -13,7 +15,7 @@ impl Connection {
         Ok(())
     }
 
-    pub fn send(&self, msg: trivia::messages::Request) -> Result<(), Error> {
+    pub fn send(&self, msg: Request) -> Result<(), Error> {
         let mut stream_lock = self.stream.lock().unwrap();
         let Some(ref mut stream) = *stream_lock else {
             return Err(Error::NotConnected)
@@ -24,15 +26,20 @@ impl Connection {
         Ok(())
     }
 
-    pub fn recv(&self) -> Result<trivia::messages::Response, Error> {
+    pub fn recv(&self) -> Result<Response, Error> {
         let mut stream_lock = self.stream.lock().unwrap();
         let Some(ref mut stream) = *stream_lock else {
             return Err(Error::NotConnected)
         };
 
-        let response = trivia::messages::Response::read_from(stream)?;
+        let response = Response::read_from(stream)?;
 
         Ok(response)
+    }
+
+    pub async fn send_recv(&self, msg: Request) -> Result<Response, Error> {
+        async { self.send(msg) }.await?;
+        async { self.recv() }.await
     }
 }
 

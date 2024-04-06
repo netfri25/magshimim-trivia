@@ -87,7 +87,7 @@ impl Application for Client {
                 return Command::perform(
                     {
                         let conn = self.conn.clone();
-                        async move { conn.send(req).and_then(|()| conn.recv()) }
+                        async move { conn.send_recv(req).await }
                     },
 
                     |result| match result {
