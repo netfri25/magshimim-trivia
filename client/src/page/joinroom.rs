@@ -67,8 +67,7 @@ impl Page for JoinRoomPage {
         )
         .align_items(Alignment::Center)
         .padding(2)
-        .width(Length::Fill)
-        .height(self.rooms.len() as u16 * 20 * 100);
+        .width(Length::Fill);
 
         let rooms = container(row![
             horizontal_space().width(Length::FillPortion(1)),
@@ -129,13 +128,13 @@ pub fn room_element<'a>(room: &Room) -> iced::Element<'a, Message, iced::Theme> 
         .style(iced::theme::Container::Custom(Box::new(style::RoomStyle)))
         .width(Length::Fill)
         .height(Length::Fill)
-        .max_height(20)
         .center_x()
         .center_y();
 
     button(room_container)
         .style(iced::theme::Button::Text)
         .on_press(Msg::EnterRoom(*room_id).into())
+        .height(100)
         .padding(5)
         .into()
 }
