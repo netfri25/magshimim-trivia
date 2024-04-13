@@ -62,8 +62,6 @@ impl Page for JoinRoomPage {
         let rooms_col = Column::from_vec(
             self.rooms
                 .iter()
-                .cycle()
-                .take(20)
                 .map(room_element)
                 .collect(),
         )
