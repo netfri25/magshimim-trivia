@@ -134,6 +134,10 @@ impl Application for Client {
     fn theme(&self) -> iced::Theme {
         iced::Theme::GruvboxDark
     }
+
+    fn subscription(&self) -> iced::Subscription<Message> {
+        self.page.subscription()
+    }
 }
 
 impl Client {

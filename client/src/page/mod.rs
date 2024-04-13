@@ -19,4 +19,8 @@ pub use joinroom::JoinRoomPage;
 pub trait Page {
     fn update(&mut self, message: Message) -> Action;
     fn view(&self) -> iced::Element<Message>;
+
+    fn subscription(&self) -> iced::Subscription<Message> {
+        iced::Subscription::none()
+    }
 }

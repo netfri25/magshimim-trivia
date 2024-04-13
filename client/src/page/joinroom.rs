@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use iced::alignment::Horizontal;
 use iced::widget::scrollable::Properties;
 use iced::widget::{button, column, container, horizontal_space, row, scrollable, text, Column};
@@ -15,6 +17,7 @@ use super::Page;
 #[derive(Debug, Clone)]
 pub enum Msg {
     EnterRoom(RoomID),
+    UpdateRooms,
 }
 
 #[derive(Default)]
@@ -44,6 +47,7 @@ impl Page for JoinRoomPage {
         // TODO: enter a room
         match msg {
             Msg::EnterRoom(id) => eprintln!("enter room {:?}", id),
+            Msg::UpdateRooms => return Action::request(Request::RoomList),
         }
 
         Action::none()
@@ -90,6 +94,10 @@ impl Page for JoinRoomPage {
         .center_x()
         .center_y()
         .into()
+    }
+
+    fn subscription(&self) -> iced::Subscription<Message> {
+        iced::time::every(Duration::from_secs(3)).map(|_| Msg::UpdateRooms.into())
     }
 }
 
