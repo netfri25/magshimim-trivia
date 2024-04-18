@@ -1,9 +1,9 @@
-use std::sync::Arc;
 use derive_more::From;
+use std::sync::Arc;
 use trivia::messages::Response;
 
 use crate::connection;
-use crate::page::{createroom, joinroom, login, mainmenu, register};
+use crate::page::{createroom, joinroom, login, mainmenu, register, room};
 
 #[derive(From, Debug, Clone)]
 #[non_exhaustive]
@@ -26,4 +26,7 @@ pub enum Message {
 
     #[from]
     JoinRoom(joinroom::Msg),
+
+    #[from]
+    Room(room::Msg),
 }

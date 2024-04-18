@@ -12,6 +12,7 @@ use crate::message::Message;
 use trivia::managers::room::{Room, RoomData, RoomID};
 use trivia::messages::{Request, Response};
 
+use super::room::RoomPage;
 use super::Page;
 
 #[derive(Debug, Clone)]
@@ -23,6 +24,7 @@ pub enum Msg {
 #[derive(Default)]
 pub struct JoinRoomPage {
     rooms: Vec<Room>,
+    joining_id: RoomID, // TODO: remove this
 }
 
 impl Page for JoinRoomPage {
@@ -32,6 +34,13 @@ impl Page for JoinRoomPage {
                 Response::RoomList(rooms) => {
                     println!("rooms have been set!");
                     self.rooms = rooms.clone();
+                }
+
+                // TODO: add the id to the JoinRoom response, in case the user spams join
+                Response::JoinRoom => {
+                    let page = RoomPage::new(self.joining_id);
+                    let req = Request::PlayersInRoom(self.joining_id);
+                    return Action::switch_and_request(page, req)
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
@@ -44,13 +53,13 @@ impl Page for JoinRoomPage {
             return Action::none();
         };
 
-        // TODO: enter a room
         match msg {
-            Msg::EnterRoom(id) => eprintln!("enter room {:?}", id),
-            Msg::UpdateRooms => return Action::request(Request::RoomList),
+            Msg::UpdateRooms => Action::request(Request::RoomList),
+            Msg::EnterRoom(id) => {
+                self.joining_id = id;
+                Action::request(Request::JoinRoom(id))
+            }
         }
-
-        Action::none()
     }
 
     fn view(&self) -> iced::Element<Message> {

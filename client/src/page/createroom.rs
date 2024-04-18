@@ -11,6 +11,7 @@ use trivia::messages::{Request, Response};
 use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
+use crate::page::RoomPage;
 
 use super::Page;
 
@@ -45,9 +46,11 @@ impl Page for CreateRoomPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::CreateRoom(id) => {
+                &Response::CreateRoom(id) => {
                     eprintln!("room created: id={}", id);
-                    todo!("switch to the room page")
+                    let page = RoomPage::new(id);
+                    let req = Request::PlayersInRoom(id);
+                    return Action::switch_and_request(page, req)
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
