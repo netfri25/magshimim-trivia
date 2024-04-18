@@ -19,6 +19,8 @@ pub use joinroom::JoinRoomPage;
 pub mod room;
 pub use room::RoomPage;
 
+pub mod statistics;
+pub use statistics::StatisticsPage;
 
 pub trait Page {
     fn update(&mut self, message: Message) -> Action;

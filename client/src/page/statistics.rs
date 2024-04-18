@@ -6,56 +6,45 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{CreateRoomPage, JoinRoomPage, Page, StatisticsPage};
+use super::Page;
 
 #[derive(Debug, Clone)]
 pub enum Msg {
-    CreateRoom,
-    JoinRoom,
-    Statistics,
-    Quit,
+    PersonalStats,
+    HighScores,
 }
 
 #[derive(Default)]
-pub struct MainMenuPage;
+pub struct StatisticsPage;
 
-impl Page for MainMenuPage {
+impl Page for StatisticsPage {
     fn update(&mut self, message: Message) -> Action {
-        let Message::MainMenu(msg) = message else {
+        let Message::Statistics(msg) = message else {
             return Action::none();
         };
 
         match msg {
-            Msg::CreateRoom => Action::switch(CreateRoomPage::default()),
-            Msg::JoinRoom => {
-                let (page, req) = JoinRoomPage::new();
-                Action::switch_and_request(page, req)
-            },
-            Msg::Statistics => Action::switch(StatisticsPage),
-            Msg::Quit => Action::quit(),
+            Msg::PersonalStats => todo!("switch to personal stats page"),
+            Msg::HighScores => todo!("switch to high scores page"),
         }
     }
 
     fn view(&self) -> iced::Element<Message> {
-        let title = text("Trivia")
+        let title = text("Statistics")
             .size(consts::TITLE_SIZE)
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
 
-        let create_room_button = menu_button("Create Room", Msg::CreateRoom);
-        let join_room_button = menu_button("Join Room", Msg::JoinRoom);
-        let statistics_button = menu_button("Statistics", Msg::Statistics);
-        let quit_button = menu_button("Quit", Msg::Quit);
+        let personal_stats_button = menu_button("My Statistics", Msg::PersonalStats);
+        let high_scores_button = menu_button("High Scores", Msg::HighScores);
 
-        let buttons = column![
-            create_room_button,
-            join_room_button,
-            statistics_button,
-            quit_button,
-        ]
-        .align_items(Alignment::Center)
-        .width(Length::Fill)
-        .spacing(35);
+        let buttons = container(
+            column![personal_stats_button, high_scores_button,]
+                .align_items(Alignment::Center)
+                .width(Length::Fill)
+                .spacing(35),
+        )
+        .center_y();
 
         container(column![
             container(title)
