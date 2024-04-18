@@ -14,7 +14,7 @@ use crate::message::Message;
 
 use super::Page;
 
-
+// TODO: decide how to represent the admin and display them in the players list (maybe in red)
 
 #[derive(Debug, Clone)]
 pub enum Msg {
