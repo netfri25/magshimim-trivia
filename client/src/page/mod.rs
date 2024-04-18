@@ -22,6 +22,9 @@ pub use room::RoomPage;
 pub mod statistics;
 pub use statistics::StatisticsPage;
 
+pub mod personalstats;
+pub use personalstats::PersonalStatsPage;
+
 pub trait Page {
     fn update(&mut self, message: Message) -> Action;
     fn view(&self) -> iced::Element<Message>;

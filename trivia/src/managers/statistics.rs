@@ -36,7 +36,7 @@ impl StatisticsManager {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Statistics {
     pub correct_answers: i64,
     pub total_answers: i64,

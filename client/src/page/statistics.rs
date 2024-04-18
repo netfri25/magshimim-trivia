@@ -1,12 +1,13 @@
 use iced::alignment::{Horizontal, Vertical};
 use iced::widget::{button, column, container, text};
 use iced::{Alignment, Length};
+use trivia::messages::{Request, Response};
 
 use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{Page, PersonalStatsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -15,18 +16,40 @@ pub enum Msg {
 }
 
 #[derive(Default)]
-pub struct StatisticsPage;
+pub struct StatisticsPage {
+    switch_to: Option<Msg>,
+}
 
 impl Page for StatisticsPage {
     fn update(&mut self, message: Message) -> Action {
+        if let Message::Response(response) = message {
+            match response.as_ref() {
+                Response::Statistics {
+                    user_statistics,
+                    high_scores
+                } => {
+                    let Some(ref switch_to) = self.switch_to else {
+                        return Action::none();
+                    };
+
+                    return match switch_to {
+                        Msg::PersonalStats => Action::switch(PersonalStatsPage::new(user_statistics.clone())),
+                        Msg::HighScores => todo!("switch to high scores page"),
+                    }
+                },
+
+                _ => eprintln!("response ignored: {:?}", response),
+            }
+
+            return Action::none()
+        }
+
         let Message::Statistics(msg) = message else {
             return Action::none();
         };
 
-        match msg {
-            Msg::PersonalStats => todo!("switch to personal stats page"),
-            Msg::HighScores => todo!("switch to high scores page"),
-        }
+        self.switch_to = Some(msg);
+        Action::request(Request::Statistics)
     }
 
     fn view(&self) -> iced::Element<Message> {
