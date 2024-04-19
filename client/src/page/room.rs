@@ -3,7 +3,7 @@ use std::time::Duration;
 use iced::alignment::Horizontal;
 use iced::widget::scrollable::Properties;
 use iced::widget::{container, horizontal_space, row, scrollable, text, column, Column};
-use iced::{theme, Alignment, Length};
+use iced::{theme, Alignment, Color, Length};
 use trivia::managers::login::LoggedUser;
 use trivia::managers::room::RoomID;
 use trivia::messages::{Request, Response};
@@ -14,7 +14,8 @@ use crate::message::Message;
 
 use super::Page;
 
-// TODO: decide how to represent the admin and display them in the players list (maybe in red)
+// NOTE: my temporary solution is to consider the first user in the users list as the admin, not
+// sure how great of a solution that is but ig it will work
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -59,6 +60,7 @@ impl Page for RoomPage {
         let players_col = Column::from_vec(
             self.players
                 .iter()
+                .enumerate()
                 .map(player_element)
                 .collect(),
         )
@@ -102,8 +104,14 @@ impl RoomPage {
     }
 }
 
-fn player_element(user: &LoggedUser) -> iced::Element<Message> {
+fn player_element((index, user): (usize, &LoggedUser)) -> iced::Element<Message> {
     let user = text(user.username()).size(30);
+    let user = if index == 0 {
+        user.style(Color::from_rgb8(240, 150, 100))
+    } else {
+        user
+    };
+
     container(column![user].align_items(Alignment::Center))
         .style(theme::Container::Box)
         .height(40)
