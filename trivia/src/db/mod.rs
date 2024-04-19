@@ -29,7 +29,7 @@ pub trait Database: Send {
     fn get_score(&self, username: &str) -> Result<Score, Error>;
 
     // if there are less than 5 scores, it will be filled with zeros
-    fn get_five_highscores(&self) -> Result<[Score; 5], Error>;
+    fn get_five_highscores(&self) -> Result<[Option<(String, Score)>; 5], Error>;
 }
 
 #[derive(Debug, thiserror::Error)]

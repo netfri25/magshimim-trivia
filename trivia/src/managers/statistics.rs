@@ -15,7 +15,7 @@ impl StatisticsManager {
         Self { db }
     }
 
-    pub fn get_high_scores(&self) -> Result<[Score; 5], crate::db::Error> {
+    pub fn get_high_scores(&self) -> Result<[Option<(String, Score)>; 5], crate::db::Error> {
         Ok(self.db.lock().unwrap().get_five_highscores()?)
     }
 

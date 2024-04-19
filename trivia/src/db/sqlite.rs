@@ -299,19 +299,27 @@ impl Database for SqliteDatabase {
         Ok(total_games)
     }
 
-    fn get_five_highscores(&self) -> Result<[super::Score; 5], Error> {
+    fn get_five_highscores(&self) -> Result<[Option<(String, super::Score)>; 5], Error> {
         let statement = query::Query::select()
+            .column(User::Username)
             .column(Statistics::Score)
             .from(Statistics::Table)
             .order_by(Statistics::Score, query::Order::Desc)
+            .inner_join(
+                User::Table,
+                query::Expr::col((Statistics::Table, Statistics::UserId))
+                    .equals((User::Table, User::Id)),
+            )
             .limit(5)
             .to_string(query::SqliteQueryBuilder);
 
-        let mut scores = [0.0; 5];
+        let mut scores: [Option<(String, super::Score)>; 5] = Default::default();
         let mut index = 0;
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {
-            scores[index] = iter.read::<Score, _>(Statistics::Score.to_string().as_str())?;
+            let username = iter.read::<String, _>(User::Username.to_string().as_str())?;
+            let score = iter.read::<Score, _>(Statistics::Score.to_string().as_str())?;
+            scores[index] = Some((username, score));
             index += 1;
         }
 
@@ -566,7 +574,16 @@ mod tests {
         let scores = stats.map(|stat| calc_score(Duration::from_secs_f64(stat.2), stat.0, stat.1));
         let highscores = db.get_five_highscores()?;
 
-        assert_eq!(highscores, [scores[1], scores[2], scores[3], scores[0], 0.]);
+        assert_eq!(
+            highscores,
+            [
+                Some(("user2".to_string(), scores[1])),
+                Some(("user3".to_string(), scores[2])),
+                Some(("user4".to_string(), scores[3])),
+                Some(("user1".to_string(), scores[0])),
+                None
+            ]
+        );
 
         Ok(())
     }
