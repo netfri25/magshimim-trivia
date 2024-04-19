@@ -7,7 +7,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{Page, PersonalStatsPage};
+use super::{HighScoresPage, Page, PersonalStatsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -34,7 +34,7 @@ impl Page for StatisticsPage {
 
                     return match switch_to {
                         Msg::PersonalStats => Action::switch(PersonalStatsPage::new(user_statistics.clone())),
-                        Msg::HighScores => todo!("switch to high scores page"),
+                        Msg::HighScores => Action::switch(HighScoresPage::new(high_scores.clone())),
                     }
                 },
 
