@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use iced::{alignment::Horizontal, widget::{container, text, column}, Application, Command, Length, Settings};
+use iced::{
+    alignment::Horizontal,
+    widget::{column, container, text},
+    Application, Command, Length, Settings,
+};
 
 mod message;
 use message::Message;
@@ -13,7 +17,7 @@ use action::Action;
 
 mod connection;
 use connection::Connection;
-use trivia::messages::Response;
+use trivia::messages::{Request, Response};
 
 mod consts;
 
@@ -51,7 +55,14 @@ impl Application for Client {
             },
         );
 
-        (Self { conn, page, err: String::default() }, cmd)
+        (
+            Self {
+                conn,
+                page,
+                err: String::default(),
+            },
+            cmd,
+        )
     }
 
     fn title(&self) -> String {
@@ -76,32 +87,21 @@ impl Application for Client {
                 eprintln!("[RECV]: {:?}", response);
             }
 
-            _ => {},
+            _ => {}
         };
 
         self.err.clear();
 
         let action = self.page.update(message);
         match action {
-            Action::Switch(new_page, cmd) => {
+            Action::Switch(new_page, req) => {
                 self.page = new_page;
-                return cmd;
-            },
+                return self.make_request(req);
+            }
 
             Action::MakeRequest(req) => {
                 eprintln!("[SEND]: {:?}", req);
-                return Command::perform(
-                    {
-                        let conn = self.conn.clone();
-                        async move { conn.send_recv(req).await }
-                    },
-
-                    |result| match result {
-                        Ok(Response::Error { msg }) => Message::Error(Arc::new(connection::Error::ResponseErr(msg))),
-                        Ok(response) => Message::Response(Arc::new(response)),
-                        Err(err) => Message::Error(Arc::new(err)),
-                    }
-                );
+                return self.make_request(Some(req));
             }
 
             Action::Command(cmd) => return cmd,
@@ -133,5 +133,31 @@ impl Application for Client {
 
     fn theme(&self) -> iced::Theme {
         iced::Theme::GruvboxDark
+    }
+
+    fn subscription(&self) -> iced::Subscription<Message> {
+        self.page.subscription()
+    }
+}
+
+impl Client {
+    pub fn make_request(&mut self, req: Option<Request>) -> Command<Message> {
+        let Some(req) = req else {
+            return Command::none();
+        };
+
+        Command::perform(
+            {
+                let conn = self.conn.clone();
+                async move { conn.send_recv(req).await }
+            },
+            |result| match result {
+                Ok(Response::Error { msg }) => {
+                    Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
+                }
+                Ok(response) => Message::Response(Arc::new(response)),
+                Err(err) => Message::Error(Arc::new(err)),
+            },
+        )
     }
 }

@@ -5,7 +5,7 @@ use crate::page::Page;
 use crate::message::Message;
 
 pub enum Action {
-    Switch(Box<dyn Page>, Command<Message>),
+    Switch(Box<dyn Page>, Option<Request>),
     MakeRequest(Request),
     Command(Command<Message>), // focus a text input
     Quit,
@@ -14,11 +14,11 @@ pub enum Action {
 
 impl Action {
     pub fn switch(page: impl Page + 'static) -> Self {
-        Self::Switch(Box::new(page), Command::none())
+        Self::Switch(Box::new(page), None)
     }
 
-    pub fn switch_cmd(page: impl Page + 'static, cmd: Command<Message>) -> Self {
-        Self::Switch(Box::new(page), cmd)
+    pub fn switch_and_request(page: impl Page + 'static, req: Request) -> Self {
+        Self::Switch(Box::new(page), Some(req))
     }
 
     pub fn request(request: Request) -> Self {
