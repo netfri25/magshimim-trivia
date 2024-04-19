@@ -22,7 +22,7 @@ pub enum Response {
     CreateRoom(RoomID),
     Statistics {
         user_statistics: Statistics,
-        high_scores: [Score; 5],
+        high_scores: [Option<(String, Score)>; 5],
     }
 }
 
