@@ -1,11 +1,12 @@
 use std::io::{Read, Write};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 use crate::db::Score;
 use crate::managers::login::LoggedUser;
 use crate::managers::statistics::Statistics;
-use crate::managers::room::{Room, RoomID};
+use crate::managers::room::{Room, RoomID, RoomState};
 use crate::handler::Handler;
 
 use super::{Error, StatusCode};
@@ -23,7 +24,16 @@ pub enum Response {
     Statistics {
         user_statistics: Statistics,
         high_scores: [Option<(String, Score)>; 5],
-    }
+    },
+    CloseRoom,
+    StartGame,
+    RoomState {
+        state: RoomState,
+        players: Vec<LoggedUser>,
+        question_count: usize,
+        time_per_question: Duration,
+    },
+    LeaveRoom,
 }
 
 impl Response {

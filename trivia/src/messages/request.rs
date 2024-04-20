@@ -29,6 +29,10 @@ pub enum Request {
     Statistics,
     Logout,
     RoomList,
+    CloseRoom,
+    StartGame,
+    RoomState,
+    LeaveRoom,
 }
 
 impl Request {
