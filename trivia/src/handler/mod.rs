@@ -7,6 +7,9 @@ pub use menu::MenuRequestHandler;
 pub mod factory;
 pub use factory::RequestHandlerFactory;
 
+pub mod room_admin;
+pub use room_admin::RoomAdminRequestHandler;
+
 use crate::messages::{RequestResult, RequestInfo};
 use crate::db;
 
