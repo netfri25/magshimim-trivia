@@ -61,7 +61,7 @@ impl MenuRequestHandler {
         if let Some(room) = room_manager_lock.room_mut(id) {
             room.add_user(self.user.clone());
             // TODO: this will probably need to change an handler in the future
-            RequestResult::without_handler(Response::JoinRoom)
+            RequestResult::without_handler(Response::JoinRoom(id))
         } else {
             RequestResult::new_error("invalid room ID")
         }

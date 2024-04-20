@@ -24,7 +24,6 @@ pub enum Msg {
 #[derive(Default)]
 pub struct JoinRoomPage {
     rooms: Vec<Room>,
-    joining_id: RoomID, // TODO: remove this
 }
 
 impl Page for JoinRoomPage {
@@ -36,10 +35,9 @@ impl Page for JoinRoomPage {
                     self.rooms = rooms.clone();
                 }
 
-                // TODO: add the id to the JoinRoom response, in case the user spams join
-                Response::JoinRoom => {
-                    let page = RoomPage::new(self.joining_id);
-                    let req = Request::PlayersInRoom(self.joining_id);
+                &Response::JoinRoom(id) => {
+                    let page = RoomPage::new(id);
+                    let req = Request::PlayersInRoom(id);
                     return Action::switch_and_request(page, req)
                 }
 
@@ -55,10 +53,7 @@ impl Page for JoinRoomPage {
 
         match msg {
             Msg::UpdateRooms => Action::request(Request::RoomList),
-            Msg::EnterRoom(id) => {
-                self.joining_id = id;
-                Action::request(Request::JoinRoom(id))
-            }
+            Msg::EnterRoom(id) => Action::request(Request::JoinRoom(id))
         }
     }
 
@@ -114,6 +109,7 @@ impl JoinRoomPage {
 }
 
 // TODO: add more info for each room
+#[allow(unused_variables)]
 pub fn room_element<'a>(room: &Room) -> iced::Element<'a, Message, iced::Theme> {
     let RoomData {
         room_id,

@@ -18,7 +18,7 @@ pub enum Response {
     Logout,
     RoomList(Vec<Room>),
     PlayersInRoom(Vec<LoggedUser>),
-    JoinRoom,
+    JoinRoom(RoomID),
     CreateRoom(RoomID),
     Statistics {
         user_statistics: Statistics,
