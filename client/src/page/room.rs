@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use iced::alignment::Horizontal;
 use iced::widget::scrollable::Properties;
-use iced::widget::{container, horizontal_space, row, scrollable, text, column, Column};
+use iced::widget::{column, container, horizontal_space, row, scrollable, text, Column};
 use iced::{theme, Alignment, Color, Length};
 use trivia::managers::login::LoggedUser;
 use trivia::managers::room::RoomID;
@@ -25,6 +25,7 @@ pub enum Msg {
 pub struct RoomPage {
     id: RoomID,
     players: Vec<LoggedUser>,
+    is_admin: bool, // true when the current user is the admin
 }
 
 impl Page for RoomPage {
@@ -34,7 +35,7 @@ impl Page for RoomPage {
                 Response::PlayersInRoom(players) => {
                     self.players = players.clone();
                     eprintln!("players in room {}: {:?}", self.id, self.players);
-                },
+                }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
@@ -47,7 +48,7 @@ impl Page for RoomPage {
         };
 
         match msg {
-            Msg::UpdatePlayers => Action::request(Request::PlayersInRoom(self.id))
+            Msg::UpdatePlayers => Action::request(Request::PlayersInRoom(self.id)),
         }
     }
 
@@ -57,17 +58,11 @@ impl Page for RoomPage {
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
 
-        let players_col = Column::from_vec(
-            self.players
-                .iter()
-                .enumerate()
-                .map(player_element)
-                .collect(),
-        )
-        .align_items(Alignment::Center)
-        .padding(2)
-        .spacing(20)
-        .width(Length::Fill);
+        let players_col = Column::from_vec(self.players.iter().map(player_element).collect())
+            .align_items(Alignment::Center)
+            .padding(2)
+            .spacing(20)
+            .width(Length::Fill);
 
         let rooms = container(row![
             horizontal_space().width(Length::FillPortion(1)),
@@ -99,18 +94,17 @@ impl Page for RoomPage {
 }
 
 impl RoomPage {
-    pub fn new(id: RoomID) -> Self {
-        Self { id, players: vec![] }
+    pub fn new(id: RoomID, is_admin: bool) -> Self {
+        Self {
+            id,
+            players: vec![],
+            is_admin,
+        }
     }
 }
 
-fn player_element((index, user): (usize, &LoggedUser)) -> iced::Element<Message> {
+fn player_element(user: &LoggedUser) -> iced::Element<Message> {
     let user = text(user.username()).size(30);
-    let user = if index == 0 {
-        user.style(Color::from_rgb8(240, 150, 100))
-    } else {
-        user
-    };
 
     container(column![user].align_items(Alignment::Center))
         .style(theme::Container::Box)
