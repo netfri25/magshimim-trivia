@@ -3,6 +3,7 @@ use std::net::{TcpStream, ToSocketAddrs};
 
 use trivia::messages::{Request, Response};
 
+// TODO: switch to a non-blocking TcpStream
 #[derive(Debug, Default, Clone)]
 pub struct Connection {
     stream: Arc<Mutex<Option<TcpStream>>>
