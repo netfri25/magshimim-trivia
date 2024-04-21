@@ -8,7 +8,7 @@ use crate::page::{createroom, joinroom, login, mainmenu, register, room, statist
 #[derive(From, Debug, Clone)]
 #[non_exhaustive]
 pub enum Message {
-    Connected,
+    Connected(connection::Connection),
     Error(Arc<connection::Error>),
     Response(Arc<Response>),
 

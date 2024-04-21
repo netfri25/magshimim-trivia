@@ -1,39 +1,37 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::net::{TcpStream, ToSocketAddrs};
 
 use trivia::messages::{Request, Response};
 
-// TODO: switch to a non-blocking TcpStream
+// TODO: switch to a non-blocking TcpStream (maybe tokio)
 #[derive(Debug, Default, Clone)]
 pub struct Connection {
-    stream: Arc<Mutex<Option<TcpStream>>>
+    stream: Arc<Option<TcpStream>>,
 }
 
 impl Connection {
-    pub fn connect(&self, addr: impl ToSocketAddrs) -> Result<(), Error> {
+    pub fn connect(addr: impl ToSocketAddrs) -> Result<Self, Error> {
         let stream = TcpStream::connect(addr)?;
-        *self.stream.lock().unwrap() = Some(stream);
-        Ok(())
+        let stream = Arc::new(Some(stream));
+        Ok(Self { stream })
     }
 
     pub fn send(&self, msg: Request) -> Result<(), Error> {
-        let mut stream_lock = self.stream.lock().unwrap();
-        let Some(ref mut stream) = *stream_lock else {
+        let Some(mut stream) = self.stream.as_ref().as_ref() else {
             return Err(Error::NotConnected)
         };
 
-        msg.write_to(stream)?;
+        msg.write_to(&mut stream)?;
 
         Ok(())
     }
 
     pub fn recv(&self) -> Result<Response, Error> {
-        let mut stream_lock = self.stream.lock().unwrap();
-        let Some(ref mut stream) = *stream_lock else {
+        let Some(mut stream) = self.stream.as_ref().as_ref() else {
             return Err(Error::NotConnected)
         };
 
-        let response = Response::read_from(stream)?;
+        let response = Response::read_from(&mut stream)?;
 
         Ok(response)
     }

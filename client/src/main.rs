@@ -42,22 +42,20 @@ impl Application for Client {
     type Flags = &'static str;
 
     fn new(addr: &'static str) -> (Self, Command<Message>) {
-        let conn = Connection::default();
         let page = Box::<LoginPage>::default();
         let cmd = Command::perform(
             {
-                let conn = conn.clone();
-                async move { conn.connect(addr) }
+                async move { Connection::connect(addr) }
             },
             |result| match result {
-                Ok(()) => Message::Connected,
+                Ok(conn) => Message::Connected(conn),
                 Err(err) => Message::Error(Arc::new(err)),
             },
         );
 
         (
             Self {
-                conn,
+                conn: Connection::default(),
                 page,
                 err: String::default(),
             },
@@ -71,9 +69,10 @@ impl Application for Client {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         // log the messages that relate to the server
-        match &message {
-            Message::Connected => {
+        match message {
+            Message::Connected(conn) => {
                 eprintln!("connected to server!");
+                self.conn = conn;
                 return Command::none();
             }
 
@@ -83,7 +82,7 @@ impl Application for Client {
                 return Command::none();
             }
 
-            Message::Response(response) => {
+            Message::Response(ref response) => {
                 eprintln!("[RECV]: {:?}", response);
             }
 
