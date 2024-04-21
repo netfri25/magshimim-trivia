@@ -24,8 +24,8 @@ impl RoomManager {
         self.rooms.insert(room.data.room_id, room);
     }
 
-    pub fn delete_room(&mut self, id: RoomID) {
-        self.rooms.remove(&id);
+    pub fn delete_room(&mut self, id: RoomID) -> Option<Room> {
+        self.rooms.remove(&id)
     }
 
     pub fn room_state(&self, id: RoomID) -> Option<RoomState> {
