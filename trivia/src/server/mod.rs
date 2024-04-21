@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::net::ToSocketAddrs;
 
-mod communicator;
+pub mod communicator;
 use communicator::Communicator;
 
 use crate::db::{self, Database};

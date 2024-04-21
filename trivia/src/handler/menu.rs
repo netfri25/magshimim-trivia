@@ -20,7 +20,10 @@ impl MenuRequestHandler {
     }
 
     fn logout(&self) -> RequestResult {
-        RequestResult::new(Response::Logout, self.factory.create_login_request_handler())
+        RequestResult::new(
+            Response::Logout,
+            self.factory.create_login_request_handler(),
+        )
     }
 
     fn get_rooms(&self) -> RequestResult {
@@ -60,8 +63,11 @@ impl MenuRequestHandler {
         let mut room_manager_lock = room_manager.lock().unwrap();
         if let Some(room) = room_manager_lock.room_mut(id) {
             room.add_user(self.user.clone());
-            // TODO: this will probably need to change an handler in the future
-            RequestResult::without_handler(Response::JoinRoom)
+            let resp = Response::JoinRoom;
+            let handler = self
+                .factory
+                .create_room_member_request_handler(self.user.clone(), id);
+            RequestResult::new(resp, handler)
         } else {
             RequestResult::new_error("invalid room ID")
         }
@@ -79,7 +85,11 @@ impl MenuRequestHandler {
         let room_manager = self.factory.get_room_manager();
         let mut room_manager_lock = room_manager.lock().unwrap();
         room_manager_lock.create_room(self.user.clone(), room_data);
-        RequestResult::without_handler(Response::CreateRoom(id))
+        let resp = Response::CreateRoom(id);
+        let handler = self
+            .factory
+            .create_room_admin_request_handler(self.user.clone(), id);
+        RequestResult::new(resp, handler)
     }
 }
 
@@ -88,7 +98,6 @@ impl Handler for MenuRequestHandler {
         let accepted = [
             Request::is_create_room,
             Request::is_room_list,
-            Request::is_players_in_room,
             Request::is_join_room,
             Request::is_statistics,
             Request::is_logout,
@@ -99,7 +108,6 @@ impl Handler for MenuRequestHandler {
 
     fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
         match request_info.data {
-            Request::PlayersInRoom(room_id) => Ok(self.get_players_in_room(room_id)),
             Request::JoinRoom(id) => Ok(self.join_room(id)),
             Request::CreateRoom {
                 name,

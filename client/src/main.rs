@@ -1,7 +1,9 @@
+use std::io;
 use std::sync::Arc;
 
 use iced::{
     alignment::Horizontal,
+    keyboard,
     widget::{column, container, text},
     Application, Command, Length, Settings,
 };
@@ -17,7 +19,7 @@ use action::Action;
 
 mod connection;
 use connection::Connection;
-use trivia::messages::{Request, Response};
+use trivia::messages::{self, Request, Response};
 
 mod consts;
 
@@ -31,7 +33,7 @@ fn main() {
 
 struct Client {
     page: Box<dyn Page>,
-    conn: Connection,
+    conn: Arc<Connection>,
     err: String,
 }
 
@@ -42,22 +44,18 @@ impl Application for Client {
     type Flags = &'static str;
 
     fn new(addr: &'static str) -> (Self, Command<Message>) {
-        let conn = Connection::default();
         let page = Box::<LoginPage>::default();
         let cmd = Command::perform(
-            {
-                let conn = conn.clone();
-                async move { conn.connect(addr) }
-            },
+            async move { Connection::connect(addr).map(Arc::new) },
             |result| match result {
-                Ok(()) => Message::Connected,
+                Ok(conn) => Message::Connected(conn),
                 Err(err) => Message::Error(Arc::new(err)),
             },
         );
 
         (
             Self {
-                conn,
+                conn: Arc::default(),
                 page,
                 err: String::default(),
             },
@@ -71,21 +69,24 @@ impl Application for Client {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         // log the messages that relate to the server
-        match &message {
-            Message::Connected => {
+        match message {
+            Message::Connected(conn) => {
                 eprintln!("connected to server!");
+                self.conn = conn;
                 return Command::none();
             }
 
             Message::Error(err) => {
                 self.err = format!("Error: {}", err);
-                eprintln!("[ERROR]: {}", err);
+                eprintln!("[ERROR]: {:?}", err);
                 return Command::none();
             }
 
-            Message::Response(response) => {
+            Message::Response(ref response) => {
                 eprintln!("[RECV]: {:?}", response);
             }
+
+            Message::Quit => std::process::exit(0),
 
             _ => {}
         };
@@ -136,7 +137,28 @@ impl Application for Client {
     }
 
     fn subscription(&self) -> iced::Subscription<Message> {
-        self.page.subscription()
+        let mut subs = Vec::with_capacity(3);
+        subs.push(self.page.subscription());
+        subs.push(iced::event::listen().map(handle_event));
+
+        if self.conn.is_connected() {
+            let sub = iced::subscription::unfold(
+                "listener",
+                Arc::downgrade(&self.conn),
+                |conn| async move {
+                    if let Some(conn) = conn.upgrade() {
+                        let res = conn.recv();
+                        (response_as_message(res), Arc::downgrade(&conn))
+                    } else {
+                        (Message::Nothing, conn)
+                    }
+                },
+            );
+
+            subs.push(sub);
+        };
+
+        iced::Subscription::batch(subs)
     }
 }
 
@@ -149,15 +171,30 @@ impl Client {
         Command::perform(
             {
                 let conn = self.conn.clone();
-                async move { conn.send_recv(req).await }
+                async move { conn.send(req) }
             },
-            |result| match result {
-                Ok(Response::Error { msg }) => {
-                    Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
-                }
-                Ok(response) => Message::Response(Arc::new(response)),
-                Err(err) => Message::Error(Arc::new(err)),
-            },
+            |_| Message::Nothing,
         )
+    }
+}
+
+fn response_as_message(resp: Result<Response, connection::Error>) -> Message {
+    match resp {
+        Ok(Response::Error { msg }) => {
+            Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
+        }
+        Ok(response) => Message::Response(Arc::new(response)),
+        Err(err) => Message::Error(Arc::new(err)),
+    }
+}
+
+fn handle_event(event: iced::Event) -> Message {
+    match event {
+        iced::Event::Keyboard(keyboard::Event::KeyPressed {
+            key: keyboard::Key::Named(keyboard::key::Named::Escape),
+            ..
+        }) => Message::Quit,
+
+        _ => Message::Nothing,
     }
 }
