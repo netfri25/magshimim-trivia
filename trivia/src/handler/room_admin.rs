@@ -38,7 +38,7 @@ impl RoomAdminRequestHandler {
         }
     }
 
-    pub fn close_room(&mut self) -> Result<RequestResult, Error> {
+    fn close_room(&mut self) -> Result<RequestResult, Error> {
         let room_manager = self.factory.get_room_manager();
         if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
             let users = room.users();
@@ -48,7 +48,7 @@ impl RoomAdminRequestHandler {
         Ok(RequestResult::without_handler(Response::CloseRoom))
     }
 
-    pub fn start_game(&mut self) -> Result<RequestResult, Error> {
+    fn start_game(&mut self) -> Result<RequestResult, Error> {
         let room_manager = self.factory.get_room_manager();
         if !room_manager.lock().unwrap().set_state(self.room_id, RoomState::InGame) {
             return Ok(RequestResult::new_error("Room doesn't exist"))
@@ -57,7 +57,7 @@ impl RoomAdminRequestHandler {
         Ok(RequestResult::without_handler(Response::StartGame))
     }
 
-    pub fn room_state(&self) -> Result<RequestResult, Error> {
+    fn room_state(&self) -> Result<RequestResult, Error> {
         let room_manager = self.factory.get_room_manager();
         let Some(room) = room_manager.lock().unwrap().room(self.room_id).cloned() else {
             return Ok(RequestResult::new_error("Room doesn't exist"));
