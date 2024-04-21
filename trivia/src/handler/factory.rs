@@ -5,7 +5,7 @@ use crate::managers::login::LoggedUser;
 use crate::managers::room::RoomID;
 use crate::managers::{LoginManager, RoomManager, StatisticsManager};
 
-use super::{Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler};
+use super::{Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler, RoomMemberRequestHandler};
 
 pub struct RequestHandlerFactory {
     login_manager: Arc<Mutex<LoginManager>>,
@@ -40,6 +40,10 @@ impl RequestHandlerFactory {
 
     pub fn create_room_admin_request_handler(self: &Arc<Self>, admin: LoggedUser, room_id: RoomID) -> Box<dyn Handler> {
         Box::new(RoomAdminRequestHandler::new(self.clone(), admin, room_id))
+    }
+
+    pub fn create_room_member_request_handler(self: &Arc<Self>, member: LoggedUser, room_id: RoomID) -> Box<dyn Handler> {
+        Box::new(RoomMemberRequestHandler::new(self.clone(), member, room_id))
     }
 
     pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager>> {

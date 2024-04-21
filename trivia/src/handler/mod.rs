@@ -10,6 +10,9 @@ pub use factory::RequestHandlerFactory;
 pub mod room_admin;
 pub use room_admin::RoomAdminRequestHandler;
 
+pub mod room_member;
+pub use room_member::RoomMemberRequestHandler;
+
 use crate::messages::{RequestResult, RequestInfo};
 use crate::db;
 
