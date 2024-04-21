@@ -74,9 +74,12 @@ impl Communicator {
 
         loop {
             let result = if let Ok(result) = receiver.try_recv() {
+                eprint!("[CHANNEL]: ");
                 result
             } else {
                 let request = Request::read_from(&mut client)?;
+                eprintln!("[REQ]:     {:?}", request);
+                eprint!("[RESP]:    ");
 
                 // save the username, so it can be removed at the end of communication
                 if let Request::Login { ref username, .. } = request {
@@ -94,6 +97,7 @@ impl Communicator {
                 handler.handle(request_info)?
             };
 
+            eprintln!("{:?}", result.response);
             let RequestResult { response, new_handler } = result;
 
             response.write_to(&mut client)?;
