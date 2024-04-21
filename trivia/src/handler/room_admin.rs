@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::managers::login::LoggedUser;
-use crate::managers::room::RoomID;
+use crate::managers::room::{RoomID, RoomState};
 use crate::messages::{Request, RequestResult};
 use crate::messages::{RequestInfo, Response};
 
@@ -50,8 +50,8 @@ impl RoomAdminRequestHandler {
 
     pub fn start_game(&mut self) -> Result<RequestResult, Error> {
         let room_manager = self.factory.get_room_manager();
-        if let Some(room) = room_manager.lock().unwrap().room_mut(self.room_id) {
-            todo!("mark the room as InGame");
+        if !room_manager.lock().unwrap().set_state(self.room_id, RoomState::InGame) {
+            return Ok(RequestResult::new_error("Room doesn't exist"))
         }
 
         Ok(RequestResult::without_handler(Response::StartGame))
