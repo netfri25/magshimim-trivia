@@ -1,23 +1,25 @@
-use std::sync::Arc;
 use std::net::{TcpStream, ToSocketAddrs};
 
 use trivia::messages::{Request, Response};
 
-// TODO: switch to a non-blocking TcpStream (maybe tokio)
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub struct Connection {
-    stream: Arc<Option<TcpStream>>,
+    stream: Option<TcpStream>,
 }
 
 impl Connection {
     pub fn connect(addr: impl ToSocketAddrs) -> Result<Self, Error> {
         let stream = TcpStream::connect(addr)?;
-        let stream = Arc::new(Some(stream));
+        let stream = Some(stream);
         Ok(Self { stream })
     }
 
+    pub fn is_connected(&self) -> bool {
+        self.stream.is_some()
+    }
+
     pub fn send(&self, msg: Request) -> Result<(), Error> {
-        let Some(mut stream) = self.stream.as_ref().as_ref() else {
+        let Some(mut stream) = self.stream.as_ref() else {
             return Err(Error::NotConnected)
         };
 
@@ -27,18 +29,13 @@ impl Connection {
     }
 
     pub fn recv(&self) -> Result<Response, Error> {
-        let Some(mut stream) = self.stream.as_ref().as_ref() else {
+        let Some(mut stream) = self.stream.as_ref() else {
             return Err(Error::NotConnected)
         };
 
         let response = Response::read_from(&mut stream)?;
 
         Ok(response)
-    }
-
-    pub async fn send_recv(&self, msg: Request) -> Result<Response, Error> {
-        async { self.send(msg) }.await?;
-        async { self.recv() }.await
     }
 }
 
