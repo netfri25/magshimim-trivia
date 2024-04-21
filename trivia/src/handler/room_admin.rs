@@ -45,6 +45,7 @@ impl RoomAdminRequestHandler {
             // TODO: disoconnect all users
         };
 
+        // TODO: think about which handler should be used in here
         Ok(RequestResult::without_handler(Response::CloseRoom))
     }
 
@@ -54,6 +55,7 @@ impl RoomAdminRequestHandler {
             return Ok(RequestResult::new_error("Room doesn't exist"))
         }
 
+        // TODO: think about which handler should be used in here
         Ok(RequestResult::without_handler(Response::StartGame))
     }
 
