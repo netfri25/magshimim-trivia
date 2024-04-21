@@ -42,8 +42,22 @@ impl RoomAdminRequestHandler {
     fn close_room(&mut self) -> Result<RequestResult, Error> {
         let room_manager = self.factory.get_room_manager();
         if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
-            let users = room.users();
-            // TODO: disoconnect all users
+            let users = room.users().iter().map(|u| u.username());
+
+            for user in users {
+                if let Some(sender) = self.factory.channels().lock().unwrap().get(user) {
+                    let resp = Response::LeaveRoom;
+                    let handler = self.factory.create_menu_request_handler(LoggedUser::new(user.to_string()));
+
+
+                    // if the client doesn't receive it, it means that the Receiver has been
+                    // dropped which means that it's the exact split second that the user
+                    // disconnects but the HashMap hasn't been updated yet, and in that case I
+                    // don't give a shit. for that reason I'm using the .ok() method to ignore any
+                    // errors
+                    sender.send(RequestResult::new(resp, handler)).ok();
+                };
+            }
         };
 
         let resp = Response::CloseRoom;
@@ -68,6 +82,7 @@ impl RoomAdminRequestHandler {
 
         Ok(RequestResult::without_handler(Response::RoomState {
             state: room.room_data().state,
+            name: room.room_data().name.clone(),
             players: room.users().to_vec(),
             question_count: room.room_data().questions_count,
             time_per_question: room.room_data().time_per_question,
