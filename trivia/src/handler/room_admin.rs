@@ -24,6 +24,7 @@ impl Handler for RoomAdminRequestHandler {
             Request::CloseRoom => self.close_room(),
             Request::StartGame => self.start_game(),
             Request::RoomState => self.room_state(),
+            Request::Logout => self.close_room(),
             _ => Ok(RequestResult::new_error("Invalid request")),
         }
     }

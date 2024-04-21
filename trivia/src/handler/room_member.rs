@@ -22,6 +22,7 @@ impl Handler for RoomMemberRequestHandler {
         match request_info.data {
             Request::LeaveRoom => self.leave_room(),
             Request::RoomState => self.room_state(),
+            Request::Logout => self.leave_room(),
             _ => Ok(RequestResult::new_error("Invalid request")),
         }
     }
