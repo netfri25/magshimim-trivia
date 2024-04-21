@@ -7,7 +7,6 @@ use iced::widget::{
 };
 use iced::{theme, Alignment, Length};
 use trivia::managers::login::LoggedUser;
-use trivia::managers::room::RoomID;
 use trivia::messages::{Request, Response};
 
 use crate::action::Action;
@@ -28,7 +27,7 @@ pub enum Msg {
 }
 
 pub struct RoomPage {
-    id: RoomID,
+    room_name: String,
     players: Vec<LoggedUser>,
     is_admin: bool, // true when the current user is the admin
 }
@@ -39,10 +38,14 @@ impl Page for RoomPage {
             match response.as_ref() {
                 Response::RoomState {
                     state,
+                    name,
                     players,
                     question_count,
                     time_per_question,
-                } => self.players = players.clone(),
+                } => {
+                    self.room_name = name.clone();
+                    self.players = players.clone()
+                },
 
                 Response::StartGame => todo!("switch to the StartGame page"),
 
@@ -65,7 +68,7 @@ impl Page for RoomPage {
     }
 
     fn view(&self) -> iced::Element<Message> {
-        let title = text(format!("Room {}", self.id))
+        let title = text(format!("Room {}", self.room_name))
             .size(consts::TITLE_SIZE)
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
@@ -124,9 +127,9 @@ impl Page for RoomPage {
 }
 
 impl RoomPage {
-    pub fn new(id: RoomID, is_admin: bool) -> Self {
+    pub fn new(is_admin: bool) -> Self {
         Self {
-            id,
+            room_name: String::new(),
             players: vec![],
             is_admin,
         }

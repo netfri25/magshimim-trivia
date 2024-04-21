@@ -63,7 +63,7 @@ impl MenuRequestHandler {
         let mut room_manager_lock = room_manager.lock().unwrap();
         if let Some(room) = room_manager_lock.room_mut(id) {
             room.add_user(self.user.clone());
-            let resp = Response::JoinRoom(id);
+            let resp = Response::JoinRoom;
             let handler = self
                 .factory
                 .create_room_member_request_handler(self.user.clone(), id);
