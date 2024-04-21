@@ -48,7 +48,7 @@ impl Page for CreateRoomPage {
             match response.as_ref() {
                 &Response::CreateRoom(id) => {
                     eprintln!("room created: id={}", id);
-                    let page = RoomPage::new(id);
+                    let page = RoomPage::new(id, true);
                     let req = Request::PlayersInRoom(id);
                     return Action::switch_and_request(page, req)
                 }
