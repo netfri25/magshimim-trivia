@@ -35,9 +35,9 @@ impl Page for JoinRoomPage {
                     self.rooms = rooms.clone();
                 }
 
-                &Response::JoinRoom(id) => {
-                    let page = RoomPage::new(id);
-                    let req = Request::PlayersInRoom(id);
+                &Response::JoinRoom => {
+                    let page = RoomPage::new(false);
+                    let req = Request::RoomState;
                     return Action::switch_and_request(page, req)
                 }
 

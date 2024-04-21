@@ -18,7 +18,6 @@ pub enum Request {
         password: String,
         email: String,
     },
-    PlayersInRoom(RoomID),
     JoinRoom(RoomID),
     CreateRoom {
         name: String,
@@ -44,11 +43,6 @@ impl Request {
     #[must_use]
     pub fn is_login(&self) -> bool {
         matches!(self, Self::Login { .. })
-    }
-
-    #[must_use]
-    pub fn is_players_in_room(&self) -> bool {
-        matches!(self, Self::PlayersInRoom(..))
     }
 
     #[must_use]

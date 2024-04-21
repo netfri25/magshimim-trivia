@@ -19,7 +19,7 @@ pub enum Response {
     Logout,
     RoomList(Vec<Room>),
     PlayersInRoom(Vec<LoggedUser>),
-    JoinRoom(RoomID),
+    JoinRoom,
     CreateRoom(RoomID),
     Statistics {
         user_statistics: Statistics,
@@ -29,6 +29,7 @@ pub enum Response {
     StartGame,
     RoomState {
         state: RoomState,
+        name: String,
         players: Vec<LoggedUser>,
         question_count: usize,
         time_per_question: Duration,
