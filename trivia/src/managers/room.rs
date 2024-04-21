@@ -32,6 +32,10 @@ impl RoomManager {
         self.rooms.get(&id).map(|room| room.room_data().state)
     }
 
+    pub fn set_state(&mut self, id: RoomID, state: RoomState) -> bool {
+        self.rooms.get_mut(&id).map(|room| room.data.state = state).is_some()
+    }
+
     pub fn room(&self, id: RoomID) -> Option<&Room> {
         self.rooms.get(&id)
     }
