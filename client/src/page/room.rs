@@ -2,8 +2,10 @@ use std::time::Duration;
 
 use iced::alignment::Horizontal;
 use iced::widget::scrollable::Properties;
-use iced::widget::{column, container, horizontal_space, row, scrollable, text, Column};
-use iced::{theme, Alignment, Color, Length};
+use iced::widget::{
+    button, column, container, horizontal_space, row, scrollable, text, vertical_space, Column,
+};
+use iced::{theme, Alignment, Length};
 use trivia::managers::login::LoggedUser;
 use trivia::managers::room::RoomID;
 use trivia::messages::{Request, Response};
@@ -12,7 +14,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{MainMenuPage, Page};
 
 // NOTE: my temporary solution is to consider the first user in the users list as the admin, not
 // sure how great of a solution that is but ig it will work
@@ -20,6 +22,9 @@ use super::Page;
 #[derive(Debug, Clone)]
 pub enum Msg {
     UpdatePlayers,
+    StartGame,
+    CloseRoom,
+    LeaveRoom,
 }
 
 pub struct RoomPage {
@@ -32,10 +37,14 @@ impl Page for RoomPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::PlayersInRoom(players) => {
-                    self.players = players.clone();
-                    eprintln!("players in room {}: {:?}", self.id, self.players);
-                }
+                Response::RoomState {
+                    state,
+                    players,
+                    question_count,
+                    time_per_question,
+                } => self.players = players.clone(),
+
+                Response::StartGame => todo!("switch to the StartGame page"),
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
@@ -48,7 +57,10 @@ impl Page for RoomPage {
         };
 
         match msg {
-            Msg::UpdatePlayers => Action::request(Request::PlayersInRoom(self.id)),
+            Msg::UpdatePlayers => Action::request(Request::RoomState),
+            Msg::StartGame => Action::request(Request::StartGame), // TODO: switch to the game page
+            Msg::CloseRoom => Action::switch_and_request(MainMenuPage, Request::CloseRoom),
+            Msg::LeaveRoom => Action::switch_and_request(MainMenuPage, Request::LeaveRoom),
         }
     }
 
@@ -63,6 +75,24 @@ impl Page for RoomPage {
             .padding(2)
             .spacing(20)
             .width(Length::Fill);
+
+        let buttons = if self.is_admin {
+            column![
+                vertical_space(),
+                button(text("Start Game").size(30)).on_press(Msg::StartGame.into()),
+                button(text("Close Room").size(30)).on_press(Msg::CloseRoom.into()),
+            ]
+        } else {
+            column![
+                vertical_space(),
+                button(text("Leave Room").size(30)).on_press(Msg::LeaveRoom.into()),
+            ]
+        }
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .align_items(Alignment::Center)
+        .padding(10)
+        .spacing(20);
 
         let rooms = container(row![
             horizontal_space().width(Length::FillPortion(1)),
@@ -79,7 +109,7 @@ impl Page for RoomPage {
             container(title)
                 .height(Length::FillPortion(1))
                 .padding(consts::TITLES_PADDING),
-            rooms.height(Length::FillPortion(4))
+            row![rooms, buttons].height(Length::FillPortion(4))
         ])
         .height(Length::Fill)
         .width(Length::Fill)
