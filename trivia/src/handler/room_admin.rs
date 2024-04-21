@@ -71,6 +71,19 @@ impl RoomAdminRequestHandler {
             return Ok(RequestResult::new_error("Room doesn't exist"))
         }
 
+        let room_manager = self.factory.get_room_manager();
+        if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
+            let users = room.users().iter().map(|u| u.username());
+
+            for user in users {
+                if let Some(sender) = self.factory.channels().lock().unwrap().get(user) {
+                    let resp = Response::StartGame;
+                    let handler = self.factory.create_menu_request_handler(LoggedUser::new(user.to_string()));
+                    sender.send(RequestResult::new(resp, handler)).ok();
+                };
+            }
+        }
+
         Ok(RequestResult::without_handler(Response::StartGame))
     }
 
