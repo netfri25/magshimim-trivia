@@ -18,7 +18,6 @@ pub enum Request {
         password: String,
         email: String,
     },
-    PlayersInRoom(RoomID),
     JoinRoom(RoomID),
     CreateRoom {
         name: String,
