@@ -59,7 +59,10 @@ impl Communicator {
         let _defer = Defer(|| {
             if let Some(ref username) = login_username.take() {
                 eprintln!("[LOG] {:?} disconnected", username);
-                self.factory.get_login_manager().lock().unwrap().logut(username)
+                self.factory.get_login_manager().lock().unwrap().logut(username);
+                let req = Request::Logout;
+                let mut clients_mx = self.clients.lock().unwrap();
+                clients_mx.get_mut(&addr).map(|handler| handler.handle(RequestInfo::new_now(req)));
             }
         });
 
