@@ -41,8 +41,9 @@ impl RoomMemberRequestHandler {
         let mut room_manager_lock = room_manager.lock().unwrap();
         if let Some(room) = room_manager_lock.room_mut(self.room_id) {
             room.remove_user(&self.member);
-            // TODO: think about which handler should be used in here
-            Ok(RequestResult::without_handler(Response::LeaveRoom))
+            let resp = Response::LeaveRoom;
+            let handler = self.factory.create_menu_request_handler(self.member.clone());
+            Ok(RequestResult::new(resp, handler))
         } else {
             Ok(RequestResult::new_error("Room doesn't exist"))
         }

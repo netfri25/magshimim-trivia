@@ -45,8 +45,9 @@ impl RoomAdminRequestHandler {
             // TODO: disoconnect all users
         };
 
-        // TODO: think about which handler should be used in here
-        Ok(RequestResult::without_handler(Response::CloseRoom))
+        let resp = Response::CloseRoom;
+        let handler = self.factory.create_menu_request_handler(self.admin.clone());
+        Ok(RequestResult::new(resp, handler))
     }
 
     fn start_game(&mut self) -> Result<RequestResult, Error> {
@@ -55,7 +56,6 @@ impl RoomAdminRequestHandler {
             return Ok(RequestResult::new_error("Room doesn't exist"))
         }
 
-        // TODO: think about which handler should be used in here
         Ok(RequestResult::without_handler(Response::StartGame))
     }
 
