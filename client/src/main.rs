@@ -1,7 +1,9 @@
+use std::io;
 use std::sync::Arc;
 
 use iced::{
     alignment::Horizontal,
+    keyboard,
     widget::{column, container, text},
     Application, Command, Length, Settings,
 };
@@ -162,5 +164,16 @@ fn response_as_message(resp: Result<Response, connection::Error>) -> Message {
         }
         Ok(response) => Message::Response(Arc::new(response)),
         Err(err) => Message::Error(Arc::new(err)),
+    }
+}
+
+fn handle_event(event: iced::Event) -> Message {
+    match event {
+        iced::Event::Keyboard(keyboard::Event::KeyPressed {
+            key: keyboard::Key::Named(keyboard::key::Named::Escape),
+            ..
+        }) => Message::Quit,
+
+        _ => Message::Nothing,
     }
 }
