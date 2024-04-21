@@ -151,13 +151,17 @@ impl Client {
                 let conn = self.conn.clone();
                 async move { conn.send_recv(req).await }
             },
-            |result| match result {
-                Ok(Response::Error { msg }) => {
-                    Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
-                }
-                Ok(response) => Message::Response(Arc::new(response)),
-                Err(err) => Message::Error(Arc::new(err)),
-            },
+            response_as_message,
         )
+    }
+}
+
+fn response_as_message(resp: Result<Response, connection::Error>) -> Message {
+    match resp {
+        Ok(Response::Error { msg }) => {
+            Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
+        }
+        Ok(response) => Message::Response(Arc::new(response)),
+        Err(err) => Message::Error(Arc::new(err)),
     }
 }
