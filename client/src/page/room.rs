@@ -49,6 +49,8 @@ impl Page for RoomPage {
 
                 Response::StartGame => todo!("switch to the StartGame page"),
 
+                Response::LeaveRoom => return Action::switch(MainMenuPage),
+
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
