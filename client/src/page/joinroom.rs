@@ -37,7 +37,7 @@ impl Page for JoinRoomPage {
 
                 &Response::JoinRoom(id) => {
                     let page = RoomPage::new(id, false);
-                    let req = Request::PlayersInRoom(id);
+                    let req = Request::RoomState;
                     return Action::switch_and_request(page, req)
                 }
 

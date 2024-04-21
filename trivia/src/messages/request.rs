@@ -46,11 +46,6 @@ impl Request {
     }
 
     #[must_use]
-    pub fn is_players_in_room(&self) -> bool {
-        matches!(self, Self::PlayersInRoom(..))
-    }
-
-    #[must_use]
     pub fn is_join_room(&self) -> bool {
         matches!(self, Self::JoinRoom(..))
     }

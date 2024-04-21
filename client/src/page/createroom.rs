@@ -49,7 +49,7 @@ impl Page for CreateRoomPage {
                 &Response::CreateRoom(id) => {
                     eprintln!("room created: id={}", id);
                     let page = RoomPage::new(id, true);
-                    let req = Request::PlayersInRoom(id);
+                    let req = Request::RoomState;
                     return Action::switch_and_request(page, req)
                 }
 

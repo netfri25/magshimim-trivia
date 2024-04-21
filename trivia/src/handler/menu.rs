@@ -98,7 +98,6 @@ impl Handler for MenuRequestHandler {
         let accepted = [
             Request::is_create_room,
             Request::is_room_list,
-            Request::is_players_in_room,
             Request::is_join_room,
             Request::is_statistics,
             Request::is_logout,
@@ -109,7 +108,6 @@ impl Handler for MenuRequestHandler {
 
     fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
         match request_info.data {
-            Request::PlayersInRoom(room_id) => Ok(self.get_players_in_room(room_id)),
             Request::JoinRoom(id) => Ok(self.join_room(id)),
             Request::CreateRoom {
                 name,
