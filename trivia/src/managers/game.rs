@@ -98,6 +98,7 @@ impl Game {
             .get_mut(&user)
             .ok_or(db::Error::UserDoesntExist(user.username))?;
 
+        // TODO: proper error
         let question = self
             .questions
             .get(game_data.current_question_index)
