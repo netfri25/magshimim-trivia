@@ -37,7 +37,7 @@ pub enum Response {
     },
     LeaveRoom,
     LeaveGame,
-    SubmitAnswer { correct_answer: String },
+    SubmitAnswer(usize), // the correct answer index
     Question(Option<QuestionData>), // None => no more questions
     GameResult(Vec<PlayerResults>) // Will be sent to everyone when the game is over
 }
