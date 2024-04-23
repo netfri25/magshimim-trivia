@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::db::Database;
 use crate::managers::login::LoggedUser;
 use crate::managers::room::RoomID;
-use crate::managers::{LoginManager, RoomManager, StatisticsManager};
+use crate::managers::{GameManager, LoginManager, RoomManager, StatisticsManager};
 use crate::server::communicator::Channels;
 
 use super::{Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler, RoomMemberRequestHandler};
@@ -12,6 +12,7 @@ pub struct RequestHandlerFactory {
     login_manager: Arc<Mutex<LoginManager>>,
     room_manager: Arc<Mutex<RoomManager>>,
     statistics_manager: Arc<Mutex<StatisticsManager>>,
+    game_manager: Arc<Mutex<GameManager>>,
     channels: Arc<Mutex<Channels>>,
     db: Arc<Mutex<dyn Database>>,
 }
@@ -24,11 +25,14 @@ impl RequestHandlerFactory {
         let room_manager = Arc::new(Mutex::new(room_manager));
         let statistics_manager = StatisticsManager::new(db.clone());
         let statistics_manager = Arc::new(Mutex::new(statistics_manager));
+        let game_manager = GameManager::new(db.clone());
+        let game_manager = Arc::new(Mutex::new(game_manager));
         let channels = Arc::new(Mutex::default());
         Self {
             login_manager,
             room_manager,
             statistics_manager,
+            game_manager,
             channels,
             db,
         }
@@ -60,6 +64,10 @@ impl RequestHandlerFactory {
 
     pub fn get_statistics_manager(&self) -> Arc<Mutex<StatisticsManager>> {
         self.statistics_manager.clone()
+    }
+
+    pub fn get_game_manager(&self) -> Arc<Mutex<GameManager>> {
+        self.game_manager.clone()
     }
 
     pub fn channels(&self) -> Arc<Mutex<Channels>> {
