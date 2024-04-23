@@ -35,6 +35,10 @@ pub enum Response {
         time_per_question: Duration,
     },
     LeaveRoom,
+    LeaveGame,
+    SubmitAnswer { correct_answer: String },
+    Question(Option<Question>), // None => no more questions
+    GameResult(Vec<PlayerResults>) // Will be sent to everyone when the game is over
 }
 
 impl Response {
@@ -89,6 +93,48 @@ impl RequestResult {
 
     pub fn new_error(msg: impl ToString) -> Self {
         Self::without_handler(Response::new_error(msg))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PlayerResults {
+    pub username: String,
+    pub correct_answers: i64,
+    pub wrong_answers: i64,
+    pub avg_time: Duration,
+}
+
+impl PlayerResults {
+    pub fn new(
+        username: impl Into<String>,
+        correct_answers: i64,
+        wrong_answers: i64,
+        avg_time: Duration
+    ) -> Self {
+        let username = username.into();
+        Self {
+            username,
+            correct_answers,
+            wrong_answers,
+            avg_time,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Question {
+    pub question: String,
+    pub answers: Vec<String>,
+}
+
+impl Question {
+    pub fn new(
+        question: impl Into<String>,
+        answers: impl Iterator<Item = impl Into<String>>
+    ) -> Self {
+        let question = question.into();
+        let answers = answers.map(Into::into).collect();
+        Self { question, answers }
     }
 }
 

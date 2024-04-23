@@ -32,6 +32,16 @@ pub enum Request {
     StartGame,
     RoomState,
     LeaveRoom,
+    LeaveGame,
+    Question,
+
+    // I can use an answer ID instead of the answer itself, but this way it will be easier for me
+    // to compare it with the correct answer, and it won't really affect the efficiency that much
+    SubmitAnswer(String),
+
+    // no need for requesting the GameResult, the server will already send it when all of the
+    // players have finished the game
+    // GameResult,
 }
 
 impl Request {
