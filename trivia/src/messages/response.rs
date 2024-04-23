@@ -38,6 +38,9 @@ pub enum Response {
     LeaveRoom,
     LeaveGame,
     SubmitAnswer(usize), // the correct answer index
+
+    // the `correct_answer_index` will be set to usize::MAX so that the client can't cheat
+    // additionally, the answers will be shuffled when sent to the user
     Question(Option<QuestionData>), // None => no more questions
     GameResult(Vec<PlayerResults>) // Will be sent to everyone when the game is over
 }
