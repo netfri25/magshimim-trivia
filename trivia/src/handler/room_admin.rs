@@ -44,6 +44,7 @@ impl RoomAdminRequestHandler {
         if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
             let users = room.users().iter().map(|u| u.username());
 
+            // send to everyone in the room that the room has been closed
             for user in users {
                 if let Some(sender) = self.factory.channels().lock().unwrap().get(user) {
                     let resp = Response::LeaveRoom;
@@ -72,13 +73,17 @@ impl RoomAdminRequestHandler {
         }
 
         let room_manager = self.factory.get_room_manager();
-        if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
-            let users = room.users().iter().map(|u| u.username());
 
+        if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
+            let users: Vec<_> = room.users().to_vec();
+
+            let game_id = self.factory.get_game_manager().lock().unwrap().create_game(room)?.id();
+
+            // send to everyone in the room that the game has started
             for user in users {
-                if let Some(sender) = self.factory.channels().lock().unwrap().get(user) {
+                if let Some(sender) = self.factory.channels().lock().unwrap().get(user.username()) {
                     let resp = Response::StartGame;
-                    let handler = self.factory.create_menu_request_handler(LoggedUser::new(user.to_string()));
+                    let handler = self.factory.create_game_request_handler(user, game_id);
                     sender.send(RequestResult::new(resp, handler)).ok();
                 };
             }

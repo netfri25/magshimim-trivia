@@ -1,12 +1,13 @@
 use std::sync::{Arc, Mutex};
 
 use crate::db::Database;
+use crate::managers::game::GameID;
 use crate::managers::login::LoggedUser;
 use crate::managers::room::RoomID;
 use crate::managers::{GameManager, LoginManager, RoomManager, StatisticsManager};
 use crate::server::communicator::Channels;
 
-use super::{Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler, RoomMemberRequestHandler};
+use super::{GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler, RoomMemberRequestHandler};
 
 pub struct RequestHandlerFactory {
     login_manager: Arc<Mutex<LoginManager>>,
@@ -52,6 +53,10 @@ impl RequestHandlerFactory {
 
     pub fn create_room_member_request_handler(self: &Arc<Self>, member: LoggedUser, room_id: RoomID) -> Box<dyn Handler> {
         Box::new(RoomMemberRequestHandler::new(self.clone(), member, room_id))
+    }
+
+    pub fn create_game_request_handler(self: &Arc<Self>, user: LoggedUser, game_id: GameID) -> Box<dyn Handler> {
+        Box::new(GameRequestHandler::new(self.clone(), user, game_id))
     }
 
     pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager>> {

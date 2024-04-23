@@ -40,6 +40,10 @@ impl GameManager {
         self.games.remove(id);
     }
 
+    pub fn game_mut(&mut self, game_id: &GameID) -> Option<&mut Game> {
+        self.games.get_mut(game_id)
+    }
+
     pub fn submit_game_results(&mut self, game_id: &GameID) -> Result<(), db::Error> {
         let game = self
             .games
@@ -56,9 +60,9 @@ impl GameManager {
 }
 
 pub struct Game {
-    pub id: GameID,
-    pub questions: Vec<QuestionData>,
-    pub players: HashMap<LoggedUser, GameData>,
+    id: GameID,
+    questions: Vec<QuestionData>,
+    players: HashMap<LoggedUser, GameData>,
 }
 
 impl Game {
@@ -79,8 +83,12 @@ impl Game {
         }
     }
 
-    pub fn get_question_for_user(&mut self, user: LoggedUser) -> Option<&QuestionData> {
-        let game_data = self.players.get_mut(&user)?;
+    pub fn id(&self) -> GameID {
+        self.id
+    }
+
+    pub fn get_question_for_user(&mut self, user: &LoggedUser) -> Option<&QuestionData> {
+        let game_data = self.players.get_mut(user)?;
         let index = game_data.current_question_index;
         game_data.current_question_index += 1;
         self.questions.get(index)
@@ -111,6 +119,21 @@ impl Game {
 
     pub fn remove_user(&mut self, user: &LoggedUser) {
         self.players.remove(user);
+    }
+
+    pub fn users(&self) -> impl Iterator<Item = &LoggedUser> {
+        self.players.keys()
+    }
+
+    // NOTE: can be optimized, but I don't really care about performance
+    pub fn all_finished(&self) -> bool {
+        self.players
+            .values()
+            .all(|data| data.current_question_index == self.questions.len())
+    }
+
+    pub fn results(&self) -> impl Iterator<Item = (&LoggedUser, &GameData)> {
+        self.players.iter()
     }
 }
 

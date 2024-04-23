@@ -103,16 +103,16 @@ impl RequestResult {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PlayerResults {
     pub username: String,
-    pub correct_answers: i64,
-    pub wrong_answers: i64,
+    pub correct_answers: u32,
+    pub wrong_answers: u32,
     pub avg_time: Duration,
 }
 
 impl PlayerResults {
     pub fn new(
         username: impl Into<String>,
-        correct_answers: i64,
-        wrong_answers: i64,
+        correct_answers: u32,
+        wrong_answers: u32,
         avg_time: Duration
     ) -> Self {
         let username = username.into();

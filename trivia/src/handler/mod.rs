@@ -27,5 +27,8 @@ pub trait Handler: Send {
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    DBError(#[from] db::Error)
+    DBError(#[from] db::Error),
+
+    #[error(transparent)]
+    SystemTime(#[from] std::time::SystemTimeError),
 }
