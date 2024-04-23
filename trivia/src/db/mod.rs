@@ -21,7 +21,7 @@ pub trait Database: Send {
     fn password_matches(&self, username: &str, password: &str) -> Result<bool, Error>;
     fn add_user(&mut self, username: &str, password: &str, email: &str) -> Result<(), Error>;
 
-    fn get_questions(&self, amount: u8) -> Result<Vec<QuestionData>, Error>;
+    fn get_questions(&self, amount: usize) -> Result<Vec<QuestionData>, Error>;
     fn get_player_average_answer_time(&self, username: &str) -> Result<Duration, Error>;
     fn get_correct_answers_count(&self, username: &str) -> Result<i64, Error>;
     fn get_total_answers_count(&self, username: &str) -> Result<i64, Error>;
@@ -36,6 +36,12 @@ pub trait Database: Send {
 pub enum Error {
     #[error("user {0:?} doesn't exist")]
     UserDoesntExist(String),
+
+    #[error("no correct answer for ({question_id}) {question_content:?}")]
+    NoCorrectAnswer {
+        question_id: i64,
+        question_content: String,
+    },
 
     #[error(transparent)]
     InternalDBError(#[from] ::sqlite::Error),

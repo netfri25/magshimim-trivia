@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
+use crate::db::question::QuestionData;
 use crate::db::Score;
 use crate::managers::login::LoggedUser;
 use crate::managers::statistics::Statistics;
@@ -37,7 +38,7 @@ pub enum Response {
     LeaveRoom,
     LeaveGame,
     SubmitAnswer { correct_answer: String },
-    Question(Option<Question>), // None => no more questions
+    Question(Option<QuestionData>), // None => no more questions
     GameResult(Vec<PlayerResults>) // Will be sent to everyone when the game is over
 }
 
@@ -118,23 +119,6 @@ impl PlayerResults {
             wrong_answers,
             avg_time,
         }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Question {
-    pub question: String,
-    pub answers: Vec<String>,
-}
-
-impl Question {
-    pub fn new(
-        question: impl Into<String>,
-        answers: impl Iterator<Item = impl Into<String>>
-    ) -> Self {
-        let question = question.into();
-        let answers = answers.map(Into::into).collect();
-        Self { question, answers }
     }
 }
 

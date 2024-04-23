@@ -44,20 +44,18 @@ impl SqliteDatabase {
                 statement.read::<i64, _>(Question::Id.to_string().as_str())?
             };
 
-            let possible_answers = question.possible_answers();
-
             let correct_answer_insert_query = query::Query::insert()
                 .into_table(Answer::Table)
                 .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
                 .values_panic([
-                    possible_answers.correct_answer.into(),
+                    question.correct_answer().into(),
                     true.into(),
                     question_id.into(),
                 ])
                 .to_string(query::SqliteQueryBuilder);
             self.conn.execute(correct_answer_insert_query)?;
 
-            for incorrect_answer in possible_answers.incorrect_answers {
+            for incorrect_answer in question.incorrect_answers() {
                 let incorrect_answer_insert_query = query::Query::insert()
                     .into_table(Answer::Table)
                     .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
@@ -142,12 +140,12 @@ impl Database for SqliteDatabase {
         Ok(())
     }
 
-    fn get_questions(&self, amount: u8) -> Result<Vec<QuestionData>, Error> {
+    fn get_questions(&self, amount: usize) -> Result<Vec<QuestionData>, Error> {
         let select_question_query = query::Query::select()
             .columns([Question::Content, Question::Id])
             .from(Question::Table)
             .order_by_expr(query::Func::random().into(), query::Order::Asc)
-            .limit(amount.into())
+            .limit(amount as u64)
             .to_string(query::SqliteQueryBuilder);
 
         let mut output = Vec::new();
@@ -159,31 +157,43 @@ impl Database for SqliteDatabase {
             let question_id = questions_iter.read::<i64, _>(Question::Id.to_string().as_str())?;
 
             let get_answers_query = query::Query::select()
-                .columns([Answer::Correct, Answer::Content])
+                .column(Answer::Content)
                 .from(Answer::Table)
                 .and_where(query::Expr::col(Answer::QuestionId).is(question_id))
                 .to_string(query::SqliteQueryBuilder);
 
-            let mut question = QuestionData {
-                question: question_content,
-                correct_answer: String::new(),
-                incorrect_answers: Vec::new(),
-            };
-
+            let mut answers = Vec::new();
             let mut answers_iter = self.conn.prepare(get_answers_query)?;
             while let State::Row = answers_iter.next()? {
                 let answer_content =
                     answers_iter.read::<String, _>(Answer::Content.to_string().as_str())?;
-                let answer_correct =
-                    answers_iter.read::<i64, _>(Answer::Correct.to_string().as_str())? == 1;
 
-                if answer_correct {
-                    question.correct_answer = answer_content;
-                } else {
-                    question.incorrect_answers.push(answer_content)
-                }
+                answers.push(answer_content);
             }
 
+            let correct_answer_query = query::Query::select()
+                .column(Answer::Content)
+                .from(Answer::Table)
+                .and_where(query::Expr::col(Answer::QuestionId).is(question_id))
+                .and_where(query::Expr::col(Answer::Correct).is(1))
+                .to_string(query::SqliteQueryBuilder);
+
+            let mut correct_answer_iter = self.conn.prepare(correct_answer_query)?;
+            let State::Row = correct_answer_iter.next()? else {
+                return Err(Error::NoCorrectAnswer {
+                    question_id,
+                    question_content,
+                });
+            };
+
+            let correct_answer =
+                correct_answer_iter.read::<String, _>(Answer::Content.to_string().as_str())?;
+
+            // I can safely unwrap here because it's impossible to get the correct answer without
+            // it being part of all of the answers
+            let correct_answer_index = answers.iter().position(|s| *s == correct_answer).unwrap();
+
+            let question = QuestionData::new(question_content, answers, correct_answer_index);
             output.push(question);
         }
 

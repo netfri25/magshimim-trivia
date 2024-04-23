@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct Question {
@@ -29,11 +29,12 @@ impl Question {
         &self.question
     }
 
-    pub fn possible_answers(&self) -> PossibleAnswers {
-        PossibleAnswers {
-            correct_answer: &self.correct_answer,
-            incorrect_answers: &self.incorrect_answers
-        }
+    pub fn correct_answer(&self) -> &str {
+        &self.correct_answer
+    }
+
+    pub fn incorrect_answers(&self) -> &[String] {
+        &self.incorrect_answers
     }
 }
 
@@ -52,15 +53,15 @@ pub enum QuestionKind {
     Multiple,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct PossibleAnswers<'a> {
-    pub correct_answer: &'a str,
-    pub incorrect_answers: &'a [String],
-}
-
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QuestionData {
     pub question: String,
-    pub correct_answer: String,
-    pub incorrect_answers: Vec<String>
+    pub answers: Vec<String>,
+    pub correct_answer_index: usize,
+}
+
+impl QuestionData {
+    pub fn new(question: String, answers: Vec<String>, correct_answer_index: usize) -> Self {
+        Self { question, answers, correct_answer_index }
+    }
 }
