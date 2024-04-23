@@ -5,6 +5,8 @@ use query::Iden;
 use sea_query as query;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
+use crate::managers::game::GameData;
+
 use super::question::QuestionData;
 use super::{opentdb, Database, Error, Score};
 
@@ -334,6 +336,53 @@ impl Database for SqliteDatabase {
         }
 
         Ok(scores)
+    }
+
+    // NOTE: not tested, hoping that this function works as expected
+    fn submit_game_data(&mut self, username: &str, game_data: GameData) -> Result<(), Error> {
+        let GameData {
+            correct_answers,
+            wrong_answers,
+            avg_time,
+            ..
+        } = game_data;
+
+        let user_id = {
+            let statement = query::Query::select()
+                .column(User::Id)
+                .from(User::Table)
+                .and_where(query::Expr::col(User::Username).eq(username))
+                .to_string(query::SqliteQueryBuilder);
+
+            let mut iter = self.conn.prepare(statement)?;
+            let State::Row = iter.next()? else {
+                return Err(Error::UserDoesntExist(username.to_string()));
+            };
+
+            iter.read::<i64, _>(User::Id.to_string().as_str())?
+        };
+
+        let old_total_answers = self.get_total_answers_count(username).unwrap_or_default();
+        let total_answers = old_total_answers + wrong_answers as i64 + correct_answers as i64;
+        let avg_time = {
+            let old_total_time = self.get_player_average_answer_time(username).unwrap_or_default().as_secs_f64() * old_total_answers as f64;
+            let new_total_time = avg_time.as_secs_f64() * (wrong_answers + correct_answers) as f64;
+            new_total_time / total_answers as f64
+        };
+
+        let correct_answers = self.get_correct_answers_count(username).unwrap_or_default() + correct_answers as i64;
+
+        let statement = query::Query::update()
+            .table(Statistics::Table)
+            .and_where(query::Expr::col(Statistics::UserId).eq(user_id))
+            .value(Statistics::CorrectAnswers, correct_answers)
+            .value(Statistics::TotalAnswers, total_answers)
+            .value(Statistics::AverageAnswerTime, avg_time)
+            .value(Statistics::TotalGames, query::Expr::col(Statistics::TotalGames).add(1))
+            .value(Statistics::Score, calc_score(Duration::from_secs_f64(avg_time), correct_answers, total_answers))
+            .to_string(query::SqliteQueryBuilder);
+
+        Ok(self.conn.execute(statement)?)
     }
 }
 

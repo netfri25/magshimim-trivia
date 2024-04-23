@@ -6,6 +6,8 @@ pub use sqlite::SqliteDatabase;
 pub mod question;
 use question::QuestionData;
 
+use crate::managers::game::GameData;
+
 pub mod opentdb;
 
 
@@ -30,6 +32,7 @@ pub trait Database: Send {
 
     // if there are less than 5 scores, it will be filled with zeros
     fn get_five_highscores(&self) -> Result<[Option<(String, Score)>; 5], Error>;
+    fn submit_game_data(&mut self, username: &str, game_data: GameData) -> Result<(), Error>;
 }
 
 #[derive(Debug, thiserror::Error)]
