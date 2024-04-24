@@ -26,7 +26,7 @@ impl GameManager {
         }
     }
 
-    pub fn create_game(&mut self, room: Room) -> Result<&Game, db::Error> {
+    pub fn create_game(&mut self, room: &Room) -> Result<&Game, db::Error> {
         let questions = self
             .db
             .lock()

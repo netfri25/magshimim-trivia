@@ -74,7 +74,7 @@ impl RoomAdminRequestHandler {
 
         let room_manager = self.factory.get_room_manager();
 
-        if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
+        if let Some(room) = room_manager.lock().unwrap().room(self.room_id) {
             let users: Vec<_> = room.users().to_vec();
 
             let game_id = self.factory.get_game_manager().lock().unwrap().create_game(room)?.id();

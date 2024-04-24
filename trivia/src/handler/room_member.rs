@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::managers::login::LoggedUser;
-use crate::managers::room::RoomID;
+use crate::managers::room::{RoomID, RoomState};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
