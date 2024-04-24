@@ -89,6 +89,8 @@ impl Database for SqliteDatabase {
                 .execute(statement.to_string(query::SqliteQueryBuilder))?;
         }
 
+        self.populate_questions(50)?;
+
         Ok(())
     }
 
