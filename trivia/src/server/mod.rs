@@ -9,8 +9,6 @@ use crate::handler::RequestHandlerFactory;
 
 pub struct TriviaServer {
     comm: Communicator,
-    db: Arc<Mutex<dyn Database>>,
-    factory: Arc<RequestHandlerFactory>,
 }
 
 impl TriviaServer {
@@ -19,7 +17,7 @@ impl TriviaServer {
         let db = Arc::new(Mutex::new(db));
         let factory = Arc::new(RequestHandlerFactory::new(db.clone()));
         let comm = Communicator::build(addr, factory.clone())?;
-        Ok(Self { comm, db, factory })
+        Ok(Self { comm })
     }
 
     pub fn run(self) {

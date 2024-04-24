@@ -55,6 +55,12 @@ impl RoomMemberRequestHandler {
             return self.leave_room();
         };
 
+        if room.room_data().state == RoomState::InGame {
+            let resp = Response::StartGame;
+            let handler = self.factory.create_game_request_handler(self.member.clone(), self.room_id);
+            return Ok(RequestResult::new(resp, handler))
+        }
+
         Ok(RequestResult::without_handler(Response::RoomState {
             state: room.room_data().state,
             name: room.room_data().name.clone(),

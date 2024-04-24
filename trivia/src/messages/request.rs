@@ -35,10 +35,7 @@ pub enum Request {
     LeaveGame,
     Question,
     SubmitAnswer(String),
-
-    // no need for requesting the GameResult, the server will already send it when all of the
-    // players have finished the game
-    // GameResult,
+    GameResult,
 }
 
 impl Request {

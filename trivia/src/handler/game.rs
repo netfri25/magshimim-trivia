@@ -19,7 +19,10 @@ pub struct GameRequestHandler {
 impl Handler for GameRequestHandler {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
-        matches!(request_info.data, LeaveGame | Question | SubmitAnswer(_))
+        matches!(
+            request_info.data,
+            LeaveGame | Question | SubmitAnswer(_) | GameResult
+        )
     }
 
     fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
@@ -33,6 +36,7 @@ impl Handler for GameRequestHandler {
                 answer,
                 request_info.time.duration_since(self.question_sent_at),
             ),
+            Request::GameResult => self.game_results(),
             _ => Ok(RequestResult::new_error("Invalid request")),
         }
     }
@@ -91,24 +95,35 @@ impl GameRequestHandler {
         Ok(RequestResult::new(resp, handler))
     }
 
+    #[allow(redundant_semicolons, unused_parens)]
     fn submit_answer(
         &self,
         answer: String,
         answer_duration: Duration,
     ) -> Result<RequestResult, Error> {
-        let game_manager = self.factory.get_game_manager();
-        let mut game_manager_lock = game_manager.lock().unwrap();
-        let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
-            return Ok(RequestResult::new_error("Invalid Game ID".to_string()));
-        };
+        let game_manager = self.factory.get_game_manager();;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        let mut game_manager_lock = game_manager.lock().unwrap();;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        let Some((((((((((((game)))))))))))) = game_manager_lock.game_mut(&self.game_id) else {
+            return Ok(RequestResult::new_error("Invalid Game ID".to_string()));;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        };;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
         let correct_answer = game
             .submit_answer(self.user.clone(), answer, answer_duration)?
-            .to_string();
+            .to_string();;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-        if game.all_finished() {
-            let players_results: Vec<_> = game
-                .results()
+        let resp = Response::CorrectAnswer(correct_answer);;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        Ok(RequestResult::without_handler(resp))
+    }
+
+    fn game_results(&self) -> Result<RequestResult, Error> {
+        let game_manager = self.factory.get_game_manager();
+        let mut game_manager_lock = game_manager.lock().unwrap();
+        let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
+            return Ok(RequestResult::new_error("Game doesn't exist"));
+        };
+
+        let resp = Response::GameResult(
+            game.results()
                 .map(|(user, data)| {
                     PlayerResults::new(
                         user.username(),
@@ -117,18 +132,9 @@ impl GameRequestHandler {
                         data.avg_time,
                     )
                 })
-                .collect();
+                .collect(),
+        );
 
-            for user in game.users() {
-                if let Some(sender) = self.factory.channels().lock().unwrap().get(user.username()) {
-                    let resp = Response::GameResult(players_results.clone());
-                    sender.send(RequestResult::without_handler(resp)).ok();
-                }
-            }
-        }
-
-        Ok(RequestResult::without_handler(Response::CorrectAnswer(
-            correct_answer,
-        )))
+        Ok(RequestResult::without_handler(resp))
     }
 }

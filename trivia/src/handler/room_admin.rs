@@ -41,26 +41,7 @@ impl RoomAdminRequestHandler {
 
     fn close_room(&mut self) -> Result<RequestResult, Error> {
         let room_manager = self.factory.get_room_manager();
-        if let Some(room) = room_manager.lock().unwrap().delete_room(self.room_id) {
-            let users = room.users().iter().map(|u| u.username());
-
-            // send to everyone in the room that the room has been closed
-            for user in users {
-                if let Some(sender) = self.factory.channels().lock().unwrap().get(user) {
-                    let resp = Response::LeaveRoom;
-                    let handler = self.factory.create_menu_request_handler(LoggedUser::new(user.to_string()));
-
-
-                    // if the client doesn't receive it, it means that the Receiver has been
-                    // dropped which means that it's the exact split second that the user
-                    // disconnects but the HashMap hasn't been updated yet, and in that case I
-                    // don't give a shit. for that reason I'm using the .ok() method to ignore any
-                    // errors
-                    sender.send(RequestResult::new(resp, handler)).ok();
-                };
-            }
-        };
-
+        room_manager.lock().unwrap().delete_room(self.room_id);
         let resp = Response::CloseRoom;
         let handler = self.factory.create_menu_request_handler(self.admin.clone());
         Ok(RequestResult::new(resp, handler))
@@ -73,23 +54,19 @@ impl RoomAdminRequestHandler {
         }
 
         let room_manager = self.factory.get_room_manager();
+        let room_manager_lock = room_manager.lock().unwrap();
 
-        if let Some(room) = room_manager.lock().unwrap().room(self.room_id) {
-            let users: Vec<_> = room.users().to_vec();
+        let Some(room) = room_manager_lock.room(self.room_id) else {
+            return Ok(RequestResult::new_error("Room doesn't exist"));
+        };
 
-            let game_id = self.factory.get_game_manager().lock().unwrap().create_game(room)?.id();
+        let game_id = self.factory.get_game_manager().lock().unwrap().create_game(room)?.id();
 
-            // send to everyone in the room that the game has started
-            for user in users {
-                if let Some(sender) = self.factory.channels().lock().unwrap().get(user.username()) {
-                    let resp = Response::StartGame;
-                    let handler = self.factory.create_game_request_handler(user, game_id);
-                    sender.send(RequestResult::new(resp, handler)).ok();
-                };
-            }
-        }
+        drop(room_manager_lock);
 
-        Ok(RequestResult::without_handler(Response::StartGame))
+        let resp = Response::StartGame;
+        let handler = self.factory.create_game_request_handler(self.admin.clone(), game_id);
+        Ok(RequestResult::new(resp, handler))
     }
 
     fn room_state(&self) -> Result<RequestResult, Error> {

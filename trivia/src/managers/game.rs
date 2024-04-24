@@ -9,7 +9,7 @@ use crate::db::question::QuestionData;
 use crate::db::{self, Database};
 
 use super::login::LoggedUser;
-use super::room::Room;
+use super::room::{Room, RoomID};
 
 pub type GameID = i64;
 
@@ -32,7 +32,7 @@ impl GameManager {
             .lock()
             .unwrap()
             .get_questions(room.room_data().questions_count)?;
-        let game = Game::new(room.users().iter().cloned(), questions);
+        let game = Game::new(room.room_data().room_id, room.users().iter().cloned(), questions);
         Ok(self.games.entry(game.id).or_insert(game))
     }
 
@@ -66,14 +66,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(users: impl Iterator<Item = LoggedUser>, questions: Vec<QuestionData>) -> Self {
-        static COUNTER: Mutex<GameID> = Mutex::new(0);
-        let id = {
-            let mut counter = COUNTER.lock().unwrap();
-            *counter += 1;
-            *counter
-        };
-
+    pub fn new(id: RoomID, users: impl Iterator<Item = LoggedUser>, questions: Vec<QuestionData>) -> Self {
         let players = users.zip(iter::repeat_with(GameData::default)).collect();
 
         Self {
