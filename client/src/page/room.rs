@@ -13,7 +13,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{MainMenuPage, Page};
+use super::{GamePage, MainMenuPage, Page};
 
 // NOTE: my temporary solution is to consider the first user in the users list as the admin, not
 // sure how great of a solution that is but ig it will work
@@ -47,7 +47,7 @@ impl Page for RoomPage {
                     self.players = players.clone()
                 },
 
-                Response::StartGame => todo!("switch to the StartGame page"),
+                Response::StartGame => return Action::switch_and_request(GamePage::default(), Request::Question),
 
                 Response::LeaveRoom => return Action::switch(MainMenuPage),
 
