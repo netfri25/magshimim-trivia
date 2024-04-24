@@ -367,7 +367,7 @@ impl Database for SqliteDatabase {
         let avg_time = {
             let old_total_time = self.get_player_average_answer_time(username).unwrap_or_default().as_secs_f64() * old_total_answers as f64;
             let new_total_time = avg_time.as_secs_f64() * (wrong_answers + correct_answers) as f64;
-            new_total_time / total_answers as f64
+            (old_total_time + new_total_time) / total_answers as f64
         };
 
         let correct_answers = self.get_correct_answers_count(username).unwrap_or_default() + correct_answers as i64;
