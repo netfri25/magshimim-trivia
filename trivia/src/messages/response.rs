@@ -37,7 +37,7 @@ pub enum Response {
     },
     LeaveRoom,
     LeaveGame,
-    SubmitAnswer(usize), // the correct answer index
+    CorrectAnswer(String),
 
     // the `correct_answer_index` will be set to usize::MAX so that the client can't cheat
     // additionally, the answers will be shuffled when sent to the user

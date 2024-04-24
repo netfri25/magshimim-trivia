@@ -64,4 +64,8 @@ impl QuestionData {
     pub fn new(question: String, answers: Vec<String>, correct_answer_index: usize) -> Self {
         Self { question, answers, correct_answer_index }
     }
+
+    pub(crate) fn correct_answer(&self) -> &str {
+        &self.answers[self.correct_answer_index]
+    }
 }

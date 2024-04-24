@@ -34,9 +34,7 @@ pub enum Request {
     LeaveRoom,
     LeaveGame,
     Question,
-
-    // the answer index
-    SubmitAnswer(usize),
+    SubmitAnswer(String),
 
     // no need for requesting the GameResult, the server will already send it when all of the
     // players have finished the game

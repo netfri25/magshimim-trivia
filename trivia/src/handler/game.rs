@@ -93,7 +93,7 @@ impl GameRequestHandler {
 
     fn submit_answer(
         &self,
-        answer_index: usize,
+        answer: String,
         answer_duration: Duration,
     ) -> Result<RequestResult, Error> {
         let game_manager = self.factory.get_game_manager();
@@ -102,8 +102,9 @@ impl GameRequestHandler {
             return Ok(RequestResult::new_error("Invalid Game ID".to_string()));
         };
 
-        let correct_answer_index =
-            game.submit_answer(self.user.clone(), answer_index, answer_duration)?;
+        let correct_answer = game
+            .submit_answer(self.user.clone(), answer, answer_duration)?
+            .to_string();
 
         if game.all_finished() {
             let players_results: Vec<_> = game
@@ -126,8 +127,8 @@ impl GameRequestHandler {
             }
         }
 
-        Ok(RequestResult::without_handler(Response::SubmitAnswer(
-            correct_answer_index,
+        Ok(RequestResult::without_handler(Response::CorrectAnswer(
+            correct_answer,
         )))
     }
 }

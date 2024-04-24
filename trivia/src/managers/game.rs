@@ -98,9 +98,9 @@ impl Game {
     pub fn submit_answer(
         &mut self,
         user: LoggedUser,
-        answer_index: usize,
+        answer: String,
         answer_time: Duration,
-    ) -> Result<usize, db::Error> {
+    ) -> Result<&str, db::Error> {
         let game_data = self
             .players
             .get_mut(&user)
@@ -112,9 +112,9 @@ impl Game {
             .get(game_data.current_question_index)
             .ok_or_else(|| anyhow!("CRITICAL ERROR: unexpected current question index"))?;
 
-        let correct = question.correct_answer_index == answer_index;
+        let correct = question.correct_answer() == answer;
         game_data.submit_answer(correct, answer_time);
-        Ok(question.correct_answer_index)
+        Ok(question.correct_answer())
     }
 
     pub fn remove_user(&mut self, user: &LoggedUser) {
