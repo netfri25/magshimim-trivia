@@ -82,12 +82,12 @@ impl Game {
 
     pub fn get_question_for_user(&mut self, user: &LoggedUser) -> Option<&QuestionData> {
         let game_data = self.players.get_mut(user)?;
-        let index = game_data.current_question_index;
         game_data.current_question_index += 1;
+        let index = game_data.current_question_index - 1;
         self.questions.get(index)
     }
 
-    // returns the correct answer index
+    // returns the correct answer index and goes to the next question
     pub fn submit_answer(
         &mut self,
         user: LoggedUser,
@@ -102,7 +102,7 @@ impl Game {
         // TODO: proper error
         let question = self
             .questions
-            .get(game_data.current_question_index)
+            .get(game_data.current_question_index - 1)
             .ok_or_else(|| anyhow!("CRITICAL ERROR: unexpected current question index"))?;
 
         let correct = question.correct_answer() == answer;
@@ -110,8 +110,9 @@ impl Game {
         Ok(question.correct_answer())
     }
 
-    pub fn remove_user(&mut self, user: &LoggedUser) {
-        self.players.remove(user);
+    pub fn remove_user(&mut self, _user: &LoggedUser) {
+        // I want to keep the user result
+        // self.players.remove(user);
     }
 
     pub fn users(&self) -> impl Iterator<Item = &LoggedUser> {
