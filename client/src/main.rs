@@ -1,4 +1,3 @@
-use std::io;
 use std::sync::Arc;
 
 use iced::{
@@ -19,7 +18,7 @@ use action::Action;
 
 mod connection;
 use connection::Connection;
-use trivia::messages::{self, Request, Response};
+use trivia::messages::{Request, Response};
 
 mod consts;
 
@@ -88,6 +87,8 @@ impl Application for Client {
 
             Message::Quit => std::process::exit(0),
 
+            Message::Nothing => return Command::none(),
+
             _ => {}
         };
 
@@ -141,24 +142,10 @@ impl Application for Client {
         subs.push(self.page.subscription());
         subs.push(iced::event::listen().map(handle_event));
 
-        if self.conn.is_connected() {
-            let sub = iced::subscription::unfold(
-                "listener",
-                Arc::downgrade(&self.conn),
-                |conn| async move {
-                    if let Some(conn) = conn.upgrade() {
-                        let res = conn.recv();
-                        (response_as_message(res), Arc::downgrade(&conn))
-                    } else {
-                        (Message::Nothing, conn)
-                    }
-                },
-            );
-
-            subs.push(sub);
-        };
-
-        iced::Subscription::batch(subs)
+        iced::Subscription::batch([
+            self.page.subscription(),
+            iced::event::listen().map(handle_event),
+        ])
     }
 }
 
@@ -171,9 +158,9 @@ impl Client {
         Command::perform(
             {
                 let conn = self.conn.clone();
-                async move { conn.send(req) }
+                async move { conn.send_and_recv(req).await }
             },
-            |_| Message::Nothing,
+            response_as_message,
         )
     }
 }
