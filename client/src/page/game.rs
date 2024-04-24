@@ -6,7 +6,9 @@ use iced::{theme, Alignment, Length};
 use trivia::db::question::QuestionData;
 use trivia::messages::{Request, Response};
 
-use crate::{action::Action, consts, message::Message};
+use crate::message::Message;
+use crate::consts;
+use crate::action::Action;
 
 use super::Page;
 
