@@ -10,6 +10,7 @@ use crate::page::{createroom, joinroom, login, mainmenu, register, room, statist
 pub enum Message {
     Nothing,
     Quit,
+    Connect,
 
     Connected(Arc<connection::Connection>),
     Error(Arc<connection::Error>),
