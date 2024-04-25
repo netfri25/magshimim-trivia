@@ -388,6 +388,8 @@ impl Database for SqliteDatabase {
         let correct_answers =
             self.get_correct_answers_count(username).unwrap_or_default() + correct_answers as i64;
 
+        let total_games = self.get_games_count(username).unwrap_or_default() + 1;
+
         let statement = query::Query::insert()
             .replace()
             .into_table(Statistics::Table)
@@ -397,6 +399,7 @@ impl Database for SqliteDatabase {
                 Statistics::TotalAnswers,
                 Statistics::AverageAnswerTime,
                 Statistics::TotalAnswers,
+                Statistics::TotalGames,
                 Statistics::Score,
             ])
             .values_panic([
@@ -405,6 +408,7 @@ impl Database for SqliteDatabase {
                 total_answers.into(),
                 avg_time.into(),
                 total_answers.into(),
+                total_games.into(),
                 calc_score(
                     Duration::from_secs_f64(avg_time),
                     correct_answers,
