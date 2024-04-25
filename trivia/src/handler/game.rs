@@ -61,6 +61,8 @@ impl GameRequestHandler {
 
         let mut question = game.get_question_for_user(&self.user).cloned();
 
+        drop(game_manager_lock);
+
         // change any information that can give away the correct answer
         if let Some(ref mut question) = question {
             let mut rng = Rng::from_seed(
@@ -146,6 +148,7 @@ impl GameRequestHandler {
             vec![]
         };
 
+        drop(game_manager_lock);
         self.leave_game()?;
 
         let resp = Response::GameResult(results);
