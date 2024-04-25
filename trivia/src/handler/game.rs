@@ -130,7 +130,7 @@ impl GameRequestHandler {
             return Ok(RequestResult::without_handler(Response::LeaveGame));
         };
 
-        let results = if game.all_finished() {
+        if game.all_finished() {
             let mut results: Vec<_> = game
                 .results()
                 .map(|(user, data)| {
@@ -143,16 +143,16 @@ impl GameRequestHandler {
                 })
                 .collect();
             results.sort_by(|res1, res2| res1.score.total_cmp(&res2.score).reverse());
-            results
+
+            drop(game_manager_lock);
+            self.leave_game()?;
+
+            let resp = Response::GameResult(results);
+            let handler = self.factory.create_menu_request_handler(self.user.clone());
+            Ok(RequestResult::new(resp, handler))
         } else {
-            vec![]
-        };
-
-        drop(game_manager_lock);
-        self.leave_game()?;
-
-        let resp = Response::GameResult(results);
-        let handler = self.factory.create_menu_request_handler(self.user.clone());
-        Ok(RequestResult::new(resp, handler))
+            let resp = Response::GameResult(vec![]);
+            Ok(RequestResult::without_handler(resp))
+        }
     }
 }
