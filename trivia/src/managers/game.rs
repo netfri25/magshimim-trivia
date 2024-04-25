@@ -182,8 +182,8 @@ impl GameData {
     }
 }
 
-pub fn calc_score(average_answer_time: Duration, correct_answers: i64) -> Score {
+pub fn calc_score(answer_time: Duration, correct_answers: i64) -> Score {
     // TODO: the user can just spam wrong answers and still get a really good score
     //       find a way to prevent this, meaning a new score evaluation algorithm
-    correct_answers as f64 * average_answer_time.as_secs_f64().max(1.).recip()
+    correct_answers as f64 / answer_time.as_secs_f64()
 }
