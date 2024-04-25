@@ -29,6 +29,7 @@ pub enum Msg {
 pub struct RoomPage {
     room_name: String,
     players: Vec<LoggedUser>,
+    time_per_question: Duration,
     is_admin: bool, // true when the current user is the admin
 }
 
@@ -44,10 +45,11 @@ impl Page for RoomPage {
                     time_per_question,
                 } => {
                     self.room_name = name.clone();
-                    self.players = players.clone()
+                    self.players = players.clone();
+                    self.time_per_question = *time_per_question;
                 },
 
-                Response::StartGame => return Action::switch_and_request(GamePage::default(), Request::Question),
+                Response::StartGame => return Action::switch_and_request(GamePage::new(self.time_per_question), Request::Question),
 
                 Response::LeaveRoom => return Action::switch(MainMenuPage),
 
@@ -133,6 +135,7 @@ impl RoomPage {
         Self {
             room_name: String::new(),
             players: vec![],
+            time_per_question: Default::default(),
             is_admin,
         }
     }
