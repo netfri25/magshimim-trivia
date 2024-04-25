@@ -71,8 +71,9 @@ impl Communicator {
                 let req = Request::Logout;
                 let mut clients_mx = self.clients.lock().unwrap();
                 clients_mx
-                    .get_mut(&addr)
-                    .map(|handler| handler.handle(RequestInfo::new_now(req)));
+                    .remove(&addr)
+                    .map(|mut handler| handler.handle(RequestInfo::new_now(req)));
+
             }
         });
 
