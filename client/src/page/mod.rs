@@ -31,6 +31,9 @@ pub use highscores::HighScoresPage;
 pub mod game;
 pub use game::GamePage;
 
+pub mod results;
+pub use results::ResultsPage;
+
 pub trait Page {
     fn update(&mut self, message: Message) -> Action;
     fn view(&self) -> iced::Element<Message>;

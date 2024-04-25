@@ -3,7 +3,7 @@ use std::sync::Arc;
 use trivia::messages::Response;
 
 use crate::connection;
-use crate::page::{createroom, joinroom, login, mainmenu, register, room, statistics, game};
+use crate::page::{createroom, joinroom, login, mainmenu, register, room, statistics, game, results};
 
 #[derive(From, Debug, Clone)]
 #[non_exhaustive]
@@ -37,5 +37,8 @@ pub enum Message {
     Statistics(statistics::Msg),
 
     #[from]
-    Game(game::Msg)
+    Game(game::Msg),
+
+    #[from]
+    Results(results::Msg)
 }

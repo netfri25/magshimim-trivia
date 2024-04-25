@@ -10,7 +10,7 @@ use crate::message::Message;
 use crate::consts;
 use crate::action::Action;
 
-use super::Page;
+use super::{Page, ResultsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -39,7 +39,7 @@ impl Page for GamePage {
                         self.selected_answer = None;
                         self.correct_answer = None;
                     } else {
-                        todo!("switch to the results page")
+                        return Action::switch_and_request(ResultsPage::default(), Request::GameResult);
                     }
                 }
 
