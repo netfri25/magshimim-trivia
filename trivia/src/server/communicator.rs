@@ -73,7 +73,6 @@ impl Communicator {
                 clients_mx
                     .remove(&addr)
                     .map(|mut handler| handler.handle(RequestInfo::new_now(req)));
-
             }
         });
 
