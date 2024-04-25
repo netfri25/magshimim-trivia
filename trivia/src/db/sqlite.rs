@@ -5,7 +5,7 @@ use query::Iden;
 use sea_query as query;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
-use crate::managers::game::GameData;
+use crate::managers::game::{calc_score, GameData};
 
 use super::question::QuestionData;
 use super::{opentdb, Database, Error, Score};
@@ -409,15 +409,6 @@ impl Database for SqliteDatabase {
 
         Ok(self.conn.execute(statement)?)
     }
-}
-
-pub fn calc_score(
-    average_answer_time: Duration,
-    correct_answers: i64,
-) -> Score {
-    // TODO: the user can just spam wrong answers and still get a really good score
-    //       find a way to prevent this, meaning a new score evaluation algorithm
-    correct_answers as f64 * average_answer_time.as_secs_f64().max(1.).recip()
 }
 
 // Users table definition

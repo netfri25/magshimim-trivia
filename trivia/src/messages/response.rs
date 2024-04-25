@@ -4,8 +4,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
-use crate::db::sqlite::calc_score;
-use crate::db::Score;
+use crate::managers::game::{calc_score, Score};
 use crate::managers::login::LoggedUser;
 use crate::managers::statistics::Statistics;
 use crate::managers::room::{Room, RoomID, RoomState};

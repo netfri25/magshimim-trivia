@@ -8,7 +8,7 @@ use crate::message::Message;
 
 use super::Page;
 
-use trivia::db::Score;
+use trivia::managers::game::Score;
 
 pub struct HighScoresPage {
     scores: [Option<(String, Score)>; 5],

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::db::Score;
+use crate::managers::game::Score;
 use crate::managers::login::LoggedUser;
 use crate::managers::room::{RoomData, RoomID};
 use crate::managers::statistics::Statistics;

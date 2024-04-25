@@ -6,12 +6,9 @@ pub use sqlite::SqliteDatabase;
 pub mod question;
 use question::QuestionData;
 
-use crate::managers::game::GameData;
+use crate::managers::game::{GameData, Score};
 
 pub mod opentdb;
-
-
-pub type Score = f64;
 
 pub trait Database: Send {
     fn open(&mut self) -> Result<(), Error>;
