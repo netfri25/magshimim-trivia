@@ -112,7 +112,8 @@ impl Game {
 
     pub fn remove_user(&mut self, user: &LoggedUser) {
         if let Some(data) = self.players.get_mut(user) {
-            data.current_question_index = usize::MAX; // mark as if the user has finished
+            // mark as if the user has finished
+            data.current_question_index = self.questions.len() + 1;
         }
     }
 
