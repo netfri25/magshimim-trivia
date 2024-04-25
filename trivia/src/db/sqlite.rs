@@ -28,13 +28,14 @@ impl SqliteDatabase {
                 .into_table(Question::Table)
                 .columns([Question::Content])
                 .values_panic([question.question().into()])
-                .on_conflict(
-                    query::OnConflict::column(Question::Content)
-                        .do_nothing()
-                        .to_owned(),
-                )
                 .to_string(query::SqliteQueryBuilder);
-            self.conn.execute(question_insert_query)?;
+
+            // when encountering a question that already exists on the db (19 => unique constraint
+            // conflict) just skip it and go to the next question
+            match self.conn.execute(question_insert_query) {
+                Err(sqlite::Error { code: Some(19), .. }) => continue,
+                res => res?,
+            };
 
             let question_id = {
                 let select_query = query::Query::select()
