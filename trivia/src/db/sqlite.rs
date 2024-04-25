@@ -221,7 +221,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -243,7 +243,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -265,7 +265,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -286,7 +286,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -303,11 +303,11 @@ impl Database for SqliteDatabase {
 
     fn get_score(&self, username: &str) -> Result<super::Score, Error> {
         let statement = query::Query::select()
-            .column(Statistics::Score)
+            .column(Statistics::OverallScore)
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -318,19 +318,19 @@ impl Database for SqliteDatabase {
             return Err(Error::UserDoesntExist(username.to_string()));
         }
 
-        let total_games = iter.read::<Score, _>(Statistics::Score.to_string().as_str())?;
+        let total_games = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
         Ok(total_games)
     }
 
     fn get_five_highscores(&self) -> Result<[Option<(String, super::Score)>; 5], Error> {
         let statement = query::Query::select()
             .column(User::Username)
-            .column(Statistics::Score)
+            .column(Statistics::OverallScore)
             .from(Statistics::Table)
-            .order_by(Statistics::Score, query::Order::Desc)
+            .order_by(Statistics::OverallScore, query::Order::Desc)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .limit(5)
@@ -341,7 +341,7 @@ impl Database for SqliteDatabase {
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {
             let username = iter.read::<String, _>(User::Username.to_string().as_str())?;
-            let score = iter.read::<Score, _>(Statistics::Score.to_string().as_str())?;
+            let score = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
             scores[index] = Some((username, score));
             index += 1;
         }
@@ -352,9 +352,9 @@ impl Database for SqliteDatabase {
     // NOTE: not tested, hoping that this function works as expected
     fn submit_game_data(&mut self, username: &str, game_data: GameData) -> Result<(), Error> {
         let GameData {
-            correct_answers,
-            wrong_answers,
-            avg_time,
+            correct_answers: current_correct_answers,
+            wrong_answers: current_wrong_answers,
+            avg_time: current_avg_time,
             ..
         } = game_data;
 
@@ -374,19 +374,21 @@ impl Database for SqliteDatabase {
         };
 
         let old_total_answers = self.get_total_answers_count(username).unwrap_or_default();
-        let total_answers = old_total_answers + wrong_answers as i64 + correct_answers as i64;
+        let total_answers =
+            old_total_answers + current_wrong_answers as i64 + current_correct_answers as i64;
         let avg_time = {
             let old_total_time = self
                 .get_player_average_answer_time(username)
                 .unwrap_or_default()
                 .as_secs_f64()
                 * old_total_answers as f64;
-            let new_total_time = avg_time.as_secs_f64() * (wrong_answers + correct_answers) as f64;
-            (old_total_time + new_total_time) / total_answers as f64
+            let current_total_time = current_avg_time.as_secs_f64()
+                * (current_wrong_answers + current_correct_answers) as f64;
+            (old_total_time + current_total_time) / total_answers as f64
         };
 
-        let correct_answers =
-            self.get_correct_answers_count(username).unwrap_or_default() + correct_answers as i64;
+        let correct_answers = self.get_correct_answers_count(username).unwrap_or_default()
+            + current_correct_answers as i64;
 
         let total_games = self.get_games_count(username).unwrap_or_default() + 1;
 
@@ -394,13 +396,13 @@ impl Database for SqliteDatabase {
             .replace()
             .into_table(Statistics::Table)
             .columns([
-                Statistics::UserId,
+                Statistics::Id,
                 Statistics::CorrectAnswers,
                 Statistics::TotalAnswers,
                 Statistics::AverageAnswerTime,
                 Statistics::TotalAnswers,
                 Statistics::TotalGames,
-                Statistics::Score,
+                Statistics::OverallScore,
             ])
             .values_panic([
                 user_id.into(),
@@ -409,10 +411,7 @@ impl Database for SqliteDatabase {
                 avg_time.into(),
                 total_answers.into(),
                 total_games.into(),
-                calc_score(
-                    Duration::from_secs_f64(avg_time),
-                    correct_answers,
-                ).into(),
+                calc_score(Duration::from_secs_f64(avg_time), correct_answers).into(),
             ])
             .to_string(query::SqliteQueryBuilder);
 
@@ -523,13 +522,12 @@ impl Answer {
 #[derive(query::Iden)]
 enum Statistics {
     Table,
-    Id,
+    Id, // also the user_id
     CorrectAnswers,
     TotalAnswers,
     AverageAnswerTime, // in seconds
     TotalGames,
-    Score,
-    UserId,
+    OverallScore,
 }
 
 impl Statistics {
@@ -541,8 +539,7 @@ impl Statistics {
                 query::ColumnDef::new(Statistics::Id)
                     .integer()
                     .not_null()
-                    .primary_key()
-                    .auto_increment(),
+                    .primary_key(),
             )
             .col(
                 query::ColumnDef::new(Statistics::CorrectAnswers)
@@ -564,15 +561,10 @@ impl Statistics {
                     .integer()
                     .not_null(),
             )
-            .col(query::ColumnDef::new(Statistics::Score).double().not_null())
-            .col(
-                query::ColumnDef::new(Statistics::UserId)
-                    .integer()
-                    .not_null(),
-            )
+            .col(query::ColumnDef::new(Statistics::OverallScore).double().not_null())
             .foreign_key(
                 query::ForeignKey::create()
-                    .from(Statistics::Table, Statistics::UserId)
+                    .from(Statistics::Table, Statistics::Id)
                     .to(User::Table, User::Id),
             )
             .to_owned()
@@ -620,8 +612,8 @@ mod tests {
                 Statistics::TotalAnswers,
                 Statistics::AverageAnswerTime,
                 Statistics::TotalGames,
-                Statistics::Score,
-                Statistics::UserId,
+                Statistics::OverallScore,
+                Statistics::Id,
             ])
             .into_table(Statistics::Table)
             .values_panic([
