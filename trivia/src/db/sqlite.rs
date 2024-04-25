@@ -28,6 +28,11 @@ impl SqliteDatabase {
                 .into_table(Question::Table)
                 .columns([Question::Content])
                 .values_panic([question.question().into()])
+                .on_conflict(
+                    query::OnConflict::column(Question::Content)
+                        .do_nothing()
+                        .to_owned(),
+                )
                 .to_string(query::SqliteQueryBuilder);
             self.conn.execute(question_insert_query)?;
 
@@ -367,12 +372,17 @@ impl Database for SqliteDatabase {
         let old_total_answers = self.get_total_answers_count(username).unwrap_or_default();
         let total_answers = old_total_answers + wrong_answers as i64 + correct_answers as i64;
         let avg_time = {
-            let old_total_time = self.get_player_average_answer_time(username).unwrap_or_default().as_secs_f64() * old_total_answers as f64;
+            let old_total_time = self
+                .get_player_average_answer_time(username)
+                .unwrap_or_default()
+                .as_secs_f64()
+                * old_total_answers as f64;
             let new_total_time = avg_time.as_secs_f64() * (wrong_answers + correct_answers) as f64;
             (old_total_time + new_total_time) / total_answers as f64
         };
 
-        let correct_answers = self.get_correct_answers_count(username).unwrap_or_default() + correct_answers as i64;
+        let correct_answers =
+            self.get_correct_answers_count(username).unwrap_or_default() + correct_answers as i64;
 
         let statement = query::Query::update()
             .table(Statistics::Table)
@@ -380,16 +390,29 @@ impl Database for SqliteDatabase {
             .value(Statistics::CorrectAnswers, correct_answers)
             .value(Statistics::TotalAnswers, total_answers)
             .value(Statistics::AverageAnswerTime, avg_time)
-            .value(Statistics::TotalGames, query::Expr::col(Statistics::TotalGames).add(1))
-            .value(Statistics::Score, calc_score(Duration::from_secs_f64(avg_time), correct_answers, total_answers))
+            .value(
+                Statistics::TotalGames,
+                query::Expr::col(Statistics::TotalGames).add(1),
+            )
+            .value(
+                Statistics::Score,
+                calc_score(
+                    Duration::from_secs_f64(avg_time),
+                    correct_answers,
+                    total_answers,
+                ),
+            )
             .to_string(query::SqliteQueryBuilder);
 
         Ok(self.conn.execute(statement)?)
     }
 }
 
-#[allow(unused)]
-fn calc_score(average_answer_time: Duration, correct_answers: i64, total_answers: i64) -> Score {
+pub fn calc_score(
+    average_answer_time: Duration,
+    correct_answers: i64,
+    total_answers: i64,
+) -> Score {
     // TODO: the user can just spam wrong answers and still get a really good score
     //       find a way to prevent this, meaning a new score evaluation algorithm
     let answer_ratio = correct_answers as f64 / total_answers as f64;
