@@ -110,9 +110,10 @@ impl Game {
         Ok(question.correct_answer())
     }
 
-    pub fn remove_user(&mut self, _user: &LoggedUser) {
-        // I want to keep the user result
-        // self.players.remove(user);
+    pub fn remove_user(&mut self, user: &LoggedUser) {
+        if let Some(data) = self.players.get_mut(user) {
+            data.current_question_index = usize::MAX; // mark as if the user has finished
+        }
     }
 
     pub fn users(&self) -> impl Iterator<Item = &LoggedUser> {
@@ -121,9 +122,10 @@ impl Game {
 
     // NOTE: can be optimized, but I don't really care about performance
     pub fn all_finished(&self) -> bool {
+        // because that I'm using (current_question_index - 1) then I'm comparing with `>` instead of `>=`
         self.players
             .values()
-            .all(|data| data.current_question_index == self.questions.len())
+            .all(|data| data.current_question_index > self.questions.len())
     }
 
     pub fn results(&self) -> impl Iterator<Item = (&LoggedUser, &GameData)> {
