@@ -122,19 +122,24 @@ impl GameRequestHandler {
             return Ok(RequestResult::new_error("Game doesn't exist"));
         };
 
-        let mut results: Vec<_> = game
-            .results()
-            .map(|(user, data)| {
-                PlayerResults::new(
-                    user.username(),
-                    data.correct_answers,
-                    data.wrong_answers,
-                    data.avg_time,
-                )
-            })
-            .collect();
+        let results = if game.all_finished() {
+            let mut results: Vec<_> = game
+                .results()
+                .map(|(user, data)| {
+                    PlayerResults::new(
+                        user.username(),
+                        data.correct_answers,
+                        data.wrong_answers,
+                        data.avg_time,
+                    )
+                })
+                .collect();
+            results.sort_by(|res1, res2| res1.score.total_cmp(&res2.score).reverse());
+            results
+        } else {
+            vec![]
+        };
 
-        results.sort_by(|res1, res2| res1.score.total_cmp(&res2.score));
         let resp = Response::GameResult(results);
         Ok(RequestResult::without_handler(resp))
     }
