@@ -95,7 +95,10 @@ impl Database for SqliteDatabase {
                 .execute(statement.to_string(query::SqliteQueryBuilder))?;
         }
 
-        self.populate_questions(50)?;
+        match self.populate_questions(50) {
+            Err(Error::OpenTDB(err)) => eprintln!("[INFO] can't get questions: {}", err),
+            res => res?,
+        };
 
         Ok(())
     }
