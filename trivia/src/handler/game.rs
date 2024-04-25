@@ -146,7 +146,10 @@ impl GameRequestHandler {
             vec![]
         };
 
+        self.leave_game()?;
+
         let resp = Response::GameResult(results);
-        Ok(RequestResult::without_handler(resp))
+        let handler = self.factory.create_menu_request_handler(self.user.clone());
+        Ok(RequestResult::new(resp, handler))
     }
 }
