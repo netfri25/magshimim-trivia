@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use iced::alignment::{Horizontal, Vertical};
 use iced::widget::scrollable::{Direction, Properties};
-use iced::widget::{column, container, horizontal_space, row, scrollable, text, Column};
+use iced::widget::{
+    button, column, container, horizontal_space, row, scrollable, text, vertical_space, Column,
+};
 use iced::{Alignment, Length, Pixels, Subscription};
 use trivia::messages::{PlayerResults, Request, Response};
 
@@ -10,11 +12,12 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{MainMenuPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     GetResults,
+    Cry,
 }
 
 #[derive(Default)]
@@ -41,11 +44,11 @@ impl Page for ResultsPage {
 
         match msg {
             Msg::GetResults => Action::request(Request::GameResult),
+            Msg::Cry => Action::switch(MainMenuPage),
         }
     }
 
     fn view(&self) -> iced::Element<Message> {
-
         let title = text("Results")
             .size(consts::TITLE_SIZE)
             .width(Length::Fill)
@@ -74,13 +77,20 @@ impl Page for ResultsPage {
             .into()
         };
 
+        let cry_button = button(text("Cry").size(30)).on_press(Msg::Cry.into());
+
         container(
             column![
                 title.height(Length::FillPortion(2)),
                 row![
                     horizontal_space().width(Length::FillPortion(3)),
                     results,
-                    horizontal_space().width(Length::FillPortion(3)),
+                    column![vertical_space(), cry_button]
+                        .align_items(Alignment::Center)
+                        .width(Length::FillPortion(3))
+                        .height(Length::Fill)
+                        .padding(10)
+                        .spacing(20),
                 ]
                 .height(Length::FillPortion(5))
             ]
