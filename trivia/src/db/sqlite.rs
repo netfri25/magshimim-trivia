@@ -403,7 +403,6 @@ impl Database for SqliteDatabase {
                 calc_score(
                     Duration::from_secs_f64(avg_time),
                     correct_answers,
-                    total_answers,
                 ),
             )
             .to_string(query::SqliteQueryBuilder);
@@ -415,13 +414,10 @@ impl Database for SqliteDatabase {
 pub fn calc_score(
     average_answer_time: Duration,
     correct_answers: i64,
-    total_answers: i64,
 ) -> Score {
     // TODO: the user can just spam wrong answers and still get a really good score
     //       find a way to prevent this, meaning a new score evaluation algorithm
-    let answer_ratio = correct_answers as f64 / total_answers as f64;
-    let time_ratio = 1. / average_answer_time.as_secs_f64().max(1.);
-    answer_ratio * time_ratio
+    correct_answers as f64 * average_answer_time.as_secs_f64().max(1.).recip()
 }
 
 // Users table definition
@@ -617,7 +613,7 @@ mod tests {
         total_games: i64,
         user_id: i64,
     ) -> anyhow::Result<()> {
-        let score = calc_score(Duration::from_secs_f64(avg_time), correct, total_answers);
+        let score = calc_score(Duration::from_secs_f64(avg_time), correct);
         let statement = query::Query::insert()
             .columns([
                 Statistics::CorrectAnswers,
@@ -659,7 +655,7 @@ mod tests {
             insert_stats(&mut db, stat.0, stat.1, stat.2, 12, user_id as i64)?;
         }
 
-        let scores = stats.map(|stat| calc_score(Duration::from_secs_f64(stat.2), stat.0, stat.1));
+        let scores = stats.map(|stat| calc_score(Duration::from_secs_f64(stat.2), stat.0));
         let highscores = db.get_five_highscores()?;
 
         assert_eq!(
