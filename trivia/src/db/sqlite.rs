@@ -388,23 +388,28 @@ impl Database for SqliteDatabase {
         let correct_answers =
             self.get_correct_answers_count(username).unwrap_or_default() + correct_answers as i64;
 
-        let statement = query::Query::update()
-            .table(Statistics::Table)
-            .and_where(query::Expr::col(Statistics::UserId).eq(user_id))
-            .value(Statistics::CorrectAnswers, correct_answers)
-            .value(Statistics::TotalAnswers, total_answers)
-            .value(Statistics::AverageAnswerTime, avg_time)
-            .value(
-                Statistics::TotalGames,
-                query::Expr::col(Statistics::TotalGames).add(1),
-            )
-            .value(
+        let statement = query::Query::insert()
+            .replace()
+            .into_table(Statistics::Table)
+            .columns([
+                Statistics::UserId,
+                Statistics::CorrectAnswers,
+                Statistics::TotalAnswers,
+                Statistics::AverageAnswerTime,
+                Statistics::TotalAnswers,
                 Statistics::Score,
+            ])
+            .values_panic([
+                user_id.into(),
+                correct_answers.into(),
+                total_answers.into(),
+                avg_time.into(),
+                total_answers.into(),
                 calc_score(
                     Duration::from_secs_f64(avg_time),
                     correct_answers,
-                ),
-            )
+                ).into(),
+            ])
             .to_string(query::SqliteQueryBuilder);
 
         Ok(self.conn.execute(statement)?)
