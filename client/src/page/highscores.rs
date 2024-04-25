@@ -65,7 +65,7 @@ impl HighScoresPage {
 }
 
 fn user_score(username: &str, score: Score) -> iced::Element<Message> {
-    container(text(format!("{} - {:.4}", username, score)).size(25))
+    container(text(format!("{} - {:.2}", username, score)).size(25))
         .width(Length::Fill)
         .height(Length::Fill)
         .center_x()
