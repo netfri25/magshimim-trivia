@@ -88,13 +88,17 @@ impl Communicator {
             }
 
             let request_info = RequestInfo::new_now(request);
-            let result = self
-                .clients
-                .lock()
-                .unwrap()
-                .get_mut(&addr)
-                .expect("client must have a handler")
-                .handle(request_info)?;
+            let result: RequestResult = {
+                let mut clients_lock = self.clients.lock().unwrap();
+                let handler = clients_lock.get_mut(&addr).expect("client must have a handler");
+
+                if !handler.relevant(&request_info) {
+                    eprintln!("[INFO] Irrelevant request ({}): {:?}", addr, request_info);
+                    RequestResult::new_error("Irrelevant request")
+                } else {
+                    handler.handle(request_info)?
+                }
+            };
 
             eprintln!("{:?}", result.response);
             let RequestResult {
