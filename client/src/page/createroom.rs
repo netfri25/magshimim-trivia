@@ -95,21 +95,21 @@ impl Page for CreateRoomPage {
                 .on_input(|input| Msg::NameInput(input).into()),
             input_field(
                 "users count",
-                1..=100,
+                1..=20,
                 self.max_users,
                 1,
                 Msg::MaxUsersInput
             ),
             input_field(
                 "questions count",
-                1..=100,
+                1..=30,
                 self.questions,
                 1,
                 Msg::QuestionsInput
             ),
             input_field(
                 "answer time (secs)",
-                5..=300,
+                5..=120,
                 self.answer_timeout,
                 5,
                 Msg::AnswerTimeoutInput
