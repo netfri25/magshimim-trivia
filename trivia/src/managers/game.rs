@@ -38,6 +38,8 @@ impl GameManager {
     }
 
     pub fn delete_game(&mut self, id: &GameID) {
+        // I don't care if the submission fails
+        self.submit_game_results(id).ok();
         self.games.remove(id);
     }
 
