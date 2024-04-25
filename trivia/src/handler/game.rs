@@ -65,7 +65,8 @@ impl GameRequestHandler {
         if let Some(ref mut question) = question {
             let mut rng = Rng::from_seed(
                 SystemTime::now()
-                    .duration_since(time::UNIX_EPOCH)?
+                    .duration_since(time::UNIX_EPOCH)
+                    .expect("clock can't go back from 0")
                     .as_secs(),
             );
             question.correct_answer_index = usize::MAX;
