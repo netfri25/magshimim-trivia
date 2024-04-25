@@ -113,7 +113,7 @@ impl Game {
     pub fn remove_user(&mut self, user: &LoggedUser) {
         if let Some(data) = self.players.get_mut(user) {
             // mark as if the user has finished
-            data.current_question_index = self.questions.len() + 1;
+            data.left = true;
         }
     }
 
@@ -121,12 +121,16 @@ impl Game {
         self.players.keys()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.players.values().all(|data| data.left)
+    }
+
     // NOTE: can be optimized, but I don't really care about performance
     pub fn all_finished(&self) -> bool {
         // because that I'm using (current_question_index - 1) then I'm comparing with `>` instead of `>=`
         self.players
             .values()
-            .all(|data| data.current_question_index > self.questions.len())
+            .all(|data| data.left || data.current_question_index > self.questions.len())
     }
 
     pub fn results(&self) -> impl Iterator<Item = (&LoggedUser, &GameData)> {
@@ -140,10 +144,12 @@ pub struct GameData {
     pub correct_answers: u32,
     pub wrong_answers: u32,
     pub avg_time: Duration,
+    pub left: bool,
 }
 
 impl GameData {
     pub fn submit_answer(&mut self, correct: bool, answer_time: Duration) {
+        self.left = false; // if the user left and came back
         let old_total = self.correct_answers + self.wrong_answers;
         let old_total_time = self.avg_time.as_secs_f64() * old_total as f64;
         let total_time = old_total_time + answer_time.as_secs_f64();

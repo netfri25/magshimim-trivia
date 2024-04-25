@@ -31,12 +31,12 @@ impl Handler for GameRequestHandler {
                 self.question_sent_at = Instant::now();
                 self.get_question()
             }
-            Request::LeaveGame => self.leave_game(),
             Request::SubmitAnswer(answer) => self.submit_answer(
                 answer,
                 request_info.time.duration_since(self.question_sent_at),
             ),
             Request::GameResult => self.game_results(),
+            Request::Logout | Request::LeaveGame => self.leave_game(),
             _ => Ok(RequestResult::new_error("Invalid request")),
         }
     }
@@ -82,8 +82,13 @@ impl GameRequestHandler {
             game.remove_user(&self.user);
 
             // no more players are left
-            if game.users().next().is_none() {
+            if game.is_empty() {
                 game_manager_lock.delete_game(&self.game_id);
+                self.factory
+                    .get_room_manager()
+                    .lock()
+                    .unwrap()
+                    .delete_room(self.game_id);
             }
         };
 
@@ -101,17 +106,17 @@ impl GameRequestHandler {
         answer: String,
         answer_duration: Duration,
     ) -> Result<RequestResult, Error> {
-        let game_manager = self.factory.get_game_manager();;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        let mut game_manager_lock = game_manager.lock().unwrap();;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        let Some((((((((((((game)))))))))))) = game_manager_lock.game_mut(&self.game_id) else {
-            return Ok(RequestResult::new_error("Invalid Game ID".to_string()));;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        };;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        let game_manager = self.factory.get_game_manager();
+        let mut game_manager_lock = game_manager.lock().unwrap();
+        let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
+            return Ok(RequestResult::new_error("Invalid Game ID".to_string()));
+        };
 
         let correct_answer = game
             .submit_answer(self.user.clone(), answer, answer_duration)?
-            .to_string();;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+            .to_string();
 
-        let resp = Response::CorrectAnswer(correct_answer);;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        let resp = Response::CorrectAnswer(correct_answer);
         Ok(RequestResult::without_handler(resp))
     }
 
@@ -119,7 +124,7 @@ impl GameRequestHandler {
         let game_manager = self.factory.get_game_manager();
         let mut game_manager_lock = game_manager.lock().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
-            return Ok(RequestResult::new_error("Game doesn't exist"));
+            return Ok(RequestResult::without_handler(Response::LeaveGame));
         };
 
         let results = if game.all_finished() {

@@ -42,6 +42,9 @@ impl RoomMemberRequestHandler {
         let mut room_manager_lock = room_manager.lock().unwrap();
         if let Some(room) = room_manager_lock.room_mut(self.room_id) {
             room.remove_user(&self.member);
+            if room.is_empty() {
+                room_manager_lock.delete_room(self.room_id);
+            }
         }
 
         let resp = Response::LeaveRoom;

@@ -14,6 +14,46 @@ pub struct MenuRequestHandler {
     factory: Arc<RequestHandlerFactory>,
 }
 
+impl Handler for MenuRequestHandler {
+    fn relevant(&self, request_info: &RequestInfo) -> bool {
+        let accepted = [
+            Request::is_create_room,
+            Request::is_room_list,
+            Request::is_join_room,
+            Request::is_statistics,
+            Request::is_logout,
+        ];
+
+        accepted.iter().any(|f| f(&request_info.data))
+    }
+
+    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
+        match request_info.data {
+            Request::JoinRoom(id) => Ok(self.join_room(id)),
+            Request::CreateRoom {
+                name,
+                max_users,
+                questions,
+                answer_timeout,
+            } => Ok(self.create_room(name, max_users, questions, answer_timeout)),
+            Request::Statistics => {
+                let user_statistics = self.get_personal_stats()?;
+                let high_scores = self.get_high_scores()?;
+                let response = Response::Statistics {
+                    user_statistics,
+                    high_scores,
+                };
+                let result = RequestResult::without_handler(response);
+                Ok(result)
+            }
+            Request::Logout => Ok(self.logout()),
+            Request::RoomList => Ok(self.get_rooms()),
+
+            _ => Ok(RequestResult::new_error("Invalid request")),
+        }
+    }
+}
+
 impl MenuRequestHandler {
     pub fn new(factory: Arc<RequestHandlerFactory>, user: LoggedUser) -> Self {
         Self { factory, user }
@@ -61,16 +101,20 @@ impl MenuRequestHandler {
     fn join_room(&self, id: RoomID) -> RequestResult {
         let room_manager = self.factory.get_room_manager();
         let mut room_manager_lock = room_manager.lock().unwrap();
-        if let Some(room) = room_manager_lock.room_mut(id) {
-            room.add_user(self.user.clone());
-            let resp = Response::JoinRoom;
-            let handler = self
-                .factory
-                .create_room_member_request_handler(self.user.clone(), id);
-            RequestResult::new(resp, handler)
-        } else {
-            RequestResult::new_error("invalid room ID")
+        let Some(room) = room_manager_lock.room_mut(id) else {
+            return RequestResult::new_error("invalid room ID");
+        };
+
+        if room.is_full() {
+            return RequestResult::new_error("room is full");
         }
+
+        room.add_user(self.user.clone());
+        let resp = Response::JoinRoom;
+        let handler = self
+            .factory
+            .create_room_member_request_handler(self.user.clone(), id);
+        RequestResult::new(resp, handler)
     }
 
     fn create_room(
@@ -90,45 +134,5 @@ impl MenuRequestHandler {
             .factory
             .create_room_admin_request_handler(self.user.clone(), id);
         RequestResult::new(resp, handler)
-    }
-}
-
-impl Handler for MenuRequestHandler {
-    fn relevant(&self, request_info: &RequestInfo) -> bool {
-        let accepted = [
-            Request::is_create_room,
-            Request::is_room_list,
-            Request::is_join_room,
-            Request::is_statistics,
-            Request::is_logout,
-        ];
-
-        accepted.iter().any(|f| f(&request_info.data))
-    }
-
-    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
-        match request_info.data {
-            Request::JoinRoom(id) => Ok(self.join_room(id)),
-            Request::CreateRoom {
-                name,
-                max_users,
-                questions,
-                answer_timeout,
-            } => Ok(self.create_room(name, max_users, questions, answer_timeout)),
-            Request::Statistics => {
-                let user_statistics = self.get_personal_stats()?;
-                let high_scores = self.get_high_scores()?;
-                let response = Response::Statistics {
-                    user_statistics,
-                    high_scores,
-                };
-                let result = RequestResult::without_handler(response);
-                Ok(result)
-            }
-            Request::Logout => Ok(self.logout()),
-            Request::RoomList => Ok(self.get_rooms()),
-
-            _ => Ok(RequestResult::new_error("Invalid request")),
-        }
     }
 }
