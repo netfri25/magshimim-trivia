@@ -4,6 +4,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
+use crate::db::sqlite::calc_score;
 use crate::db::Score;
 use crate::managers::login::LoggedUser;
 use crate::managers::statistics::Statistics;
@@ -106,6 +107,7 @@ pub struct PlayerResults {
     pub correct_answers: u32,
     pub wrong_answers: u32,
     pub avg_time: Duration,
+    pub score: f64,
 }
 
 impl PlayerResults {
@@ -113,14 +115,16 @@ impl PlayerResults {
         username: impl Into<String>,
         correct_answers: u32,
         wrong_answers: u32,
-        avg_time: Duration
+        avg_time: Duration,
     ) -> Self {
         let username = username.into();
+        let score = calc_score(avg_time, correct_answers as i64, (correct_answers + wrong_answers) as i64);
         Self {
             username,
             correct_answers,
             wrong_answers,
             avg_time,
+            score,
         }
     }
 }
