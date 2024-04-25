@@ -97,6 +97,7 @@ impl Request {
     }
 }
 
+#[derive(Debug)]
 pub struct RequestInfo {
     pub data: Request,
     pub time: Instant,
