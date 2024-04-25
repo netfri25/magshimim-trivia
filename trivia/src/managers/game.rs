@@ -33,7 +33,12 @@ impl GameManager {
             .lock()
             .unwrap()
             .get_questions(room.room_data().questions_count)?;
-        let game = Game::new(room.room_data().room_id, room.users().iter().cloned(), questions);
+        let game = Game::new(
+            room.room_data().room_id,
+            room.users().iter().cloned(),
+            questions,
+            room.room_data().time_per_question,
+        );
         Ok(self.games.entry(game.id).or_insert(game))
     }
 
@@ -65,17 +70,24 @@ impl GameManager {
 pub struct Game {
     id: GameID,
     questions: Vec<QuestionData>,
+    time_per_question: Duration,
     players: HashMap<LoggedUser, GameData>,
 }
 
 impl Game {
-    pub fn new(id: RoomID, users: impl Iterator<Item = LoggedUser>, questions: Vec<QuestionData>) -> Self {
+    pub fn new(
+        id: RoomID,
+        users: impl Iterator<Item = LoggedUser>,
+        questions: Vec<QuestionData>,
+        time_per_question: Duration,
+    ) -> Self {
         let players = users.zip(iter::repeat_with(GameData::default)).collect();
 
         Self {
             id,
             players,
             questions,
+            time_per_question,
         }
     }
 
@@ -108,8 +120,11 @@ impl Game {
             .get(game_data.current_question_index - 1)
             .ok_or_else(|| anyhow!("CRITICAL ERROR: unexpected current question index"))?;
 
-        let correct = question.correct_answer() == answer;
-        game_data.submit_answer(correct, answer_time);
+        if answer_time < self.time_per_question {
+            let correct = question.correct_answer() == answer;
+            game_data.submit_answer(correct, answer_time);
+        }
+
         Ok(question.correct_answer())
     }
 
@@ -167,10 +182,7 @@ impl GameData {
     }
 }
 
-pub fn calc_score(
-    average_answer_time: Duration,
-    correct_answers: i64,
-) -> Score {
+pub fn calc_score(average_answer_time: Duration, correct_answers: i64) -> Score {
     // TODO: the user can just spam wrong answers and still get a really good score
     //       find a way to prevent this, meaning a new score evaluation algorithm
     correct_answers as f64 * average_answer_time.as_secs_f64().max(1.).recip()
