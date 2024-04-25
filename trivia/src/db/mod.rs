@@ -43,10 +43,10 @@ pub enum Error {
         question_content: String,
     },
 
-    #[error(transparent)]
+    #[error("DB: {0}")]
     InternalDBError(#[from] ::sqlite::Error),
 
-    #[error(transparent)]
+    #[error("OpenTDB: {0}")]
     OpenTDB(#[from] opentdb::Error),
 
     #[error(transparent)]
