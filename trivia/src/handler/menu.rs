@@ -74,6 +74,7 @@ impl MenuRequestHandler {
         RequestResult::without_handler(response)
     }
 
+    #[allow(unused)]
     fn get_players_in_room(&self, id: RoomID) -> RequestResult {
         let room_manager = self.factory.get_room_manager();
         let room_manager_lock = room_manager.lock().unwrap();

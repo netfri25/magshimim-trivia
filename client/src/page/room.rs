@@ -38,11 +38,10 @@ impl Page for RoomPage {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::RoomState {
-                    state,
                     name,
                     players,
-                    question_count,
                     time_per_question,
+                    ..
                 } => {
                     self.room_name = name.clone();
                     self.players = players.clone();
