@@ -7,6 +7,7 @@
     when time is up, go to the next question
  - [ ] add [correct, wrong, average answer time] when playing the game
  - [ ] fix score being NaN when the user doesn't answer any question
+ - [ ] remove `is_*` from the Request/Result and use the `matches!` macro instead
 
 ### Bonuses
  - [ ] password and email regex checking
