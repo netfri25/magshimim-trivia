@@ -16,7 +16,7 @@ pub struct RoomAdminRequestHandler {
 impl Handler for RoomAdminRequestHandler {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
-        matches!(request_info.data, CloseRoom | StartGame | RoomState,)
+        matches!(request_info.data, CloseRoom | StartGame | RoomState)
     }
 
     fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {

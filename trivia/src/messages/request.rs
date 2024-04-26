@@ -39,41 +39,6 @@ pub enum Request {
 }
 
 impl Request {
-    #[must_use]
-    pub fn is_signup(&self) -> bool {
-        matches!(self, Self::Signup { .. })
-    }
-
-    #[must_use]
-    pub fn is_login(&self) -> bool {
-        matches!(self, Self::Login { .. })
-    }
-
-    #[must_use]
-    pub fn is_join_room(&self) -> bool {
-        matches!(self, Self::JoinRoom(..))
-    }
-
-    #[must_use]
-    pub fn is_create_room(&self) -> bool {
-        matches!(self, Self::CreateRoom { .. })
-    }
-
-    #[must_use]
-    pub fn is_statistics(&self) -> bool {
-        matches!(self, Self::Statistics)
-    }
-
-    #[must_use]
-    pub fn is_logout(&self) -> bool {
-        matches!(self, Self::Logout)
-    }
-
-    #[must_use]
-    pub fn is_room_list(&self) -> bool {
-        matches!(self, Self::RoomList)
-    }
-
     pub fn read_from(reader: &mut impl Read) -> Result<Self, Error> {
         let mut buf_data_len = [0; 4];
         reader.read_exact(&mut buf_data_len)?;

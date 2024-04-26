@@ -16,15 +16,11 @@ pub struct MenuRequestHandler {
 
 impl Handler for MenuRequestHandler {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
-        let accepted = [
-            Request::is_create_room,
-            Request::is_room_list,
-            Request::is_join_room,
-            Request::is_statistics,
-            Request::is_logout,
-        ];
-
-        accepted.iter().any(|f| f(&request_info.data))
+        use Request::*;
+        matches!(
+            request_info.data,
+            CreateRoom { .. } | RoomList | JoinRoom(_) | Statistics | Logout
+        )
     }
 
     fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {

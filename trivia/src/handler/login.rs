@@ -16,7 +16,8 @@ impl LoginRequestHandler {
 
 impl Handler for LoginRequestHandler {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
-        request_info.data.is_login() || request_info.data.is_signup()
+        use Request::*;
+        matches!(request_info.data, Login { .. } | Signup { .. })
     }
 
     fn handle(&mut self, request: RequestInfo) -> Result<RequestResult, Error> {
