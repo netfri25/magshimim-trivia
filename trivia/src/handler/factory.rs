@@ -1,19 +1,18 @@
 use std::sync::{Arc, Mutex};
 
 use crate::db::Database;
+use crate::managers::game::GameID;
 use crate::managers::login::LoggedUser;
 use crate::managers::room::RoomID;
-use crate::managers::{LoginManager, RoomManager, StatisticsManager};
-use crate::server::communicator::Channels;
+use crate::managers::{GameManager, LoginManager, RoomManager, StatisticsManager};
 
-use super::{Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler, RoomMemberRequestHandler};
+use super::{GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler, RoomMemberRequestHandler};
 
 pub struct RequestHandlerFactory {
     login_manager: Arc<Mutex<LoginManager>>,
     room_manager: Arc<Mutex<RoomManager>>,
     statistics_manager: Arc<Mutex<StatisticsManager>>,
-    channels: Arc<Mutex<Channels>>,
-    db: Arc<Mutex<dyn Database>>,
+    game_manager: Arc<Mutex<GameManager>>,
 }
 
 impl RequestHandlerFactory {
@@ -24,13 +23,13 @@ impl RequestHandlerFactory {
         let room_manager = Arc::new(Mutex::new(room_manager));
         let statistics_manager = StatisticsManager::new(db.clone());
         let statistics_manager = Arc::new(Mutex::new(statistics_manager));
-        let channels = Arc::new(Mutex::default());
+        let game_manager = GameManager::new(db.clone());
+        let game_manager = Arc::new(Mutex::new(game_manager));
         Self {
             login_manager,
             room_manager,
             statistics_manager,
-            channels,
-            db,
+            game_manager,
         }
     }
 
@@ -50,6 +49,10 @@ impl RequestHandlerFactory {
         Box::new(RoomMemberRequestHandler::new(self.clone(), member, room_id))
     }
 
+    pub fn create_game_request_handler(self: &Arc<Self>, user: LoggedUser, game_id: GameID) -> Box<dyn Handler> {
+        Box::new(GameRequestHandler::new(self.clone(), user, game_id))
+    }
+
     pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager>> {
         self.login_manager.clone()
     }
@@ -62,7 +65,7 @@ impl RequestHandlerFactory {
         self.statistics_manager.clone()
     }
 
-    pub fn channels(&self) -> Arc<Mutex<Channels>> {
-        self.channels.clone()
+    pub fn get_game_manager(&self) -> Arc<Mutex<GameManager>> {
+        self.game_manager.clone()
     }
 }

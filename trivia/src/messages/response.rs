@@ -3,7 +3,8 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::Score;
+use crate::db::question::QuestionData;
+use crate::managers::game::{calc_score, Score};
 use crate::managers::login::LoggedUser;
 use crate::managers::statistics::Statistics;
 use crate::managers::room::{Room, RoomID, RoomState};
@@ -35,6 +36,13 @@ pub enum Response {
         time_per_question: Duration,
     },
     LeaveRoom,
+    LeaveGame,
+    CorrectAnswer(String),
+
+    // the `correct_answer_index` will be set to usize::MAX so that the client can't cheat
+    // additionally, the answers will be shuffled when sent to the user
+    Question(Option<QuestionData>), // None => no more questions
+    GameResult(Vec<PlayerResults>) // Will be sent to everyone when the game is over
 }
 
 impl Response {
@@ -89,6 +97,34 @@ impl RequestResult {
 
     pub fn new_error(msg: impl ToString) -> Self {
         Self::without_handler(Response::new_error(msg))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PlayerResults {
+    pub username: String,
+    pub correct_answers: u32,
+    pub wrong_answers: u32,
+    pub avg_time: Duration,
+    pub score: f64,
+}
+
+impl PlayerResults {
+    pub fn new(
+        username: impl Into<String>,
+        correct_answers: u32,
+        wrong_answers: u32,
+        avg_time: Duration,
+    ) -> Self {
+        let username = username.into();
+        let score = calc_score(avg_time, correct_answers as i64);
+        Self {
+            username,
+            correct_answers,
+            wrong_answers,
+            avg_time,
+            score,
+        }
     }
 }
 

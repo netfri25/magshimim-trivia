@@ -29,10 +29,10 @@ impl Page for PersonalStatsPage {
             field("Total Answers", format!("{}", self.stats.total_answers)),
             field(
                 "Average Answer Time",
-                format!("{:?}", self.stats.average_answer_time)
+                format!("{:.02?}", self.stats.average_answer_time)
             ),
             field("Total Games", format!("{}", self.stats.total_games)),
-            field("Score", format!("{:.4}", self.stats.score)),
+            field("Score", format!("{:.02}", self.stats.score)),
         ]
         .spacing(20)
         .align_items(Alignment::Center);

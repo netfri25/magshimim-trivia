@@ -5,6 +5,8 @@ use query::Iden;
 use sea_query as query;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
+use crate::managers::game::{calc_score, GameData};
+
 use super::question::QuestionData;
 use super::{opentdb, Database, Error, Score};
 
@@ -27,7 +29,13 @@ impl SqliteDatabase {
                 .columns([Question::Content])
                 .values_panic([question.question().into()])
                 .to_string(query::SqliteQueryBuilder);
-            self.conn.execute(question_insert_query)?;
+
+            // when encountering a question that already exists on the db (19 => unique constraint
+            // conflict) just skip it and go to the next question
+            match self.conn.execute(question_insert_query) {
+                Err(sqlite::Error { code: Some(19), .. }) => continue,
+                res => res?,
+            };
 
             let question_id = {
                 let select_query = query::Query::select()
@@ -44,20 +52,18 @@ impl SqliteDatabase {
                 statement.read::<i64, _>(Question::Id.to_string().as_str())?
             };
 
-            let possible_answers = question.possible_answers();
-
             let correct_answer_insert_query = query::Query::insert()
                 .into_table(Answer::Table)
                 .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
                 .values_panic([
-                    possible_answers.correct_answer.into(),
+                    question.correct_answer().into(),
                     true.into(),
                     question_id.into(),
                 ])
                 .to_string(query::SqliteQueryBuilder);
             self.conn.execute(correct_answer_insert_query)?;
 
-            for incorrect_answer in possible_answers.incorrect_answers {
+            for incorrect_answer in question.incorrect_answers() {
                 let incorrect_answer_insert_query = query::Query::insert()
                     .into_table(Answer::Table)
                     .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
@@ -88,6 +94,11 @@ impl Database for SqliteDatabase {
             self.conn
                 .execute(statement.to_string(query::SqliteQueryBuilder))?;
         }
+
+        match self.populate_questions(50) {
+            Err(Error::OpenTDB(err)) => eprintln!("[INFO] can't get questions: {}", err),
+            res => res?,
+        };
 
         Ok(())
     }
@@ -142,12 +153,12 @@ impl Database for SqliteDatabase {
         Ok(())
     }
 
-    fn get_questions(&self, amount: u8) -> Result<Vec<QuestionData>, Error> {
+    fn get_questions(&self, amount: usize) -> Result<Vec<QuestionData>, Error> {
         let select_question_query = query::Query::select()
             .columns([Question::Content, Question::Id])
             .from(Question::Table)
             .order_by_expr(query::Func::random().into(), query::Order::Asc)
-            .limit(amount.into())
+            .limit(amount as u64)
             .to_string(query::SqliteQueryBuilder);
 
         let mut output = Vec::new();
@@ -159,31 +170,43 @@ impl Database for SqliteDatabase {
             let question_id = questions_iter.read::<i64, _>(Question::Id.to_string().as_str())?;
 
             let get_answers_query = query::Query::select()
-                .columns([Answer::Correct, Answer::Content])
+                .column(Answer::Content)
                 .from(Answer::Table)
                 .and_where(query::Expr::col(Answer::QuestionId).is(question_id))
                 .to_string(query::SqliteQueryBuilder);
 
-            let mut question = QuestionData {
-                question: question_content,
-                correct_answer: String::new(),
-                incorrect_answers: Vec::new(),
-            };
-
+            let mut answers = Vec::new();
             let mut answers_iter = self.conn.prepare(get_answers_query)?;
             while let State::Row = answers_iter.next()? {
                 let answer_content =
                     answers_iter.read::<String, _>(Answer::Content.to_string().as_str())?;
-                let answer_correct =
-                    answers_iter.read::<i64, _>(Answer::Correct.to_string().as_str())? == 1;
 
-                if answer_correct {
-                    question.correct_answer = answer_content;
-                } else {
-                    question.incorrect_answers.push(answer_content)
-                }
+                answers.push(answer_content);
             }
 
+            let correct_answer_query = query::Query::select()
+                .column(Answer::Content)
+                .from(Answer::Table)
+                .and_where(query::Expr::col(Answer::QuestionId).is(question_id))
+                .and_where(query::Expr::col(Answer::Correct).is(1))
+                .to_string(query::SqliteQueryBuilder);
+
+            let mut correct_answer_iter = self.conn.prepare(correct_answer_query)?;
+            let State::Row = correct_answer_iter.next()? else {
+                return Err(Error::NoCorrectAnswer {
+                    question_id,
+                    question_content,
+                });
+            };
+
+            let correct_answer =
+                correct_answer_iter.read::<String, _>(Answer::Content.to_string().as_str())?;
+
+            // I can safely unwrap here because it's impossible to get the correct answer without
+            // it being part of all of the answers
+            let correct_answer_index = answers.iter().position(|s| *s == correct_answer).unwrap();
+
+            let question = QuestionData::new(question_content, answers, correct_answer_index);
             output.push(question);
         }
 
@@ -198,7 +221,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -220,7 +243,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -242,7 +265,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -263,7 +286,7 @@ impl Database for SqliteDatabase {
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -280,11 +303,11 @@ impl Database for SqliteDatabase {
 
     fn get_score(&self, username: &str) -> Result<super::Score, Error> {
         let statement = query::Query::select()
-            .column(Statistics::Score)
+            .column(Statistics::OverallScore)
             .from(Statistics::Table)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
@@ -295,19 +318,19 @@ impl Database for SqliteDatabase {
             return Err(Error::UserDoesntExist(username.to_string()));
         }
 
-        let total_games = iter.read::<Score, _>(Statistics::Score.to_string().as_str())?;
+        let total_games = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
         Ok(total_games)
     }
 
     fn get_five_highscores(&self) -> Result<[Option<(String, super::Score)>; 5], Error> {
         let statement = query::Query::select()
             .column(User::Username)
-            .column(Statistics::Score)
+            .column(Statistics::OverallScore)
             .from(Statistics::Table)
-            .order_by(Statistics::Score, query::Order::Desc)
+            .order_by(Statistics::OverallScore, query::Order::Desc)
             .inner_join(
                 User::Table,
-                query::Expr::col((Statistics::Table, Statistics::UserId))
+                query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
             .limit(5)
@@ -318,22 +341,82 @@ impl Database for SqliteDatabase {
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {
             let username = iter.read::<String, _>(User::Username.to_string().as_str())?;
-            let score = iter.read::<Score, _>(Statistics::Score.to_string().as_str())?;
+            let score = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
             scores[index] = Some((username, score));
             index += 1;
         }
 
         Ok(scores)
     }
-}
 
-#[allow(unused)]
-fn calc_score(average_answer_time: Duration, correct_answers: i64, total_answers: i64) -> Score {
-    // TODO: the user can just spam wrong answers and still get a really good score
-    //       find a way to prevent this, meaning a new score evaluation algorithm
-    let answer_ratio = correct_answers as f64 / total_answers as f64;
-    let time_ratio = 1. / average_answer_time.as_secs_f64().max(1.);
-    answer_ratio * time_ratio
+    // NOTE: not tested, hoping that this function works as expected
+    fn submit_game_data(&mut self, username: &str, game_data: GameData) -> Result<(), Error> {
+        let GameData {
+            correct_answers: current_correct_answers,
+            wrong_answers: current_wrong_answers,
+            avg_time: current_avg_time,
+            ..
+        } = game_data;
+
+        let user_id = {
+            let statement = query::Query::select()
+                .column(User::Id)
+                .from(User::Table)
+                .and_where(query::Expr::col(User::Username).eq(username))
+                .to_string(query::SqliteQueryBuilder);
+
+            let mut iter = self.conn.prepare(statement)?;
+            let State::Row = iter.next()? else {
+                return Err(Error::UserDoesntExist(username.to_string()));
+            };
+
+            iter.read::<i64, _>(User::Id.to_string().as_str())?
+        };
+
+        let old_total_answers = self.get_total_answers_count(username).unwrap_or_default();
+        let total_answers =
+            old_total_answers + current_wrong_answers as i64 + current_correct_answers as i64;
+        let avg_time = {
+            let old_total_time = self
+                .get_player_average_answer_time(username)
+                .unwrap_or_default()
+                .as_secs_f64()
+                * old_total_answers as f64;
+            let current_total_time = current_avg_time.as_secs_f64()
+                * (current_wrong_answers + current_correct_answers) as f64;
+            (old_total_time + current_total_time) / total_answers as f64
+        };
+
+        let correct_answers = self.get_correct_answers_count(username).unwrap_or_default()
+            + current_correct_answers as i64;
+
+        let total_games = self.get_games_count(username).unwrap_or_default() + 1;
+
+        let statement = query::Query::insert()
+            .replace()
+            .into_table(Statistics::Table)
+            .columns([
+                Statistics::Id,
+                Statistics::CorrectAnswers,
+                Statistics::TotalAnswers,
+                Statistics::AverageAnswerTime,
+                Statistics::TotalAnswers,
+                Statistics::TotalGames,
+                Statistics::OverallScore,
+            ])
+            .values_panic([
+                user_id.into(),
+                correct_answers.into(),
+                total_answers.into(),
+                avg_time.into(),
+                total_answers.into(),
+                total_games.into(),
+                calc_score(Duration::from_secs_f64(avg_time), correct_answers).into(),
+            ])
+            .to_string(query::SqliteQueryBuilder);
+
+        Ok(self.conn.execute(statement)?)
+    }
 }
 
 // Users table definition
@@ -439,13 +522,12 @@ impl Answer {
 #[derive(query::Iden)]
 enum Statistics {
     Table,
-    Id,
+    Id, // also the user_id
     CorrectAnswers,
     TotalAnswers,
     AverageAnswerTime, // in seconds
     TotalGames,
-    Score,
-    UserId,
+    OverallScore,
 }
 
 impl Statistics {
@@ -457,8 +539,7 @@ impl Statistics {
                 query::ColumnDef::new(Statistics::Id)
                     .integer()
                     .not_null()
-                    .primary_key()
-                    .auto_increment(),
+                    .primary_key(),
             )
             .col(
                 query::ColumnDef::new(Statistics::CorrectAnswers)
@@ -480,15 +561,10 @@ impl Statistics {
                     .integer()
                     .not_null(),
             )
-            .col(query::ColumnDef::new(Statistics::Score).double().not_null())
-            .col(
-                query::ColumnDef::new(Statistics::UserId)
-                    .integer()
-                    .not_null(),
-            )
+            .col(query::ColumnDef::new(Statistics::OverallScore).double().not_null())
             .foreign_key(
                 query::ForeignKey::create()
-                    .from(Statistics::Table, Statistics::UserId)
+                    .from(Statistics::Table, Statistics::Id)
                     .to(User::Table, User::Id),
             )
             .to_owned()
@@ -529,15 +605,15 @@ mod tests {
         total_games: i64,
         user_id: i64,
     ) -> anyhow::Result<()> {
-        let score = calc_score(Duration::from_secs_f64(avg_time), correct, total_answers);
+        let score = calc_score(Duration::from_secs_f64(avg_time), correct);
         let statement = query::Query::insert()
             .columns([
                 Statistics::CorrectAnswers,
                 Statistics::TotalAnswers,
                 Statistics::AverageAnswerTime,
                 Statistics::TotalGames,
-                Statistics::Score,
-                Statistics::UserId,
+                Statistics::OverallScore,
+                Statistics::Id,
             ])
             .into_table(Statistics::Table)
             .values_panic([
@@ -571,7 +647,7 @@ mod tests {
             insert_stats(&mut db, stat.0, stat.1, stat.2, 12, user_id as i64)?;
         }
 
-        let scores = stats.map(|stat| calc_score(Duration::from_secs_f64(stat.2), stat.0, stat.1));
+        let scores = stats.map(|stat| calc_score(Duration::from_secs_f64(stat.2), stat.0));
         let highscores = db.get_five_highscores()?;
 
         assert_eq!(
