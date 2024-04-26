@@ -48,7 +48,7 @@ impl Communicator {
             self.clients.lock().unwrap().insert(addr, handler);
             let me = self.clone();
             std::thread::spawn(move || {
-                if let Err(err) = me.clone().handle_new_client(client) {
+                if let Err(err) = me.handle_new_client(client) {
                     eprintln!("[ERROR] communication error: {err}");
                 }
             });
