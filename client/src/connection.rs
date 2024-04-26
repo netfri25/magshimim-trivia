@@ -37,6 +37,11 @@ impl Connection {
 
         Ok(response)
     }
+
+    pub async fn send_and_recv(&self, msg: Request) -> Result<Response, Error> {
+        async { self.send(msg) }.await?;
+        async { self.recv() }.await
+    }
 }
 
 #[derive(Debug, thiserror::Error)]

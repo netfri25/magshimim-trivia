@@ -59,7 +59,7 @@ impl LoginManager {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LoggedUser {
-    username: String,
+    pub username: String,
 }
 
 impl LoggedUser {

@@ -80,6 +80,14 @@ impl Room {
     pub fn room_data(&self) -> &RoomData {
         &self.data
     }
+
+    pub fn is_full(&self) -> bool {
+        self.users().len() >= self.room_data().max_players
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.users().is_empty()
+    }
 }
 
 #[derive(Default, Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]

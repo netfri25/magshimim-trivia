@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::managers::login::LoggedUser;
-use crate::managers::room::RoomID;
+use crate::managers::room::{RoomID, RoomState};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
@@ -42,6 +42,9 @@ impl RoomMemberRequestHandler {
         let mut room_manager_lock = room_manager.lock().unwrap();
         if let Some(room) = room_manager_lock.room_mut(self.room_id) {
             room.remove_user(&self.member);
+            if room.is_empty() {
+                room_manager_lock.delete_room(self.room_id);
+            }
         }
 
         let resp = Response::LeaveRoom;
@@ -54,6 +57,12 @@ impl RoomMemberRequestHandler {
         let Some(room) = room_manager.lock().unwrap().room(self.room_id).cloned() else {
             return self.leave_room();
         };
+
+        if room.room_data().state == RoomState::InGame {
+            let resp = Response::StartGame;
+            let handler = self.factory.create_game_request_handler(self.member.clone(), self.room_id);
+            return Ok(RequestResult::new(resp, handler))
+        }
 
         Ok(RequestResult::without_handler(Response::RoomState {
             state: room.room_data().state,

@@ -1,5 +1,4 @@
-use std::io;
-use std::sync::Arc;
+use std::{net::ToSocketAddrs, sync::Arc, time::Duration};
 
 use iced::{
     alignment::Horizontal,
@@ -19,7 +18,7 @@ use action::Action;
 
 mod connection;
 use connection::Connection;
-use trivia::messages::{self, Request, Response};
+use trivia::messages::{Request, Response};
 
 mod consts;
 
@@ -31,32 +30,31 @@ fn main() {
     Client::run(settings).unwrap();
 }
 
-struct Client {
+struct Client<A> {
     page: Box<dyn Page>,
     conn: Arc<Connection>,
+    addr: A,
     err: String,
 }
 
-impl Application for Client {
+impl<A> Application for Client<A>
+where
+    A: ToSocketAddrs + Send + Clone + 'static
+{
     type Message = Message;
     type Executor = iced::executor::Default;
     type Theme = iced::Theme;
-    type Flags = &'static str;
+    type Flags = A;
 
-    fn new(addr: &'static str) -> (Self, Command<Message>) {
+    fn new(addr: A) -> (Self, Command<Message>) {
         let page = Box::<LoginPage>::default();
-        let cmd = Command::perform(
-            async move { Connection::connect(addr).map(Arc::new) },
-            |result| match result {
-                Ok(conn) => Message::Connected(conn),
-                Err(err) => Message::Error(Arc::new(err)),
-            },
-        );
+        let cmd = Self::connect(addr.clone());
 
         (
             Self {
                 conn: Arc::default(),
                 page,
+                addr,
                 err: String::default(),
             },
             cmd,
@@ -70,9 +68,14 @@ impl Application for Client {
     fn update(&mut self, message: Message) -> Command<Message> {
         // log the messages that relate to the server
         match message {
+            Message::Connect => {
+                return Self::connect(self.addr.clone())
+            }
+
             Message::Connected(conn) => {
                 eprintln!("connected to server!");
                 self.conn = conn;
+                self.err.clear();
                 return Command::none();
             }
 
@@ -87,6 +90,8 @@ impl Application for Client {
             }
 
             Message::Quit => std::process::exit(0),
+
+            Message::Nothing => return Command::none(),
 
             _ => {}
         };
@@ -141,28 +146,19 @@ impl Application for Client {
         subs.push(self.page.subscription());
         subs.push(iced::event::listen().map(handle_event));
 
-        if self.conn.is_connected() {
-            let sub = iced::subscription::unfold(
-                "listener",
-                Arc::downgrade(&self.conn),
-                |conn| async move {
-                    if let Some(conn) = conn.upgrade() {
-                        let res = conn.recv();
-                        (response_as_message(res), Arc::downgrade(&conn))
-                    } else {
-                        (Message::Nothing, conn)
-                    }
-                },
-            );
-
+        if !self.conn.is_connected() {
+            let sub = iced::time::every(Duration::from_secs(5)).map(|_| Message::Connect);
             subs.push(sub);
-        };
+        }
 
         iced::Subscription::batch(subs)
     }
 }
 
-impl Client {
+impl<A> Client<A>
+where
+    A: ToSocketAddrs + Send + 'static
+{
     pub fn make_request(&mut self, req: Option<Request>) -> Command<Message> {
         let Some(req) = req else {
             return Command::none();
@@ -171,9 +167,19 @@ impl Client {
         Command::perform(
             {
                 let conn = self.conn.clone();
-                async move { conn.send(req) }
+                async move { conn.send_and_recv(req).await }
             },
-            |_| Message::Nothing,
+            response_as_message,
+        )
+    }
+
+    pub fn connect(addr: A) -> Command<Message> {
+        Command::perform(
+            async move { Connection::connect(addr).map(Arc::new) },
+            |result| match result {
+                Ok(conn) => Message::Connected(conn),
+                Err(err) => Message::Error(Arc::new(err)),
+            },
         )
     }
 }

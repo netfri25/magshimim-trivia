@@ -3,7 +3,9 @@ use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::{Database, Score};
+use crate::db::Database;
+
+use crate::managers::game::Score;
 
 
 pub struct StatisticsManager {

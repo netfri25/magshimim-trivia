@@ -32,6 +32,10 @@ pub enum Request {
     StartGame,
     RoomState,
     LeaveRoom,
+    LeaveGame,
+    Question,
+    SubmitAnswer(String),
+    GameResult,
 }
 
 impl Request {
@@ -93,6 +97,7 @@ impl Request {
     }
 }
 
+#[derive(Debug)]
 pub struct RequestInfo {
     pub data: Request,
     pub time: Instant,

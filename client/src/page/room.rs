@@ -13,7 +13,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{MainMenuPage, Page};
+use super::{GamePage, MainMenuPage, Page};
 
 // NOTE: my temporary solution is to consider the first user in the users list as the admin, not
 // sure how great of a solution that is but ig it will work
@@ -29,6 +29,7 @@ pub enum Msg {
 pub struct RoomPage {
     room_name: String,
     players: Vec<LoggedUser>,
+    time_per_question: Duration,
     is_admin: bool, // true when the current user is the admin
 }
 
@@ -37,17 +38,17 @@ impl Page for RoomPage {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::RoomState {
-                    state,
                     name,
                     players,
-                    question_count,
                     time_per_question,
+                    ..
                 } => {
                     self.room_name = name.clone();
-                    self.players = players.clone()
+                    self.players = players.clone();
+                    self.time_per_question = *time_per_question;
                 },
 
-                Response::StartGame => todo!("switch to the StartGame page"),
+                Response::StartGame => return Action::switch_and_request(GamePage::new(self.time_per_question), Request::Question),
 
                 Response::LeaveRoom => return Action::switch(MainMenuPage),
 
@@ -133,6 +134,7 @@ impl RoomPage {
         Self {
             room_name: String::new(),
             players: vec![],
+            time_per_question: Default::default(),
             is_admin,
         }
     }
