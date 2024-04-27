@@ -30,10 +30,7 @@ impl Page for JoinRoomPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::RoomList(rooms) => {
-                    println!("rooms have been set!");
-                    self.rooms = rooms.clone();
-                }
+                Response::RoomList(rooms) => self.rooms = rooms.clone(),
 
                 &Response::JoinRoom => {
                     let page = RoomPage::new(false);
