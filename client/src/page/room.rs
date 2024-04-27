@@ -49,9 +49,14 @@ impl Page for RoomPage {
                     self.players = players.clone();
                     self.time_per_question = *time_per_question;
                     self.question_count = *question_count;
-                },
+                }
 
-                Response::StartGame => return Action::switch_and_request(GamePage::new(self.time_per_question, self.question_count), Request::Question),
+                Response::StartGame => {
+                    return Action::switch_and_request(
+                        GamePage::new(self.time_per_question, self.question_count),
+                        Request::Question,
+                    )
+                }
 
                 Response::LeaveRoom => return Action::switch(MainMenuPage),
 

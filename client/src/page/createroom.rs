@@ -2,9 +2,7 @@ use std::ops::RangeInclusive;
 use std::time::Duration;
 
 use iced::alignment::{Horizontal, Vertical};
-use iced::widget::{
-    button, column, container, horizontal_space, row, slider, text, text_input,
-};
+use iced::widget::{button, column, container, horizontal_space, row, slider, text, text_input};
 use iced::{Alignment, Length};
 use trivia::messages::{Request, Response};
 
@@ -50,7 +48,7 @@ impl Page for CreateRoomPage {
                     eprintln!("room created: id={}", id);
                     let page = RoomPage::new(true);
                     let req = Request::RoomState;
-                    return Action::switch_and_request(page, req)
+                    return Action::switch_and_request(page, req);
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
@@ -91,15 +89,8 @@ impl Page for CreateRoomPage {
         .padding(consts::TITLES_PADDING);
 
         let inputs = column![
-            text_input("room name:", &self.name)
-                .on_input(|input| Msg::NameInput(input).into()),
-            input_field(
-                "users count",
-                1..=20,
-                self.max_users,
-                1,
-                Msg::MaxUsersInput
-            ),
+            text_input("room name:", &self.name).on_input(|input| Msg::NameInput(input).into()),
+            input_field("users count", 1..=20, self.max_users, 1, Msg::MaxUsersInput),
             input_field(
                 "questions count",
                 1..=30,

@@ -1,8 +1,8 @@
 use iced::Command;
 use trivia::messages::Request;
 
-use crate::page::Page;
 use crate::message::Message;
+use crate::page::Page;
 
 pub enum Action {
     Switch(Box<dyn Page>, Option<Request>),

@@ -1,5 +1,5 @@
-use crate::message::Message;
 use crate::action::Action;
+use crate::message::Message;
 
 pub mod login;
 pub use login::LoginPage;

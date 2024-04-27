@@ -1,7 +1,7 @@
-pub mod server;
 pub mod db;
-pub mod messages;
 pub mod managers;
+pub mod messages;
+pub mod server;
 
-mod handler;
 mod defer;
+mod handler;

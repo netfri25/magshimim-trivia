@@ -1,6 +1,6 @@
-use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +33,10 @@ impl RoomManager {
     }
 
     pub fn set_state(&mut self, id: RoomID, state: RoomState) -> bool {
-        self.rooms.get_mut(&id).map(|room| room.data.state = state).is_some()
+        self.rooms
+            .get_mut(&id)
+            .map(|room| room.data.state = state)
+            .is_some()
     }
 
     pub fn room(&self, id: RoomID) -> Option<&Room> {
@@ -104,7 +107,7 @@ pub struct RoomData {
     pub max_players: usize,
     pub questions_count: usize,
     pub time_per_question: Duration,
-    pub state: RoomState
+    pub state: RoomState,
 }
 
 impl RoomData {
@@ -112,7 +115,7 @@ impl RoomData {
         name: impl Into<String>,
         max_players: usize,
         questions_count: usize,
-        time_per_question: Duration
+        time_per_question: Duration,
     ) -> Self {
         static ROOM_ID_COUNTER: Mutex<RoomID> = Mutex::new(0);
         let room_id;

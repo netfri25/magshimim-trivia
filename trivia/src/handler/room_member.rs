@@ -48,7 +48,9 @@ impl RoomMemberRequestHandler {
         }
 
         let resp = Response::LeaveRoom;
-        let handler = self.factory.create_menu_request_handler(self.member.clone());
+        let handler = self
+            .factory
+            .create_menu_request_handler(self.member.clone());
         Ok(RequestResult::new(resp, handler))
     }
 
@@ -60,8 +62,10 @@ impl RoomMemberRequestHandler {
 
         if room.room_data().state == RoomState::InGame {
             let resp = Response::StartGame;
-            let handler = self.factory.create_game_request_handler(self.member.clone(), self.room_id);
-            return Ok(RequestResult::new(resp, handler))
+            let handler = self
+                .factory
+                .create_game_request_handler(self.member.clone(), self.room_id);
+            return Ok(RequestResult::new(resp, handler));
         }
 
         Ok(RequestResult::without_handler(Response::RoomState {

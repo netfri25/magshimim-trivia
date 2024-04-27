@@ -33,7 +33,7 @@ impl Page for LoginPage {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::Login {
-                    status: StatusCode::ResponseOk
+                    status: StatusCode::ResponseOk,
                 } => {
                     return Action::switch(MainMenuPage::default());
                 }
@@ -49,7 +49,9 @@ impl Page for LoginPage {
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
-            Msg::UsernameSubmit => return Action::cmd(text_input::focus(text_input::Id::new("password"))),
+            Msg::UsernameSubmit => {
+                return Action::cmd(text_input::focus(text_input::Id::new("password")))
+            }
 
             Msg::PasswordInput(password) => self.password = password,
             Msg::PasswordSubmit | Msg::Login => {
@@ -125,9 +127,6 @@ impl Page for LoginPage {
 
 impl LoginPage {
     pub fn new(username: String, password: String) -> Self {
-        Self {
-            username,
-            password,
-        }
+        Self { username, password }
     }
 }

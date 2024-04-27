@@ -16,8 +16,8 @@ pub use room_member::RoomMemberRequestHandler;
 pub mod game;
 pub use game::GameRequestHandler;
 
-use crate::messages::{RequestResult, RequestInfo};
 use crate::db;
+use crate::messages::{RequestInfo, RequestResult};
 
 pub use db::Error;
 

@@ -4,19 +4,25 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
+use crate::handler::Handler;
 use crate::managers::game::{calc_score, Score};
 use crate::managers::login::LoggedUser;
-use crate::managers::statistics::Statistics;
 use crate::managers::room::{Room, RoomID, RoomState};
-use crate::handler::Handler;
+use crate::managers::statistics::Statistics;
 
 use super::{Error, StatusCode};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Response {
-    Error { msg: String },
-    Login { status: StatusCode },
-    Signup { status: StatusCode },
+    Error {
+        msg: String,
+    },
+    Login {
+        status: StatusCode,
+    },
+    Signup {
+        status: StatusCode,
+    },
     Logout,
     RoomList(Vec<Room>),
     PlayersInRoom(Vec<LoggedUser>),
@@ -42,7 +48,7 @@ pub enum Response {
     // the `correct_answer_index` will be set to usize::MAX so that the client can't cheat
     // additionally, the answers will be shuffled when sent to the user
     Question(Option<QuestionData>), // None => no more questions
-    GameResult(Vec<PlayerResults>) // Will be sent to everyone when the game is over
+    GameResult(Vec<PlayerResults>), // Will be sent to everyone when the game is over
 }
 
 impl Response {
@@ -134,13 +140,19 @@ mod tests {
 
     #[test]
     fn serde() {
-        use std::io::Cursor;
         use super::Response;
+        use std::io::Cursor;
 
         let to_test = [
-            Response::Error { msg: "some error".into() },
-            Response::Login { status: StatusCode::ResponseOk },
-            Response::Signup { status: StatusCode::ResponseOk },
+            Response::Error {
+                msg: "some error".into(),
+            },
+            Response::Login {
+                status: StatusCode::ResponseOk,
+            },
+            Response::Signup {
+                status: StatusCode::ResponseOk,
+            },
         ];
 
         for original_response in to_test {

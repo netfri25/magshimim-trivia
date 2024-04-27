@@ -39,7 +39,7 @@ struct Client<A> {
 
 impl<A> Application for Client<A>
 where
-    A: ToSocketAddrs + Send + Clone + 'static
+    A: ToSocketAddrs + Send + Clone + 'static,
 {
     type Message = Message;
     type Executor = iced::executor::Default;
@@ -68,9 +68,7 @@ where
     fn update(&mut self, message: Message) -> Command<Message> {
         // log the messages that relate to the server
         match message {
-            Message::Connect => {
-                return Self::connect(self.addr.clone())
-            }
+            Message::Connect => return Self::connect(self.addr.clone()),
 
             Message::Connected(conn) => {
                 eprintln!("connected to server!");
@@ -155,7 +153,7 @@ where
 
 impl<A> Client<A>
 where
-    A: ToSocketAddrs + Send + 'static
+    A: ToSocketAddrs + Send + 'static,
 {
     pub fn make_request(&mut self, req: Option<Request>) -> Command<Message> {
         let Some(req) = req else {

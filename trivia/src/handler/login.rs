@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use crate::{managers::login::LoggedUser, messages::{Request, RequestInfo, RequestResult, Response, StatusCode}};
+use crate::{
+    managers::login::LoggedUser,
+    messages::{Request, RequestInfo, RequestResult, Response, StatusCode},
+};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
@@ -25,23 +28,42 @@ impl Handler for LoginRequestHandler {
 
         let result = match request.data {
             Request::Login { username, password } => {
-                if let Some(err) = login_manager.lock().unwrap().login(username.clone(), &password)? {
+                if let Some(err) = login_manager
+                    .lock()
+                    .unwrap()
+                    .login(username.clone(), &password)?
+                {
                     return Ok(RequestResult::new_error(err));
                 }
 
                 let logged_user = LoggedUser::new(username);
-                let response = Response::Login { status: StatusCode::ResponseOk };
-                RequestResult::new(response, self.factory.create_menu_request_handler(logged_user))
-            },
+                let response = Response::Login {
+                    status: StatusCode::ResponseOk,
+                };
+                RequestResult::new(
+                    response,
+                    self.factory.create_menu_request_handler(logged_user),
+                )
+            }
 
-            Request::Signup { username, password, email } => {
-                if let Some(err) = login_manager.lock().unwrap().signup(username, &password, &email)? {
+            Request::Signup {
+                username,
+                password,
+                email,
+            } => {
+                if let Some(err) = login_manager
+                    .lock()
+                    .unwrap()
+                    .signup(username, &password, &email)?
+                {
                     return Ok(RequestResult::new_error(err));
                 }
 
-                let response = Response::Signup { status: StatusCode::ResponseOk };
+                let response = Response::Signup {
+                    status: StatusCode::ResponseOk,
+                };
                 RequestResult::without_handler(response) // no need to switch an handler
-            },
+            }
 
             _ => RequestResult::new_error("Invalid request"),
         };

@@ -35,7 +35,7 @@ impl Page for JoinRoomPage {
                 &Response::JoinRoom => {
                     let page = RoomPage::new(false);
                     let req = Request::RoomState;
-                    return Action::switch_and_request(page, req)
+                    return Action::switch_and_request(page, req);
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
@@ -50,7 +50,7 @@ impl Page for JoinRoomPage {
 
         match msg {
             Msg::UpdateRooms => Action::request(Request::RoomList),
-            Msg::EnterRoom(id) => Action::request(Request::JoinRoom(id))
+            Msg::EnterRoom(id) => Action::request(Request::JoinRoom(id)),
         }
     }
 
@@ -60,15 +60,10 @@ impl Page for JoinRoomPage {
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
 
-        let rooms_col = Column::from_vec(
-            self.rooms
-                .iter()
-                .map(room_element)
-                .collect(),
-        )
-        .align_items(Alignment::Center)
-        .padding(2)
-        .width(Length::Fill);
+        let rooms_col = Column::from_vec(self.rooms.iter().map(room_element).collect())
+            .align_items(Alignment::Center)
+            .padding(2)
+            .width(Length::Fill);
 
         let rooms = container(row![
             horizontal_space().width(Length::FillPortion(1)),

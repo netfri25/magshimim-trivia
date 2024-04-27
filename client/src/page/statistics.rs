@@ -26,22 +26,24 @@ impl Page for StatisticsPage {
             match response.as_ref() {
                 Response::Statistics {
                     user_statistics,
-                    high_scores
+                    high_scores,
                 } => {
                     let Some(ref switch_to) = self.switch_to else {
                         return Action::none();
                     };
 
                     return match switch_to {
-                        Msg::PersonalStats => Action::switch(PersonalStatsPage::new(user_statistics.clone())),
+                        Msg::PersonalStats => {
+                            Action::switch(PersonalStatsPage::new(user_statistics.clone()))
+                        }
                         Msg::HighScores => Action::switch(HighScoresPage::new(high_scores.clone())),
-                    }
-                },
+                    };
+                }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none()
+            return Action::none();
         }
 
         let Message::Statistics(msg) = message else {

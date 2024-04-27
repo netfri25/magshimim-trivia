@@ -49,8 +49,12 @@ impl RoomAdminRequestHandler {
 
     fn start_game(&mut self) -> Result<RequestResult, Error> {
         let room_manager = self.factory.get_room_manager();
-        if !room_manager.lock().unwrap().set_state(self.room_id, RoomState::InGame) {
-            return Ok(RequestResult::new_error("Room doesn't exist"))
+        if !room_manager
+            .lock()
+            .unwrap()
+            .set_state(self.room_id, RoomState::InGame)
+        {
+            return Ok(RequestResult::new_error("Room doesn't exist"));
         }
 
         let room_manager = self.factory.get_room_manager();
@@ -60,12 +64,20 @@ impl RoomAdminRequestHandler {
             return Ok(RequestResult::new_error("Room doesn't exist"));
         };
 
-        let game_id = self.factory.get_game_manager().lock().unwrap().create_game(room)?.id();
+        let game_id = self
+            .factory
+            .get_game_manager()
+            .lock()
+            .unwrap()
+            .create_game(room)?
+            .id();
 
         drop(room_manager_lock);
 
         let resp = Response::StartGame;
-        let handler = self.factory.create_game_request_handler(self.admin.clone(), game_id);
+        let handler = self
+            .factory
+            .create_game_request_handler(self.admin.clone(), game_id);
         Ok(RequestResult::new(resp, handler))
     }
 

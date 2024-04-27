@@ -55,9 +55,13 @@ impl Page for RegisterPage {
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
-            Msg::UsernameSubmit => return Action::cmd(text_input::focus(text_input::Id::new("password"))),
+            Msg::UsernameSubmit => {
+                return Action::cmd(text_input::focus(text_input::Id::new("password")))
+            }
             Msg::PasswordInput(password) => self.password = password,
-            Msg::PasswordSubmit => return Action::cmd(text_input::focus(text_input::Id::new("email"))),
+            Msg::PasswordSubmit => {
+                return Action::cmd(text_input::focus(text_input::Id::new("email")))
+            }
             Msg::EmailInput(email) => self.email = email,
 
             Msg::EmailSubmit | Msg::Register => {

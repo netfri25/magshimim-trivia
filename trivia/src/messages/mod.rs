@@ -1,6 +1,6 @@
 use std::io;
 
-use serde_repr::{Serialize_repr, Deserialize_repr};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 pub mod request;
 pub use request::*; // re-export

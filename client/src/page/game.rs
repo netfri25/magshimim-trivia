@@ -150,7 +150,10 @@ impl Page for GamePage {
                 .padding(10)
                 .spacing(20);
 
-        let timer = data_field("time left", format!("{:.01}s", self.time_left.as_secs_f32()));
+        let timer = data_field(
+            "time left",
+            format!("{:.01}s", self.time_left.as_secs_f32()),
+        );
         let correct_count = data_field("correct", format!("{}", self.correct_count));
         let questions_left = data_field("questions left", format!("{}", self.questions_left));
 

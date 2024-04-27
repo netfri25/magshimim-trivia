@@ -1,7 +1,7 @@
-use std::time::{Duration, Instant};
 use std::io::{Read, Write};
+use std::time::{Duration, Instant};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::managers::room::RoomID;
 
@@ -82,8 +82,8 @@ impl RequestInfo {
 mod tests {
     #[test]
     fn serde() {
-        use std::io::Cursor;
         use super::Request;
+        use std::io::Cursor;
 
         let to_test = [
             Request::Signup {
@@ -91,7 +91,6 @@ mod tests {
                 password: "pass1234".into(),
                 email: "example@mail.com".into(),
             },
-
             Request::Login {
                 username: "user1234".into(),
                 password: "pass1234".into(),
