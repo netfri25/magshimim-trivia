@@ -10,7 +10,7 @@
  - [x] remove `is_*` from the Request/Result and use the `matches!` macro instead
  - [ ] refactor some of the trivia/db/sqlite.rs module:
     1. [ ] function that abstracts the query for a specific statistic of some user
-    2. [ ] proper usage of the .iterate() and .prepare() methods of the connection
+    2. [x] proper usage of the .iterate() and .prepare() methods of the connection
 
 ### Bonuses
  - [ ] password and email regex checking

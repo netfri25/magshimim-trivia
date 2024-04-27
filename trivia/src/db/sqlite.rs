@@ -115,13 +115,7 @@ impl Database for SqliteDatabase {
             .limit(1)
             .to_string(query::SqliteQueryBuilder);
 
-        let mut exists = false;
-        self.conn.iterate(statement, |_| {
-            exists = true; // mark as found
-            true // don't care if it will continue or not
-        })?;
-
-        Ok(exists)
+        Ok(self.conn.prepare(statement)?.next()? == State::Row)
     }
 
     fn password_matches(&self, username: &str, password: &str) -> Result<bool, Error> {
@@ -133,13 +127,7 @@ impl Database for SqliteDatabase {
             .limit(1)
             .to_string(query::SqliteQueryBuilder);
 
-        let mut exists = false;
-        self.conn.iterate(statement, |_| {
-            exists = true; // mark as found
-            true // don't care if it will continue or not
-        })?;
-
-        Ok(exists)
+        Ok(self.conn.prepare(statement)?.next()? == State::Row)
     }
 
     /// doesn't check whether the user exists or not
