@@ -8,8 +8,8 @@
  - [x] add [correctly answered, questions left] while playing the game
  - [x] fix score being NaN when the user doesn't answer any question
  - [x] remove `is_*` from the Request/Result and use the `matches!` macro instead
- - [ ] refactor some of the trivia/db/sqlite.rs module:
-    1. [ ] function that abstracts the query for a specific statistic of some user
+ - [x] refactor some of the trivia/db/sqlite.rs module:
+    1. [x] function that abstracts the query for a specific statistic of some user
     2. [x] proper usage of the .iterate() and .prepare() methods of the connection
 
 ### Bonuses

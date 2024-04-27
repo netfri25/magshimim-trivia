@@ -75,6 +75,30 @@ impl SqliteDatabase {
 
         Ok(())
     }
+
+    fn get_stats<T: sqlite::ReadableWithIndex>(
+        &self,
+        username: &str,
+        col: Statistics,
+    ) -> Result<T, Error> {
+        let statement = query::Query::select()
+            .column(col)
+            .from(Statistics::Table)
+            .inner_join(
+                User::Table,
+                query::Expr::col((Statistics::Table, Statistics::Id))
+                    .equals((User::Table, User::Id)),
+            )
+            .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
+            .to_string(query::SqliteQueryBuilder);
+
+        let mut iter = self.conn.prepare(statement)?;
+        if let State::Done = iter.next()? {
+            return Err(Error::UserDoesntExist(username.to_string()));
+        }
+
+        Ok(iter.read::<T, _>(col.to_string().as_str())?)
+    }
 }
 
 impl Database for SqliteDatabase {
@@ -201,116 +225,28 @@ impl Database for SqliteDatabase {
         Ok(output)
     }
 
-    // NOTE: LOTS of copy & paste, I can probably factor this out but it's not really necessary
-
     fn get_player_average_answer_time(&self, username: &str) -> Result<Duration, Error> {
-        let statement = query::Query::select()
-            .column(Statistics::AverageAnswerTime)
-            .from(Statistics::Table)
-            .inner_join(
-                User::Table,
-                query::Expr::col((Statistics::Table, Statistics::Id))
-                    .equals((User::Table, User::Id)),
-            )
-            .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
-            .to_string(query::SqliteQueryBuilder);
-
-        let mut iter = self.conn.prepare(statement)?;
-        if let State::Done = iter.next()? {
-            return Err(Error::UserDoesntExist(username.to_string()));
-        }
-
-        let average_answer_time =
-            iter.read::<f64, _>(Statistics::AverageAnswerTime.to_string().as_str())?;
-        Ok(Duration::from_secs_f64(average_answer_time))
+        self.get_stats(username, Statistics::AverageAnswerTime)
+            .map(Duration::from_secs_f64)
     }
 
     fn get_correct_answers_count(&self, username: &str) -> Result<i64, Error> {
-        let statement = query::Query::select()
-            .column(Statistics::CorrectAnswers)
-            .from(Statistics::Table)
-            .inner_join(
-                User::Table,
-                query::Expr::col((Statistics::Table, Statistics::Id))
-                    .equals((User::Table, User::Id)),
-            )
-            .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
-            .to_string(query::SqliteQueryBuilder);
-
-        let mut iter = self.conn.prepare(statement)?;
-        if let State::Done = iter.next()? {
-            return Err(Error::UserDoesntExist(username.to_string()));
-        }
-
-        let correct_answers =
-            iter.read::<i64, _>(Statistics::CorrectAnswers.to_string().as_str())?;
-        Ok(correct_answers)
+        self.get_stats(username, Statistics::CorrectAnswers)
     }
 
     fn get_total_answers_count(&self, username: &str) -> Result<i64, Error> {
-        let statement = query::Query::select()
-            .column(Statistics::TotalAnswers)
-            .from(Statistics::Table)
-            .inner_join(
-                User::Table,
-                query::Expr::col((Statistics::Table, Statistics::Id))
-                    .equals((User::Table, User::Id)),
-            )
-            .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
-            .to_string(query::SqliteQueryBuilder);
-
-        let mut iter = self.conn.prepare(statement)?;
-        if let State::Done = iter.next()? {
-            return Err(Error::UserDoesntExist(username.to_string()));
-        }
-
-        let total_answers = iter.read::<i64, _>(Statistics::TotalAnswers.to_string().as_str())?;
-        Ok(total_answers)
+        self.get_stats(username, Statistics::TotalAnswers)
     }
 
     fn get_games_count(&self, username: &str) -> Result<i64, Error> {
-        let statement = query::Query::select()
-            .column(Statistics::TotalGames)
-            .from(Statistics::Table)
-            .inner_join(
-                User::Table,
-                query::Expr::col((Statistics::Table, Statistics::Id))
-                    .equals((User::Table, User::Id)),
-            )
-            .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
-            .to_string(query::SqliteQueryBuilder);
-
-        let mut iter = self.conn.prepare(statement)?;
-        if let State::Done = iter.next()? {
-            return Err(Error::UserDoesntExist(username.to_string()));
-        }
-
-        let total_games = iter.read::<i64, _>(Statistics::TotalGames.to_string().as_str())?;
-        Ok(total_games)
+        self.get_stats(username, Statistics::TotalGames)
     }
 
-    fn get_score(&self, username: &str) -> Result<super::Score, Error> {
-        let statement = query::Query::select()
-            .column(Statistics::OverallScore)
-            .from(Statistics::Table)
-            .inner_join(
-                User::Table,
-                query::Expr::col((Statistics::Table, Statistics::Id))
-                    .equals((User::Table, User::Id)),
-            )
-            .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
-            .to_string(query::SqliteQueryBuilder);
-
-        let mut iter = self.conn.prepare(statement)?;
-        if let State::Done = iter.next()? {
-            return Err(Error::UserDoesntExist(username.to_string()));
-        }
-
-        let total_games = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
-        Ok(total_games)
+    fn get_score(&self, username: &str) -> Result<Score, Error> {
+        self.get_stats(username, Statistics::OverallScore)
     }
 
-    fn get_five_highscores(&self) -> Result<[Option<(String, super::Score)>; 5], Error> {
+    fn get_five_highscores(&self) -> Result<[Option<(String, Score)>; 5], Error> {
         let statement = query::Query::select()
             .column(User::Username)
             .column(Statistics::OverallScore)
@@ -324,7 +260,7 @@ impl Database for SqliteDatabase {
             .limit(5)
             .to_string(query::SqliteQueryBuilder);
 
-        let mut scores: [Option<(String, super::Score)>; 5] = Default::default();
+        let mut scores: [Option<(String, Score)>; 5] = Default::default();
         let mut index = 0;
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {
@@ -507,7 +443,7 @@ impl Answer {
     }
 }
 
-#[derive(query::Iden)]
+#[derive(query::Iden, Clone, Copy)]
 enum Statistics {
     Table,
     Id, // also the user_id
