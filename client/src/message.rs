@@ -8,7 +8,6 @@ use crate::page::{createroom, joinroom, login, mainmenu, register, room, statist
 #[derive(From, Debug, Clone)]
 #[non_exhaustive]
 pub enum Message {
-    Nothing,
     Quit,
     Connect,
 

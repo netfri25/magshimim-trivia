@@ -91,8 +91,6 @@ where
 
             Message::Quit => std::process::exit(0),
 
-            Message::Nothing => return Command::none(),
-
             _ => {}
         };
 
@@ -144,7 +142,7 @@ where
     fn subscription(&self) -> iced::Subscription<Message> {
         let mut subs = Vec::with_capacity(3);
         subs.push(self.page.subscription());
-        subs.push(iced::event::listen().map(handle_event));
+        subs.push(iced::event::listen_with(handle_event));
 
         if !self.conn.is_connected() {
             let sub = iced::time::every(Duration::from_secs(5)).map(|_| Message::Connect);
@@ -194,13 +192,13 @@ fn response_as_message(resp: Result<Response, connection::Error>) -> Message {
     }
 }
 
-fn handle_event(event: iced::Event) -> Message {
+fn handle_event(event: iced::Event, _status: iced::event::Status) -> Option<Message> {
     match event {
         iced::Event::Keyboard(keyboard::Event::KeyPressed {
             key: keyboard::Key::Named(keyboard::key::Named::Escape),
             ..
-        }) => Message::Quit,
+        }) => Some(Message::Quit),
 
-        _ => Message::Nothing,
+        _ => None,
     }
 }
