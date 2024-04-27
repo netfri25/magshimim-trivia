@@ -1,5 +1,6 @@
 # TODO
  - [ ] comment obscure parts of the code
+ - [ ] change README.md
  - [x] change the statistics table in the database so that `statistics.id == user.id`
  - [x] fix the scoring system
  - [x] limit the time that the user can answer a question (server side)
@@ -18,7 +19,7 @@
         - phone (prefix, number)
         - address (city, street, apartment)
         - birth date [feature: date_picker](https://github.com/iced-rs/iced_aw/tree/main/examples/date_picker/src/main.rs)
- - [ ] add question page
+ - [ ] page for adding questions
 
 ### my own additions
  - [ ] add more room info in the Join Room page
