@@ -47,7 +47,7 @@ mod tests {
     use std::sync::OnceLock;
 
     use crate::db::SqliteDatabase;
-    use crate::messages::{Request, Response, StatusCode};
+    use crate::messages::{Request, Response};
 
     use super::*;
 
@@ -98,9 +98,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Signup;
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -109,9 +107,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Login;
         assert_eq!(response, expected);
     }
 
@@ -128,9 +124,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Signup;
         assert_eq!(response, expected);
 
         let request = Request::Signup {
@@ -140,9 +134,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Error {
-            msg: "username already exists".into(),
-        };
+        let expected = Response::Error("username already exists".into());
         assert_eq!(response, expected);
     }
 
@@ -159,9 +151,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Signup;
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -170,9 +160,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Login;
         assert_eq!(response, expected);
 
         // disconnect from the server
@@ -186,9 +174,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Login;
         assert_eq!(response, expected);
     }
 
@@ -205,9 +191,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Signup;
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -216,9 +200,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login {
-            status: StatusCode::ResponseOk,
-        };
+        let expected = Response::Login;
         assert_eq!(response, expected);
 
         let mut client = TcpStream::connect(ADDR).unwrap();
@@ -229,9 +211,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Error {
-            msg: "user already connected".to_string(),
-        };
+        let expected = Response::Error("user already connected".to_string());
         assert_eq!(response, expected);
     }
 }

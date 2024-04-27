@@ -1,10 +1,7 @@
-use iced::{
-    alignment::Horizontal,
-    theme,
-    widget::{button, column, container, horizontal_space, row, text, text_input},
-    Alignment, Length,
-};
-use trivia::messages::{Request, Response, StatusCode};
+use iced::alignment::Horizontal;
+use iced::widget::{button, column, container, horizontal_space, row, text, text_input};
+use iced::{theme, Alignment, Length};
+use trivia::messages::{Request, Response};
 
 use crate::action::Action;
 use crate::consts;
@@ -32,9 +29,7 @@ impl Page for LoginPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::Login {
-                    status: StatusCode::ResponseOk,
-                } => {
+                Response::Login => {
                     return Action::switch(MainMenuPage::default());
                 }
                 _ => eprintln!("response ignored: {:?}", response),

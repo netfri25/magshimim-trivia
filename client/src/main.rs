@@ -182,7 +182,7 @@ where
 
 fn response_as_message(resp: Result<Response, connection::Error>) -> Message {
     match resp {
-        Ok(Response::Error { msg }) => {
+        Ok(Response::Error(msg)) => {
             Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
         }
         Ok(response) => Message::Response(Arc::new(response)),

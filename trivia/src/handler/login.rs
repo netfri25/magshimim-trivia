@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use crate::{
-    managers::login::LoggedUser,
-    messages::{Request, RequestInfo, RequestResult, Response, StatusCode},
-};
+use crate::managers::login::LoggedUser;
+use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
@@ -37,9 +35,7 @@ impl Handler for LoginRequestHandler {
                 }
 
                 let logged_user = LoggedUser::new(username);
-                let response = Response::Login {
-                    status: StatusCode::ResponseOk,
-                };
+                let response = Response::Login;
                 RequestResult::new(
                     response,
                     self.factory.create_menu_request_handler(logged_user),
@@ -59,9 +55,7 @@ impl Handler for LoginRequestHandler {
                     return Ok(RequestResult::new_error(err));
                 }
 
-                let response = Response::Signup {
-                    status: StatusCode::ResponseOk,
-                };
+                let response = Response::Signup;
                 RequestResult::without_handler(response) // no need to switch an handler
             }
 

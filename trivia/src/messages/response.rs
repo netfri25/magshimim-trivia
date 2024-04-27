@@ -10,19 +10,13 @@ use crate::managers::login::LoggedUser;
 use crate::managers::room::{Room, RoomID, RoomState};
 use crate::managers::statistics::Statistics;
 
-use super::{Error, StatusCode};
+use super::Error;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Response {
-    Error {
-        msg: String,
-    },
-    Login {
-        status: StatusCode,
-    },
-    Signup {
-        status: StatusCode,
-    },
+    Error(String),
+    Login,
+    Signup,
     Logout,
     RoomList(Vec<Room>),
     PlayersInRoom(Vec<LoggedUser>),
@@ -76,7 +70,7 @@ impl Response {
 
     pub fn new_error(msg: impl ToString) -> Self {
         let msg = msg.to_string();
-        Self::Error { msg }
+        Self::Error(msg)
     }
 }
 
@@ -136,23 +130,15 @@ impl PlayerResults {
 
 #[cfg(test)]
 mod tests {
-    use crate::messages::StatusCode;
-
     #[test]
     fn serde() {
         use super::Response;
         use std::io::Cursor;
 
         let to_test = [
-            Response::Error {
-                msg: "some error".into(),
-            },
-            Response::Login {
-                status: StatusCode::ResponseOk,
-            },
-            Response::Signup {
-                status: StatusCode::ResponseOk,
-            },
+            Response::Error("some error".into()),
+            Response::Login,
+            Response::Signup,
         ];
 
         for original_response in to_test {

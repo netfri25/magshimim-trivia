@@ -1,10 +1,7 @@
-use iced::{
-    alignment::Horizontal,
-    theme,
-    widget::{button, column, container, horizontal_space, row, text, text_input},
-    Alignment, Length,
-};
-use trivia::messages::{Request, Response, StatusCode};
+use iced::alignment::Horizontal;
+use iced::widget::{button, column, container, horizontal_space, row, text, text_input};
+use iced::{theme, Alignment, Length};
+use trivia::messages::{Request, Response};
 
 use crate::message::Message;
 use crate::{action::Action, consts};
@@ -34,9 +31,7 @@ impl Page for RegisterPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::Signup {
-                    status: StatusCode::ResponseOk,
-                } => {
+                Response::Signup => {
                     return Action::switch(LoginPage::new(
                         self.username.clone(),
                         self.password.clone(),
