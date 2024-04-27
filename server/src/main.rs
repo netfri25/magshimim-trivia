@@ -1,4 +1,4 @@
-use trivia::db::SqliteDatabase;
+use trivia::db::{Database, SqliteDatabase};
 use trivia::server::TriviaServer;
 
 fn main() {
@@ -7,6 +7,7 @@ fn main() {
         std::process::exit(1);
     });
 
+    db.open()?;
     db.populate_questions(50).unwrap_or_else(|err| {
         eprintln!("[WARN] unable to add questions to db: {}", err);
     });

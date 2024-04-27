@@ -12,8 +12,7 @@ pub struct TriviaServer {
 }
 
 impl TriviaServer {
-    pub fn build(addr: impl ToSocketAddrs, mut db: impl Database + 'static) -> Result<Self, Error> {
-        db.open()?;
+    pub fn build(addr: impl ToSocketAddrs, db: impl Database + 'static) -> Result<Self, Error> {
         let db = Arc::new(Mutex::new(db));
         let factory = Arc::new(RequestHandlerFactory::new(db.clone()));
         let comm = Communicator::build(addr, factory.clone())?;
