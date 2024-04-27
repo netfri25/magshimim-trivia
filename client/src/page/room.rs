@@ -31,6 +31,7 @@ pub struct RoomPage {
     players: Vec<LoggedUser>,
     time_per_question: Duration,
     is_admin: bool, // true when the current user is the admin
+    question_count: usize,
 }
 
 impl Page for RoomPage {
@@ -41,14 +42,16 @@ impl Page for RoomPage {
                     name,
                     players,
                     time_per_question,
+                    question_count,
                     ..
                 } => {
                     self.room_name = name.clone();
                     self.players = players.clone();
                     self.time_per_question = *time_per_question;
+                    self.question_count = *question_count;
                 },
 
-                Response::StartGame => return Action::switch_and_request(GamePage::new(self.time_per_question), Request::Question),
+                Response::StartGame => return Action::switch_and_request(GamePage::new(self.time_per_question, self.question_count), Request::Question),
 
                 Response::LeaveRoom => return Action::switch(MainMenuPage),
 
@@ -136,6 +139,7 @@ impl RoomPage {
             players: vec![],
             time_per_question: Default::default(),
             is_admin,
+            question_count: 0,
         }
     }
 }

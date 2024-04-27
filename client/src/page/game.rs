@@ -27,12 +27,16 @@ pub struct GamePage {
     correct_answer: Option<String>,
     time_per_question: Duration,
     time_left: Duration,
+    questions_left: usize,
+    correct_count: usize,
 }
 
 impl GamePage {
-    pub fn new(time_per_question: Duration) -> Self {
+    pub fn new(time_per_question: Duration, questions_left: usize) -> Self {
         Self {
             time_per_question,
+            questions_left: questions_left + 1, // I want the last question to show 1 instead of 0
+            correct_count: 0,
             question: None,
             selected_answer: None,
             correct_answer: None,
@@ -46,7 +50,10 @@ impl Page for GamePage {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::CorrectAnswer(correct_answer_index) => {
-                    self.correct_answer = Some(correct_answer_index.clone())
+                    self.correct_answer = Some(correct_answer_index.clone());
+                    if self.selected_answer == self.correct_answer {
+                        self.correct_count += 1;
+                    }
                 }
 
                 Response::Question(question) => {
@@ -55,6 +62,7 @@ impl Page for GamePage {
                         self.time_left = self.time_per_question;
                         self.selected_answer = None;
                         self.correct_answer = None;
+                        self.questions_left = self.questions_left.saturating_sub(1);
                     } else {
                         return Action::switch_and_request(
                             ResultsPage::default(),
@@ -142,17 +150,20 @@ impl Page for GamePage {
                 .padding(10)
                 .spacing(20);
 
-        let timer = text(format!("time left: {:.01}s", self.time_left.as_secs_f32()))
-            .size(20)
-            .width(Length::Fill)
-            .horizontal_alignment(Horizontal::Center);
+        let timer = data_field("time left", format!("{:.01}s", self.time_left.as_secs_f32()));
+        let correct_count = data_field("correct", format!("{}", self.correct_count));
+        let questions_left = data_field("questions left", format!("{}", self.questions_left));
+
+        let additional_data = column![vertical_space(), timer, correct_count, questions_left,]
+            .height(Length::Fill)
+            .spacing(10)
+            .padding(30);
 
         container(
             column![
                 question_content,
-                timer,
                 row![
-                    horizontal_space().width(Length::FillPortion(3)),
+                    additional_data.width(Length::FillPortion(3)),
                     answers.width(Length::FillPortion(5)),
                     next_button_col.width(Length::FillPortion(3))
                 ]
@@ -209,4 +220,24 @@ fn answer_elem<'a>(
     };
 
     but.into()
+}
+
+fn data_field(name: &str, value: String) -> iced::Element<Message> {
+    const FONT_SIZE: u16 = 16;
+    let name = text(format!("{}:", name))
+        .size(FONT_SIZE)
+        .horizontal_alignment(Horizontal::Left);
+
+    let value = text(value)
+        .size(FONT_SIZE)
+        .horizontal_alignment(Horizontal::Right);
+
+    row![name, horizontal_space(), value]
+        .spacing(5)
+        .width(Length::Fill)
+        .into()
+    // let questions_left = text(format!("questions left: {}", self.questions_left))
+    //     .size(20)
+    //     .width(Length::Fill)
+    //     .horizontal_alignment(Horizontal::Center);
 }
