@@ -561,7 +561,11 @@ impl Statistics {
                     .integer()
                     .not_null(),
             )
-            .col(query::ColumnDef::new(Statistics::OverallScore).double().not_null())
+            .col(
+                query::ColumnDef::new(Statistics::OverallScore)
+                    .double()
+                    .not_null(),
+            )
             .foreign_key(
                 query::ForeignKey::create()
                     .from(Statistics::Table, Statistics::Id)
