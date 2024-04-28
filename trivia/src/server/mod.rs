@@ -50,7 +50,7 @@ mod tests {
 
     use super::*;
 
-    const ADDR: &str = "127.0.0.1:6969";
+    const ADDR: &str = "127.0.0.1:1234";
 
     static START_SERVER: OnceLock<()> = OnceLock::new();
 
