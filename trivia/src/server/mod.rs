@@ -56,9 +56,11 @@ mod tests {
 
     fn start_server() {
         START_SERVER.get_or_init(|| {
-            let Ok(db) = SqliteDatabase::connect(":memory:") else {
+            let Ok(mut db) = SqliteDatabase::connect(":memory:") else {
                 return;
             };
+
+            db.open().unwrap();
 
             let Ok(server) = TriviaServer::build(ADDR, db) else {
                 return;
