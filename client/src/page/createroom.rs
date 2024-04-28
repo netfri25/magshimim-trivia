@@ -44,7 +44,7 @@ impl Page for CreateRoomPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                &Response::CreateRoom(id) => {
+                &Response::CreateRoom => {
                     let page = RoomPage::new(true);
                     let req = Request::RoomState;
                     return Action::switch_and_request(page, req);

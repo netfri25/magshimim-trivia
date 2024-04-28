@@ -7,7 +7,7 @@ use crate::db::question::QuestionData;
 use crate::handler::Handler;
 use crate::managers::game::{calc_score, Score};
 use crate::managers::login::LoggedUser;
-use crate::managers::room::{Room, RoomID, RoomState};
+use crate::managers::room::{Room, RoomState};
 use crate::managers::statistics::Statistics;
 
 use super::Error;
@@ -21,7 +21,7 @@ pub enum Response {
     RoomList(Vec<Room>),
     PlayersInRoom(Vec<LoggedUser>),
     JoinRoom,
-    CreateRoom(RoomID),
+    CreateRoom,
     Statistics {
         user_statistics: Statistics,
         high_scores: [Option<(String, Score)>; 5],

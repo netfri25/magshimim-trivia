@@ -126,7 +126,7 @@ impl MenuRequestHandler {
         let room_manager = self.factory.get_room_manager();
         let mut room_manager_lock = room_manager.lock().unwrap();
         room_manager_lock.create_room(self.user.clone(), room_data);
-        let resp = Response::CreateRoom(id);
+        let resp = Response::CreateRoom;
         let handler = self
             .factory
             .create_room_admin_request_handler(self.user.clone(), id);
