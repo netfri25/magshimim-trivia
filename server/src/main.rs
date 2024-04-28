@@ -7,7 +7,10 @@ fn main() {
         std::process::exit(1);
     });
 
-    db.open()?;
+    db.open().unwrap_or_else(|err| {
+        eprintln!("[FATAL ERROR] unable to open db: {}", err);
+    });
+
     db.populate_questions(50).unwrap_or_else(|err| {
         eprintln!("[WARN] unable to add questions to db: {}", err);
     });
