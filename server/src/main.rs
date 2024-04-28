@@ -2,22 +2,30 @@ use trivia::db::{Database, SqliteDatabase};
 use trivia::server::TriviaServer;
 
 fn main() {
-    let mut db = SqliteDatabase::connect("trivia-db.sqlite").unwrap_or_else(|err| {
-        eprintln!("[FATAL ERROR] unable to connect to db: {}", err);
-        std::process::exit(1);
-    });
+    let mut db = match SqliteDatabase::connect("trivia-db.sqlite") {
+        Ok(db) => db,
+        Err(err) => {
+            eprintln!("[FATAL ERROR] unable to connect to db: {}", err);
+            return;
+        }
+    };
 
-    db.open().unwrap_or_else(|err| {
+    if let Err(err) = db.open() {
         eprintln!("[FATAL ERROR] unable to open db: {}", err);
-    });
+        return;
+    }
 
-    db.populate_questions(50).unwrap_or_else(|err| {
+    if let Err(err) = db.populate_questions(50) {
         eprintln!("[WARN] unable to add questions to db: {}", err);
-    });
+    }
 
-    TriviaServer::build("127.0.0.1:6969", db)
-        .map(TriviaServer::run)
-        .unwrap_or_else(|err| {
+    let server = match TriviaServer::build("127.0.0.1:6969", db) {
+        Ok(server) => server,
+        Err(err) => {
             eprintln!("[FATAL ERROR] unable to run server: {}", err);
-        });
+            return
+        }
+    };
+
+    server.run()
 }
