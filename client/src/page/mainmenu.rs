@@ -1,5 +1,5 @@
 use iced::alignment::{Horizontal, Vertical};
-use iced::widget::{button, column, container, text};
+use iced::widget::{button, column, container, horizontal_space, row, text, vertical_space};
 use iced::{Alignment, Length};
 
 use crate::action::Action;
@@ -42,26 +42,27 @@ impl Page for MainMenuPage {
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
 
-        let create_room_button = menu_button("Create Room", Msg::CreateRoom);
-        let join_room_button = menu_button("Join Room", Msg::JoinRoom);
-        let statistics_button = menu_button("Statistics", Msg::Statistics);
-        let quit_button = menu_button("Quit", Msg::Quit);
-
         let buttons = column![
-            create_room_button,
-            join_room_button,
-            statistics_button,
-            quit_button,
+            menu_button("Create Room", Msg::CreateRoom),
+            vertical_space(),
+            menu_button("Join Room", Msg::JoinRoom),
+            vertical_space(),
+            menu_button("Statistics", Msg::Statistics),
+            vertical_space(),
+            menu_button("Quit", Msg::Quit),
         ]
-        .align_items(Alignment::Center)
-        .width(Length::Fill)
-        .spacing(35);
+        .align_items(Alignment::Center);
 
         container(column![
             container(title)
                 .height(Length::FillPortion(1))
                 .padding(consts::TITLES_PADDING * 2),
-            buttons.height(Length::FillPortion(3)),
+            row![
+                horizontal_space().width(Length::FillPortion(3)),
+                buttons.width(Length::FillPortion(3)),
+                horizontal_space().width(Length::FillPortion(3)),
+            ]
+            .height(Length::FillPortion(3)),
         ])
         .width(Length::Fill)
         .height(Length::Fill)
@@ -74,11 +75,13 @@ impl Page for MainMenuPage {
 fn menu_button(button_text: &'static str, msg: Msg) -> iced::Element<Message> {
     let button_text = text(button_text)
         .size(30)
+        .width(Length::Fill)
+        .height(Length::Fill)
         .horizontal_alignment(Horizontal::Center)
         .vertical_alignment(Vertical::Center);
 
     button(button_text)
-        .width(200)
+        .width(Length::Fill)
         .height(80)
         .on_press(msg.into())
         .into()
