@@ -12,7 +12,7 @@
  - [x] refactor some of the trivia/db/sqlite.rs module:
     1. [x] function that abstracts the query for a specific statistic of some user
     2. [x] proper usage of the .iterate() and .prepare() methods of the connection
- - [ ] don't allow joining a room that already started playing
+ - [x] don't allow joining a room that already started playing
  - [ ] merge the RoomAdminRequestHandler with RoomMemberRequestHandler
  - [ ] add tooltips for the Join Room page with the users of each room
 
