@@ -30,7 +30,7 @@ impl Page for LoginPage {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::Login => {
-                    return Action::switch(MainMenuPage::default());
+                    return Action::switch(MainMenuPage);
                 }
                 _ => eprintln!("response ignored: {:?}", response),
             }
