@@ -43,7 +43,7 @@ impl<'db, 'me: 'db> Server<'db> {
 #[cfg(test)]
 mod tests {
     use std::net::TcpStream;
-    use std::sync::{Condvar, OnceLock};
+    use std::sync::{Arc, Condvar, OnceLock};
 
     use trivia::db::SqliteDatabase;
     use trivia::messages::{Request, Response};
