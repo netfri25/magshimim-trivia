@@ -23,7 +23,7 @@ fn main() {
         Ok(server) => server,
         Err(err) => {
             eprintln!("[FATAL ERROR] unable to run server: {}", err);
-            return
+            return;
         }
     };
 

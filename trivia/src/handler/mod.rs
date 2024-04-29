@@ -7,11 +7,8 @@ pub use menu::MenuRequestHandler;
 pub mod factory;
 pub use factory::RequestHandlerFactory;
 
-pub mod room_admin;
-pub use room_admin::RoomAdminRequestHandler;
-
-pub mod room_member;
-pub use room_member::RoomMemberRequestHandler;
+pub mod room_user;
+pub use room_user::RoomUserRequestHandler;
 
 pub mod game;
 pub use game::GameRequestHandler;

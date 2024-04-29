@@ -7,8 +7,7 @@ use crate::managers::room::RoomID;
 use crate::managers::{GameManager, LoginManager, RoomManager, StatisticsManager};
 
 use super::{
-    GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler,
-    RoomMemberRequestHandler,
+    GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomUserRequestHandler,
 };
 
 pub struct RequestHandlerFactory {
@@ -47,20 +46,18 @@ impl RequestHandlerFactory {
         Box::new(MenuRequestHandler::new(self.clone(), logged_user))
     }
 
-    pub fn create_room_admin_request_handler(
+    pub fn create_room_user_request_handler(
         self: &Arc<Self>,
-        admin: LoggedUser,
+        user: LoggedUser,
+        is_admin: bool,
         room_id: RoomID,
     ) -> Box<dyn Handler> {
-        Box::new(RoomAdminRequestHandler::new(self.clone(), admin, room_id))
-    }
-
-    pub fn create_room_member_request_handler(
-        self: &Arc<Self>,
-        member: LoggedUser,
-        room_id: RoomID,
-    ) -> Box<dyn Handler> {
-        Box::new(RoomMemberRequestHandler::new(self.clone(), member, room_id))
+        Box::new(RoomUserRequestHandler::new(
+            self.clone(),
+            user,
+            is_admin,
+            room_id,
+        ))
     }
 
     pub fn create_game_request_handler(
