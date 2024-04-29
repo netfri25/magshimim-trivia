@@ -15,6 +15,7 @@
  - [x] don't allow joining a room that already started playing
  - [x] merge the RoomAdminRequestHandler with RoomMemberRequestHandler
  - [x] add tooltips for the Join Room page with the users of each room
+ - [ ] switch from Mutex into RwLock
 
 ### Bonuses
  - [ ] password and email regex checking
