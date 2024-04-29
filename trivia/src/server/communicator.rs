@@ -30,33 +30,34 @@ impl Communicator {
         })
     }
 
-    pub fn start_handle_requests(self) {
-        Arc::new(self).listen()
+    pub fn start_handle_requests(&self) {
+        self.listen()
     }
 
-    fn listen(self: Arc<Self>) {
-        for client in self.socket.incoming() {
-            let Ok(client) = client else {
-                eprintln!("[ERROR] connection error: {:?}", client);
-                continue;
-            };
+    fn listen(&self) {
+        std::thread::scope(|scope| {
+            for client in self.socket.incoming() {
+                let Ok(client) = client else {
+                    eprintln!("[ERROR] connection error: {:?}", client);
+                    continue;
+                };
 
-            eprintln!("[LOG] connected {:?}", client);
+                eprintln!("[LOG] connected {:?}", client);
 
-            let handler = self.factory.create_login_request_handler();
-            let addr = client.peer_addr().unwrap();
-            self.clients.lock().unwrap().insert(addr, handler);
-            let me = self.clone();
-            std::thread::spawn(move || {
-                if let Err(err) = me.handle_new_client(client) {
-                    eprintln!("[ERROR] communication error: {err}");
-                }
-            });
-        }
+                let handler = self.factory.create_login_request_handler();
+                let addr = client.peer_addr().unwrap();
+                self.clients.lock().unwrap().insert(addr, handler);
+                scope.spawn(|| {
+                    if let Err(err) = self.handle_new_client(client) {
+                        eprintln!("[ERROR] communication error: {err}");
+                    }
+                });
+            }
+        })
     }
 
     // returns the username, if the user has connected
-    fn handle_new_client(self: Arc<Self>, mut client: TcpStream) -> Result<(), Error> {
+    fn handle_new_client(&self, mut client: TcpStream) -> Result<(), Error> {
         let addr = client.peer_addr()?;
         let login_username: Cell<Option<String>> = Cell::new(None);
 
