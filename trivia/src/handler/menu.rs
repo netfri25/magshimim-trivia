@@ -114,7 +114,7 @@ impl MenuRequestHandler {
         let resp = Response::JoinRoom;
         let handler = self
             .factory
-            .create_room_member_request_handler(self.user.clone(), id);
+            .create_room_user_request_handler(self.user.clone(), false, id);
         RequestResult::new(resp, handler)
     }
 
@@ -133,7 +133,7 @@ impl MenuRequestHandler {
         let resp = Response::CreateRoom;
         let handler = self
             .factory
-            .create_room_admin_request_handler(self.user.clone(), id);
+            .create_room_user_request_handler(self.user.clone(), true, id);
         RequestResult::new(resp, handler)
     }
 }
