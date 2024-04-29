@@ -13,7 +13,7 @@
     1. [x] function that abstracts the query for a specific statistic of some user
     2. [x] proper usage of the .iterate() and .prepare() methods of the connection
  - [x] don't allow joining a room that already started playing
- - [ ] merge the RoomAdminRequestHandler with RoomMemberRequestHandler
+ - [x] merge the RoomAdminRequestHandler with RoomMemberRequestHandler
  - [ ] add tooltips for the Join Room page with the users of each room
 
 ### Bonuses
