@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use crate::managers::game::Score;
 use crate::managers::login::LoggedUser;
-use crate::managers::room::{RoomData, RoomID};
+use crate::managers::room::{RoomData, RoomID, RoomState};
 use crate::managers::statistics::Statistics;
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
@@ -104,6 +104,10 @@ impl MenuRequestHandler {
 
         if room.is_full() {
             return RequestResult::new_error("room is full");
+        }
+
+        if room.room_data().state == RoomState::InGame {
+            return RequestResult::new_error("room is already running");
         }
 
         room.add_user(self.user.clone());
