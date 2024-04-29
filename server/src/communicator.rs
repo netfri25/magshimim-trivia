@@ -1,7 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::io;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use std::sync::Arc;
 
 use trivia::handler::{self, Handler, RequestHandlerFactory};
 use trivia::messages::{self, Request, RequestInfo, RequestResult};
@@ -10,13 +9,13 @@ use crate::defer::Defer;
 
 pub struct Communicator<'db> {
     socket: TcpListener,
-    factory: Arc<RequestHandlerFactory<'db>>,
+    factory: RequestHandlerFactory<'db>,
 }
 
 impl<'db, 'me: 'db> Communicator<'db> {
     pub fn build(
         addr: impl ToSocketAddrs,
-        factory: Arc<RequestHandlerFactory<'db>>,
+        factory: RequestHandlerFactory<'db>,
     ) -> Result<Self, Error> {
         let socket = TcpListener::bind(addr)?;
         Ok(Self {

@@ -1,5 +1,5 @@
 use std::net::ToSocketAddrs;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use crate::communicator::{self, Communicator};
 
@@ -12,8 +12,8 @@ pub struct Server<'db> {
 
 impl<'db, 'me: 'db> Server<'db> {
     pub fn build(addr: impl ToSocketAddrs, db: &'db Mutex<impl Database + 'static>) -> Result<Self, Error> {
-        let factory = Arc::new(RequestHandlerFactory::new(db));
-        let comm = Communicator::build(addr, factory.clone())?;
+        let factory = RequestHandlerFactory::new(db);
+        let comm = Communicator::build(addr, factory)?;
         Ok(Self { comm })
     }
 
