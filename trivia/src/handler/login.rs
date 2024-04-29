@@ -1,21 +1,19 @@
-use std::sync::Arc;
-
 use crate::managers::login::LoggedUser;
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct LoginRequestHandler<'db> {
-    factory: Arc<RequestHandlerFactory<'db>>,
+pub struct LoginRequestHandler<'db, 'factory> {
+    factory: &'factory RequestHandlerFactory<'db>,
 }
 
-impl<'db> LoginRequestHandler<'db> {
-    pub fn new(factory: Arc<RequestHandlerFactory<'db>>) -> Self {
+impl<'db, 'factory> LoginRequestHandler<'db, 'factory> {
+    pub fn new(factory: &'factory RequestHandlerFactory<'db>) -> Self {
         Self { factory }
     }
 }
 
-impl<'db> Handler<'db> for LoginRequestHandler<'db> {
+impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(request_info.data, Login { .. } | Signup { .. })

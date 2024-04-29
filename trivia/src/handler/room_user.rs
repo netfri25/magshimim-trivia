@@ -1,19 +1,17 @@
-use std::sync::Arc;
-
 use crate::managers::login::LoggedUser;
 use crate::managers::room::{RoomID, RoomState};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct RoomUserRequestHandler<'db> {
+pub struct RoomUserRequestHandler<'db, 'factory> {
     room_id: RoomID,
     user: LoggedUser,
     is_admin: bool,
-    factory: Arc<RequestHandlerFactory<'db>>,
+    factory: &'factory RequestHandlerFactory<'db>,
 }
 
-impl<'db> Handler<'db> for RoomUserRequestHandler<'db> {
+impl<'db, 'factory: 'db> Handler<'db> for RoomUserRequestHandler<'db, 'factory> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -33,9 +31,9 @@ impl<'db> Handler<'db> for RoomUserRequestHandler<'db> {
     }
 }
 
-impl<'db> RoomUserRequestHandler<'db> {
+impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
     pub fn new(
-        factory: Arc<RequestHandlerFactory<'db>>,
+        factory: &'factory RequestHandlerFactory<'db>,
         user: LoggedUser,
         is_admin: bool,
         room_id: RoomID,

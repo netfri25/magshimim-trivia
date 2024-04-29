@@ -13,7 +13,7 @@ pub struct Communicator<'db> {
     factory: Arc<RequestHandlerFactory<'db>>,
 }
 
-impl<'db> Communicator<'db> {
+impl<'db, 'me: 'db> Communicator<'db> {
     pub fn build(
         addr: impl ToSocketAddrs,
         factory: Arc<RequestHandlerFactory<'db>>,
@@ -25,11 +25,11 @@ impl<'db> Communicator<'db> {
         })
     }
 
-    pub fn start_handle_requests(&self) {
+    pub fn start_handle_requests(&'me self) {
         self.listen()
     }
 
-    fn listen(&self) {
+    fn listen(&'me self) {
         std::thread::scope(|scope| {
             for client in self.socket.incoming() {
                 let Ok(client) = client else {

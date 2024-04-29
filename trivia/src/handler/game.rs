@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::{self, Duration, Instant, SystemTime};
 
 use tiny_rng::{Rand, Rng};
@@ -9,14 +8,14 @@ use crate::messages::{PlayerResults, Request, RequestInfo, RequestResult, Respon
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct GameRequestHandler<'db> {
+pub struct GameRequestHandler<'db, 'factory> {
     game_id: GameID,
     user: LoggedUser,
     question_sent_at: Instant,
-    factory: Arc<RequestHandlerFactory<'db>>,
+    factory: &'factory RequestHandlerFactory<'db>,
 }
 
-impl<'db> Handler<'db> for GameRequestHandler<'db> {
+impl<'db, 'factory: 'db> Handler<'db> for GameRequestHandler<'db, 'factory> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -42,8 +41,8 @@ impl<'db> Handler<'db> for GameRequestHandler<'db> {
     }
 }
 
-impl<'db> GameRequestHandler<'db> {
-    pub fn new(factory: Arc<RequestHandlerFactory<'db>>, user: LoggedUser, game_id: GameID) -> Self {
+impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
+    pub fn new(factory: &'factory RequestHandlerFactory<'db>, user: LoggedUser, game_id: GameID) -> Self {
         Self {
             game_id,
             user,

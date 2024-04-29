@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use crate::managers::game::Score;
@@ -9,12 +8,12 @@ use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct MenuRequestHandler<'db> {
+pub struct MenuRequestHandler<'db, 'factory> {
     user: LoggedUser,
-    factory: Arc<RequestHandlerFactory<'db>>,
+    factory: &'factory RequestHandlerFactory<'db>,
 }
 
-impl<'db> Handler<'db> for MenuRequestHandler<'db> {
+impl<'db, 'factory: 'db> Handler<'db> for MenuRequestHandler<'db, 'factory> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -50,8 +49,8 @@ impl<'db> Handler<'db> for MenuRequestHandler<'db> {
     }
 }
 
-impl<'db> MenuRequestHandler<'db> {
-    pub fn new(factory: Arc<RequestHandlerFactory<'db>>, user: LoggedUser) -> Self {
+impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
+    pub fn new(factory: &'factory RequestHandlerFactory<'db>, user: LoggedUser) -> Self {
         Self { factory, user }
     }
 

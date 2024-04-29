@@ -10,14 +10,14 @@ pub struct Server<'db> {
     comm: Communicator<'db>,
 }
 
-impl<'db> Server<'db> {
+impl<'db, 'me: 'db> Server<'db> {
     pub fn build(addr: impl ToSocketAddrs, db: &'db Mutex<impl Database + 'static>) -> Result<Self, Error> {
         let factory = Arc::new(RequestHandlerFactory::new(db));
         let comm = Communicator::build(addr, factory.clone())?;
         Ok(Self { comm })
     }
 
-    pub fn run(&self) {
+    pub fn run(&'me self) {
         std::thread::scope(|scope| {
             scope.spawn(|| self.comm.start_handle_requests());
 

@@ -17,7 +17,7 @@ pub struct RequestHandlerFactory<'db> {
     game_manager: Arc<Mutex<GameManager<'db>>>,
 }
 
-impl<'db> RequestHandlerFactory<'db> {
+impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
     pub fn new(db: &'db Mutex<dyn Database>) -> Self {
         let login_manager = LoginManager::new(db);
         let login_manager = Arc::new(Mutex::new(login_manager));
@@ -35,32 +35,29 @@ impl<'db> RequestHandlerFactory<'db> {
         }
     }
 
-    pub fn create_login_request_handler(self: &Arc<Self>) -> impl Handler<'db> {
-        LoginRequestHandler::new(self.clone())
+    pub fn create_login_request_handler(&'me self) -> impl Handler<'db> + 'me {
+        LoginRequestHandler::new(self)
     }
 
-    pub fn create_menu_request_handler(
-        self: &Arc<Self>,
-        logged_user: LoggedUser,
-    ) -> impl Handler<'db> {
-        MenuRequestHandler::new(self.clone(), logged_user)
+    pub fn create_menu_request_handler(&'me self, logged_user: LoggedUser) -> impl Handler<'db> + 'me {
+        MenuRequestHandler::new(self, logged_user)
     }
 
     pub fn create_room_user_request_handler(
-        self: &Arc<Self>,
+        &'me self,
         user: LoggedUser,
         is_admin: bool,
         room_id: RoomID,
-    ) -> impl Handler<'db> {
-        RoomUserRequestHandler::new(self.clone(), user, is_admin, room_id)
+    ) -> impl Handler<'db> + 'me {
+        RoomUserRequestHandler::new(self, user, is_admin, room_id)
     }
 
     pub fn create_game_request_handler(
-        self: &Arc<Self>,
+        &'me self,
         user: LoggedUser,
         game_id: GameID,
-    ) -> impl Handler<'db> {
-        GameRequestHandler::new(self.clone(), user, game_id)
+    ) -> impl Handler<'db> + 'me {
+        GameRequestHandler::new(self, user, game_id)
     }
 
     pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager<'db>>> {
