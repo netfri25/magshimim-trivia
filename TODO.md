@@ -14,7 +14,7 @@
     2. [x] proper usage of the .iterate() and .prepare() methods of the connection
  - [x] don't allow joining a room that already started playing
  - [x] merge the RoomAdminRequestHandler with RoomMemberRequestHandler
- - [ ] add tooltips for the Join Room page with the users of each room
+ - [x] add tooltips for the Join Room page with the users of each room
 
 ### Bonuses
  - [ ] password and email regex checking
