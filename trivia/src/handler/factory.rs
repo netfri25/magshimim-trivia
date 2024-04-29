@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use crate::db::Database;
 use crate::managers::game::GameID;
@@ -11,22 +11,22 @@ use super::{
 };
 
 pub struct RequestHandlerFactory<'db> {
-    login_manager: Arc<Mutex<LoginManager<'db>>>,
-    room_manager: Arc<Mutex<RoomManager>>,
-    statistics_manager: Arc<Mutex<StatisticsManager<'db>>>,
-    game_manager: Arc<Mutex<GameManager<'db>>>,
+    login_manager: Mutex<LoginManager<'db>>,
+    room_manager: Mutex<RoomManager>,
+    statistics_manager: Mutex<StatisticsManager<'db>>,
+    game_manager: Mutex<GameManager<'db>>,
 }
 
 impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
     pub fn new(db: &'db Mutex<dyn Database>) -> Self {
         let login_manager = LoginManager::new(db);
-        let login_manager = Arc::new(Mutex::new(login_manager));
+        let login_manager = Mutex::new(login_manager);
         let room_manager = RoomManager::new();
-        let room_manager = Arc::new(Mutex::new(room_manager));
+        let room_manager = Mutex::new(room_manager);
         let statistics_manager = StatisticsManager::new(db);
-        let statistics_manager = Arc::new(Mutex::new(statistics_manager));
+        let statistics_manager = Mutex::new(statistics_manager);
         let game_manager = GameManager::new(db);
-        let game_manager = Arc::new(Mutex::new(game_manager));
+        let game_manager = Mutex::new(game_manager);
         Self {
             login_manager,
             room_manager,
@@ -60,19 +60,19 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
         GameRequestHandler::new(self, user, game_id)
     }
 
-    pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager<'db>>> {
-        self.login_manager.clone()
+    pub fn get_login_manager(&'me self) -> &'me Mutex<LoginManager<'db>> {
+        &self.login_manager
     }
 
-    pub fn get_room_manager(&self) -> Arc<Mutex<RoomManager>> {
-        self.room_manager.clone()
+    pub fn get_room_manager(&'me self) -> &'me Mutex<RoomManager> {
+        &self.room_manager
     }
 
-    pub fn get_statistics_manager(&self) -> Arc<Mutex<StatisticsManager<'db>>> {
-        self.statistics_manager.clone()
+    pub fn get_statistics_manager(&'me self) -> &'me Mutex<StatisticsManager<'db>> {
+        &self.statistics_manager
     }
 
-    pub fn get_game_manager(&self) -> Arc<Mutex<GameManager<'db>>> {
-        self.game_manager.clone()
+    pub fn get_game_manager(&'me self) -> &'me Mutex<GameManager<'db>> {
+        &self.game_manager
     }
 }
