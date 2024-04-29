@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 use super::login::LoggedUser;
 
-pub type RoomID = i64;
+pub type RoomID = usize;
 
 #[derive(Default)]
 pub struct RoomManager {
@@ -117,14 +117,8 @@ impl RoomData {
         questions_count: usize,
         time_per_question: Duration,
     ) -> Self {
-        static ROOM_ID_COUNTER: Mutex<RoomID> = Mutex::new(0);
-        let room_id;
-        {
-            let mut id_lock = ROOM_ID_COUNTER.lock().unwrap();
-            room_id = *id_lock;
-            *id_lock += 1;
-        }
-
+        static ROOM_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+        let room_id = ROOM_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
         let name = name.into();
 
         Self {
