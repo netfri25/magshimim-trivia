@@ -2,8 +2,10 @@ use std::time::Duration;
 
 use iced::alignment::Horizontal;
 use iced::widget::scrollable::Properties;
-use iced::widget::{button, column, container, horizontal_space, row, scrollable, text, Column};
-use iced::{Alignment, Length};
+use iced::widget::{
+    button, column, container, horizontal_space, row, scrollable, text, tooltip, Column,
+};
+use iced::{theme, Alignment, Length};
 
 use crate::action::Action;
 use crate::consts;
@@ -134,11 +136,21 @@ pub fn room_element<'a>(room: &Room) -> iced::Element<'a, Message, iced::Theme> 
         .center_x()
         .center_y();
 
-    button(room_container)
+    let room = button(room_container)
         .style(iced::theme::Button::Text)
         .on_press(Msg::EnterRoom(*room_id).into())
         .height(100)
-        .padding(5)
+        .padding(5);
+
+    let users = Column::from_vec(
+        users
+            .iter()
+            .map(|u| text(u.username()).size(10).into())
+            .collect(),
+    );
+
+    tooltip(room, users, tooltip::Position::FollowCursor)
+        .style(theme::Container::Box)
         .into()
 }
 
