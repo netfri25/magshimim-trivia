@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -7,12 +7,12 @@ use crate::db::Database;
 
 use crate::managers::game::Score;
 
-pub struct StatisticsManager {
-    db: Arc<Mutex<dyn Database>>,
+pub struct StatisticsManager<'db> {
+    db: &'db Mutex<dyn Database>,
 }
 
-impl StatisticsManager {
-    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
+impl<'db> StatisticsManager<'db> {
+    pub fn new(db: &'db Mutex<dyn Database>) -> Self {
         Self { db }
     }
 

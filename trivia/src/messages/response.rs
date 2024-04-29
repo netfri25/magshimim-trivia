@@ -74,13 +74,13 @@ impl Response {
     }
 }
 
-pub struct RequestResult {
+pub struct RequestResult<'db> {
     pub response: Response,
-    pub new_handler: Option<Box<dyn Handler>>,
+    pub new_handler: Option<Box<dyn Handler<'db> + 'db>>,
 }
 
-impl RequestResult {
-    pub fn new(response: Response, new_handler: Box<dyn Handler>) -> Self {
+impl<'db> RequestResult<'db> {
+    pub fn new(response: Response, new_handler: Box<dyn Handler<'db> + 'db>) -> Self {
         let new_handler = Some(new_handler);
         Self {
             response,

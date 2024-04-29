@@ -6,14 +6,14 @@ use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct RoomUserRequestHandler {
+pub struct RoomUserRequestHandler<'db> {
     room_id: RoomID,
     user: LoggedUser,
     is_admin: bool,
-    factory: Arc<RequestHandlerFactory>,
+    factory: Arc<RequestHandlerFactory<'db>>,
 }
 
-impl Handler for RoomUserRequestHandler {
+impl<'db> Handler<'db> for RoomUserRequestHandler<'db> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -22,7 +22,7 @@ impl Handler for RoomUserRequestHandler {
         )
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
+    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, Error> {
         match request_info.data {
             Request::RoomState => self.room_state(),
             Request::CloseRoom => self.close_room(),
@@ -33,9 +33,9 @@ impl Handler for RoomUserRequestHandler {
     }
 }
 
-impl RoomUserRequestHandler {
+impl<'db> RoomUserRequestHandler<'db> {
     pub fn new(
-        factory: Arc<RequestHandlerFactory>,
+        factory: Arc<RequestHandlerFactory<'db>>,
         user: LoggedUser,
         is_admin: bool,
         room_id: RoomID,
@@ -48,7 +48,7 @@ impl RoomUserRequestHandler {
         }
     }
 
-    fn leave_room(&mut self) -> Result<RequestResult, Error> {
+    fn leave_room(&mut self) -> Result<RequestResult<'db>, Error> {
         let room_manager = self.factory.get_room_manager();
         let mut room_manager_lock = room_manager.lock().unwrap();
         if let Some(room) = room_manager_lock.room_mut(self.room_id) {
@@ -65,7 +65,7 @@ impl RoomUserRequestHandler {
         Ok(RequestResult::new(resp, handler))
     }
 
-    fn room_state(&mut self) -> Result<RequestResult, Error> {
+    fn room_state(&mut self) -> Result<RequestResult<'db>, Error> {
         let room_manager = self.factory.get_room_manager();
         let Some(room) = room_manager.lock().unwrap().room(self.room_id).cloned() else {
             return self.leave_room();
@@ -88,7 +88,7 @@ impl RoomUserRequestHandler {
         }))
     }
 
-    fn close_room(&mut self) -> Result<RequestResult, Error> {
+    fn close_room(&mut self) -> Result<RequestResult<'db>, Error> {
         if !self.is_admin {
             return Ok(RequestResult::new_error(
                 "only the room admin can close the room",
@@ -102,7 +102,7 @@ impl RoomUserRequestHandler {
         Ok(RequestResult::new(resp, handler))
     }
 
-    fn start_game(&mut self) -> Result<RequestResult, Error> {
+    fn start_game(&mut self) -> Result<RequestResult<'db>, Error> {
         if !self.is_admin {
             return Ok(RequestResult::new_error(
                 "only the room admin can start the game",

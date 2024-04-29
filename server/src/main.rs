@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use trivia::db::{Database, SqliteDatabase};
 
 mod defer;
@@ -24,7 +26,9 @@ fn main() {
         eprintln!("[WARN] unable to add questions to db: {}", err);
     }
 
-    let server = match Server::build("127.0.0.1:6969", db) {
+    let db = Mutex::new(db);
+
+    let server = match Server::build("127.0.0.1:6969", &db) {
         Ok(server) => server,
         Err(err) => {
             eprintln!("[FATAL ERROR] unable to run server: {}", err);

@@ -6,43 +6,44 @@ use crate::communicator::{self, Communicator};
 use trivia::db::{self, Database};
 use trivia::handler::RequestHandlerFactory;
 
-pub struct Server {
-    comm: Communicator,
+pub struct Server<'db> {
+    comm: Communicator<'db>,
 }
 
-impl Server {
-    pub fn build(addr: impl ToSocketAddrs, db: impl Database + 'static) -> Result<Self, Error> {
-        let db = Arc::new(Mutex::new(db));
-        let factory = Arc::new(RequestHandlerFactory::new(db.clone()));
+impl<'db> Server<'db> {
+    pub fn build(addr: impl ToSocketAddrs, db: &'db Mutex<impl Database + 'static>) -> Result<Self, Error> {
+        let factory = Arc::new(RequestHandlerFactory::new(db));
         let comm = Communicator::build(addr, factory.clone())?;
         Ok(Self { comm })
     }
 
-    pub fn run(self) {
-        std::thread::spawn(move || self.comm.start_handle_requests());
+    pub fn run(&self) {
+        std::thread::scope(|scope| {
+            scope.spawn(|| self.comm.start_handle_requests());
 
-        let mut line = String::new();
-        loop {
-            line.clear();
-            if let Err(err) = std::io::stdin().read_line(&mut line) {
-                eprintln!("[ERROR] stdin error: {}", err);
-                continue;
+            let mut line = String::new();
+            loop {
+                line.clear();
+                if let Err(err) = std::io::stdin().read_line(&mut line) {
+                    eprintln!("[ERROR] stdin error: {}", err);
+                    continue;
+                }
+
+                let cmd = line.trim().to_lowercase();
+
+                match cmd.as_str() {
+                    "exit" => break,
+                    _ => eprintln!("Unknown command: {:?}", cmd),
+                }
             }
-
-            let cmd = line.trim().to_lowercase();
-
-            match cmd.as_str() {
-                "exit" => break,
-                _ => eprintln!("Unknown command: {:?}", cmd),
-            }
-        }
+        });
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::net::TcpStream;
-    use std::sync::OnceLock;
+    use std::sync::{Condvar, OnceLock};
 
     use trivia::db::SqliteDatabase;
     use trivia::messages::{Request, Response};
@@ -55,17 +56,29 @@ mod tests {
 
     fn start_server() {
         START_SERVER.get_or_init(|| {
-            let Ok(mut db) = SqliteDatabase::connect(":memory:") else {
-                return;
-            };
+            let cond = Arc::new(Condvar::new());
+            let cond2 = cond.clone();
 
-            db.open().unwrap();
+            std::thread::spawn(move || {
+                let Ok(mut db) = SqliteDatabase::connect(":memory:") else {
+                    return;
+                };
 
-            let Ok(server) = Server::build(ADDR, db) else {
-                return;
-            };
+                db.open().unwrap();
 
-            std::thread::spawn(move || server.run());
+                let db = Mutex::new(db);
+
+                let Ok(server) = Server::build(ADDR, &db) else {
+                    return;
+                };
+
+                // notify that the server has started running
+                cond2.notify_one();
+                server.run();
+            });
+
+            let dummy = Mutex::new(());
+            drop(cond.wait(dummy.lock().unwrap()));
         });
     }
 

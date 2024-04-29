@@ -1,16 +1,16 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
 use crate::db::Database;
 
-pub struct LoginManager {
-    db: Arc<Mutex<dyn Database>>,
+pub struct LoginManager<'db> {
+    db: &'db Mutex<dyn Database>,
     connected: Vec<LoggedUser>,
 }
 
-impl LoginManager {
-    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
+impl<'db> LoginManager<'db> {
+    pub fn new(db: &'db Mutex<dyn Database>) -> Self {
         Self {
             db,
             connected: Default::default(),

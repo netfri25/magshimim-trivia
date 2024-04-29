@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::iter;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -14,13 +14,13 @@ use super::room::{Room, RoomID};
 pub type Score = f64;
 pub type GameID = RoomID;
 
-pub struct GameManager {
-    db: Arc<Mutex<dyn Database>>,
+pub struct GameManager<'db> {
+    db: &'db Mutex<dyn Database>,
     games: HashMap<GameID, Game>,
 }
 
-impl GameManager {
-    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
+impl<'db> GameManager<'db> {
+    pub fn new(db: &'db Mutex<dyn Database>) -> Self {
         Self {
             db,
             games: Default::default(),

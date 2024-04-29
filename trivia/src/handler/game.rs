@@ -9,14 +9,14 @@ use crate::messages::{PlayerResults, Request, RequestInfo, RequestResult, Respon
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct GameRequestHandler {
+pub struct GameRequestHandler<'db> {
     game_id: GameID,
     user: LoggedUser,
     question_sent_at: Instant,
-    factory: Arc<RequestHandlerFactory>,
+    factory: Arc<RequestHandlerFactory<'db>>,
 }
 
-impl Handler for GameRequestHandler {
+impl<'db> Handler<'db> for GameRequestHandler<'db> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -25,7 +25,7 @@ impl Handler for GameRequestHandler {
         )
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
+    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, Error> {
         match request_info.data {
             Request::Question => {
                 self.question_sent_at = Instant::now();
@@ -42,8 +42,8 @@ impl Handler for GameRequestHandler {
     }
 }
 
-impl GameRequestHandler {
-    pub fn new(factory: Arc<RequestHandlerFactory>, user: LoggedUser, game_id: GameID) -> Self {
+impl<'db> GameRequestHandler<'db> {
+    pub fn new(factory: Arc<RequestHandlerFactory<'db>>, user: LoggedUser, game_id: GameID) -> Self {
         Self {
             game_id,
             user,
@@ -52,7 +52,7 @@ impl GameRequestHandler {
         }
     }
 
-    fn get_question(&self) -> Result<RequestResult, Error> {
+    fn get_question(&self) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
         let mut game_manager_lock = game_manager.lock().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
@@ -78,7 +78,7 @@ impl GameRequestHandler {
         Ok(RequestResult::without_handler(Response::Question(question)))
     }
 
-    fn leave_game(&self) -> Result<RequestResult, Error> {
+    fn leave_game(&self) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
         let mut game_manager_lock = game_manager.lock().unwrap();
         if let Some(game) = game_manager_lock.game_mut(&self.game_id) {
@@ -108,7 +108,7 @@ impl GameRequestHandler {
         &self,
         answer: String,
         answer_duration: Duration,
-    ) -> Result<RequestResult, Error> {
+    ) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
         let mut game_manager_lock = game_manager.lock().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
@@ -123,7 +123,7 @@ impl GameRequestHandler {
         Ok(RequestResult::without_handler(resp))
     }
 
-    fn game_results(&self) -> Result<RequestResult, Error> {
+    fn game_results(&self) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
         let mut game_manager_lock = game_manager.lock().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {

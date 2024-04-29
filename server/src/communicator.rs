@@ -1,32 +1,26 @@
-use std::cell::Cell;
-use std::collections::HashMap;
+use std::cell::{Cell, RefCell};
 use std::io;
-use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
-use std::sync::{Arc, Mutex};
+use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use std::sync::Arc;
 
 use trivia::handler::{self, Handler, RequestHandlerFactory};
 use trivia::messages::{self, Request, RequestInfo, RequestResult};
 
 use crate::defer::Defer;
 
-type Clients = HashMap<SocketAddr, Box<dyn Handler>>;
-
-pub struct Communicator {
+pub struct Communicator<'db> {
     socket: TcpListener,
-    clients: Mutex<Clients>,
-    factory: Arc<RequestHandlerFactory>,
+    factory: Arc<RequestHandlerFactory<'db>>,
 }
 
-impl Communicator {
+impl<'db> Communicator<'db> {
     pub fn build(
         addr: impl ToSocketAddrs,
-        factory: Arc<RequestHandlerFactory>,
+        factory: Arc<RequestHandlerFactory<'db>>,
     ) -> Result<Self, Error> {
         let socket = TcpListener::bind(addr)?;
-        let clients = Default::default();
         Ok(Self {
             socket,
-            clients,
             factory,
         })
     }
@@ -46,10 +40,8 @@ impl Communicator {
                 eprintln!("[LOG] connected {:?}", client);
 
                 let handler = self.factory.create_login_request_handler();
-                let addr = client.peer_addr().unwrap();
-                self.clients.lock().unwrap().insert(addr, handler);
                 scope.spawn(|| {
-                    if let Err(err) = self.handle_new_client(client) {
+                    if let Err(err) = self.handle_new_client(client, handler) {
                         eprintln!("[ERROR] communication error: {err}");
                     }
                 });
@@ -58,9 +50,11 @@ impl Communicator {
     }
 
     // returns the username, if the user has connected
-    fn handle_new_client(&self, mut client: TcpStream) -> Result<(), Error> {
+    fn handle_new_client(&self, mut client: TcpStream, handler: Box<dyn Handler<'db> + 'db>) -> Result<(), Error> {
         let addr = client.peer_addr()?;
         let login_username: Cell<Option<String>> = Cell::new(None);
+
+        let handler = RefCell::from(handler);
 
         let _defer = Defer(|| {
             if let Some(ref username) = login_username.take() {
@@ -73,10 +67,7 @@ impl Communicator {
             }
 
             let req = Request::Logout;
-            let mut clients_mx = self.clients.lock().unwrap();
-            clients_mx
-                .remove(&addr)
-                .and_then(|mut handler| handler.handle(RequestInfo::new_now(req)).ok());
+            handler.borrow_mut().handle(RequestInfo::new_now(req)).ok();
         });
 
         loop {
@@ -91,16 +82,11 @@ impl Communicator {
 
             let request_info = RequestInfo::new_now(request);
             let result: RequestResult = {
-                let mut clients_lock = self.clients.lock().unwrap();
-                let handler = clients_lock
-                    .get_mut(&addr)
-                    .expect("client must have a handler");
-
-                if !handler.relevant(&request_info) {
+                if !handler.borrow().relevant(&request_info) {
                     eprintln!("[INFO] Irrelevant request ({}): {:?}", addr, request_info);
                     RequestResult::new_error("Irrelevant request")
                 } else {
-                    handler.handle(request_info)?
+                    handler.borrow_mut().handle(request_info)?
                 }
             };
 
@@ -112,9 +98,8 @@ impl Communicator {
 
             response.write_to(&mut client)?;
 
-            if let Some(handler) = new_handler {
-                let mut clients_mx = self.clients.lock().unwrap();
-                clients_mx.insert(addr, handler);
+            if let Some(new_handler) = new_handler {
+                *handler.borrow_mut() = new_handler;
             }
         }
     }

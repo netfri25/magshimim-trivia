@@ -5,23 +5,23 @@ use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct LoginRequestHandler {
-    factory: Arc<RequestHandlerFactory>,
+pub struct LoginRequestHandler<'db> {
+    factory: Arc<RequestHandlerFactory<'db>>,
 }
 
-impl LoginRequestHandler {
-    pub fn new(factory: Arc<RequestHandlerFactory>) -> Self {
+impl<'db> LoginRequestHandler<'db> {
+    pub fn new(factory: Arc<RequestHandlerFactory<'db>>) -> Self {
         Self { factory }
     }
 }
 
-impl Handler for LoginRequestHandler {
+impl<'db> Handler<'db> for LoginRequestHandler<'db> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(request_info.data, Login { .. } | Signup { .. })
     }
 
-    fn handle(&mut self, request: RequestInfo) -> Result<RequestResult, Error> {
+    fn handle(&mut self, request: RequestInfo) -> Result<RequestResult<'db>, Error> {
         let login_manager = self.factory.get_login_manager();
 
         let result = match request.data {

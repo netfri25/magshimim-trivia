@@ -10,22 +10,22 @@ use super::{
     GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomUserRequestHandler,
 };
 
-pub struct RequestHandlerFactory {
-    login_manager: Arc<Mutex<LoginManager>>,
+pub struct RequestHandlerFactory<'db> {
+    login_manager: Arc<Mutex<LoginManager<'db>>>,
     room_manager: Arc<Mutex<RoomManager>>,
-    statistics_manager: Arc<Mutex<StatisticsManager>>,
-    game_manager: Arc<Mutex<GameManager>>,
+    statistics_manager: Arc<Mutex<StatisticsManager<'db>>>,
+    game_manager: Arc<Mutex<GameManager<'db>>>,
 }
 
-impl RequestHandlerFactory {
-    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
-        let login_manager = LoginManager::new(db.clone());
+impl<'db> RequestHandlerFactory<'db> {
+    pub fn new(db: &'db Mutex<dyn Database>) -> Self {
+        let login_manager = LoginManager::new(db);
         let login_manager = Arc::new(Mutex::new(login_manager));
         let room_manager = RoomManager::new();
         let room_manager = Arc::new(Mutex::new(room_manager));
-        let statistics_manager = StatisticsManager::new(db.clone());
+        let statistics_manager = StatisticsManager::new(db);
         let statistics_manager = Arc::new(Mutex::new(statistics_manager));
-        let game_manager = GameManager::new(db.clone());
+        let game_manager = GameManager::new(db);
         let game_manager = Arc::new(Mutex::new(game_manager));
         Self {
             login_manager,
@@ -35,14 +35,14 @@ impl RequestHandlerFactory {
         }
     }
 
-    pub fn create_login_request_handler(self: &Arc<Self>) -> Box<dyn Handler> {
+    pub fn create_login_request_handler(self: &Arc<Self>) -> Box<dyn Handler<'db> + 'db> {
         Box::new(LoginRequestHandler::new(self.clone()))
     }
 
     pub fn create_menu_request_handler(
         self: &Arc<Self>,
         logged_user: LoggedUser,
-    ) -> Box<dyn Handler> {
+    ) -> Box<dyn Handler<'db> + 'db> {
         Box::new(MenuRequestHandler::new(self.clone(), logged_user))
     }
 
@@ -51,7 +51,7 @@ impl RequestHandlerFactory {
         user: LoggedUser,
         is_admin: bool,
         room_id: RoomID,
-    ) -> Box<dyn Handler> {
+    ) -> Box<dyn Handler<'db> + 'db> {
         Box::new(RoomUserRequestHandler::new(
             self.clone(),
             user,
@@ -64,11 +64,11 @@ impl RequestHandlerFactory {
         self: &Arc<Self>,
         user: LoggedUser,
         game_id: GameID,
-    ) -> Box<dyn Handler> {
+    ) -> Box<dyn Handler<'db> + 'db> {
         Box::new(GameRequestHandler::new(self.clone(), user, game_id))
     }
 
-    pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager>> {
+    pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager<'db>>> {
         self.login_manager.clone()
     }
 
@@ -76,11 +76,11 @@ impl RequestHandlerFactory {
         self.room_manager.clone()
     }
 
-    pub fn get_statistics_manager(&self) -> Arc<Mutex<StatisticsManager>> {
+    pub fn get_statistics_manager(&self) -> Arc<Mutex<StatisticsManager<'db>>> {
         self.statistics_manager.clone()
     }
 
-    pub fn get_game_manager(&self) -> Arc<Mutex<GameManager>> {
+    pub fn get_game_manager(&self) -> Arc<Mutex<GameManager<'db>>> {
         self.game_manager.clone()
     }
 }

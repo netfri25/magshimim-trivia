@@ -9,12 +9,12 @@ use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct MenuRequestHandler {
+pub struct MenuRequestHandler<'db> {
     user: LoggedUser,
-    factory: Arc<RequestHandlerFactory>,
+    factory: Arc<RequestHandlerFactory<'db>>,
 }
 
-impl Handler for MenuRequestHandler {
+impl<'db> Handler<'db> for MenuRequestHandler<'db> {
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -23,7 +23,7 @@ impl Handler for MenuRequestHandler {
         )
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult, Error> {
+    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, Error> {
         match request_info.data {
             Request::JoinRoom(id) => Ok(self.join_room(id)),
             Request::CreateRoom {
@@ -50,19 +50,19 @@ impl Handler for MenuRequestHandler {
     }
 }
 
-impl MenuRequestHandler {
-    pub fn new(factory: Arc<RequestHandlerFactory>, user: LoggedUser) -> Self {
+impl<'db> MenuRequestHandler<'db> {
+    pub fn new(factory: Arc<RequestHandlerFactory<'db>>, user: LoggedUser) -> Self {
         Self { factory, user }
     }
 
-    fn logout(&self) -> RequestResult {
+    fn logout(&self) -> RequestResult<'db> {
         RequestResult::new(
             Response::Logout,
             self.factory.create_login_request_handler(),
         )
     }
 
-    fn get_rooms(&self) -> RequestResult {
+    fn get_rooms(&self) -> RequestResult<'db> {
         let room_manager = self.factory.get_room_manager();
         let room_manager_lock = room_manager.lock().unwrap();
         let rooms = room_manager_lock.rooms().cloned().collect();
@@ -95,7 +95,7 @@ impl MenuRequestHandler {
         statistics_manager_lock.get_high_scores()
     }
 
-    fn join_room(&self, id: RoomID) -> RequestResult {
+    fn join_room(&self, id: RoomID) -> RequestResult<'db> {
         let room_manager = self.factory.get_room_manager();
         let mut room_manager_lock = room_manager.lock().unwrap();
         let Some(room) = room_manager_lock.room_mut(id) else {
@@ -124,7 +124,7 @@ impl MenuRequestHandler {
         max_users: usize,
         questions: usize,
         answer_timeout: Duration,
-    ) -> RequestResult {
+    ) -> RequestResult<'db> {
         let room_data = RoomData::new(room_name, max_users, questions, answer_timeout);
         let id = room_data.room_id;
         let room_manager = self.factory.get_room_manager();
