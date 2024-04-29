@@ -50,11 +50,11 @@ impl<'db> Communicator<'db> {
     }
 
     // returns the username, if the user has connected
-    fn handle_new_client(&self, mut client: TcpStream, handler: Box<dyn Handler<'db> + 'db>) -> Result<(), Error> {
+    fn handle_new_client(&self, mut client: TcpStream, handler: impl Handler<'db> + 'db) -> Result<(), Error> {
         let addr = client.peer_addr()?;
         let login_username: Cell<Option<String>> = Cell::new(None);
 
-        let handler = RefCell::from(handler);
+        let handler = RefCell::from(Box::new(handler) as Box<dyn Handler>);
 
         let _defer = Defer(|| {
             if let Some(ref username) = login_username.take() {

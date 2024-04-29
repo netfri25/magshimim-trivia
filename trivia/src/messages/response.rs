@@ -80,8 +80,8 @@ pub struct RequestResult<'db> {
 }
 
 impl<'db> RequestResult<'db> {
-    pub fn new(response: Response, new_handler: Box<dyn Handler<'db> + 'db>) -> Self {
-        let new_handler = Some(new_handler);
+    pub fn new(response: Response, new_handler: impl Handler<'db> + 'db) -> Self {
+        let new_handler = Some(Box::new(new_handler) as Box<dyn Handler>);
         Self {
             response,
             new_handler,
