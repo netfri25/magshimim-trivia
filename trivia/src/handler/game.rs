@@ -42,7 +42,11 @@ impl<'db, 'factory: 'db> Handler<'db> for GameRequestHandler<'db, 'factory> {
 }
 
 impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
-    pub fn new(factory: &'factory RequestHandlerFactory<'db>, user: LoggedUser, game_id: GameID) -> Self {
+    pub fn new(
+        factory: &'factory RequestHandlerFactory<'db>,
+        user: LoggedUser,
+        game_id: GameID,
+    ) -> Self {
         Self {
             game_id,
             user,

@@ -39,7 +39,10 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
         LoginRequestHandler::new(self)
     }
 
-    pub fn create_menu_request_handler(&'me self, logged_user: LoggedUser) -> impl Handler<'db> + 'me {
+    pub fn create_menu_request_handler(
+        &'me self,
+        logged_user: LoggedUser,
+    ) -> impl Handler<'db> + 'me {
         MenuRequestHandler::new(self, logged_user)
     }
 

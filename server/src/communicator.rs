@@ -18,10 +18,7 @@ impl<'db, 'me: 'db> Communicator<'db> {
         factory: RequestHandlerFactory<'db>,
     ) -> Result<Self, Error> {
         let socket = TcpListener::bind(addr)?;
-        Ok(Self {
-            socket,
-            factory,
-        })
+        Ok(Self { socket, factory })
     }
 
     pub fn start_handle_requests(&'me self) {
@@ -49,7 +46,11 @@ impl<'db, 'me: 'db> Communicator<'db> {
     }
 
     // returns the username, if the user has connected
-    fn handle_new_client(&'me self, mut client: TcpStream, handler: impl Handler<'db> + 'db) -> Result<(), Error> {
+    fn handle_new_client(
+        &'me self,
+        mut client: TcpStream,
+        handler: impl Handler<'db> + 'db,
+    ) -> Result<(), Error> {
         let addr = client.peer_addr()?;
         let login_username: Cell<Option<String>> = Cell::new(None);
 

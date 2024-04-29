@@ -11,7 +11,10 @@ pub struct Server<'db> {
 }
 
 impl<'db, 'me: 'db> Server<'db> {
-    pub fn build(addr: impl ToSocketAddrs, db: &'db Mutex<impl Database + 'static>) -> Result<Self, Error> {
+    pub fn build(
+        addr: impl ToSocketAddrs,
+        db: &'db Mutex<impl Database + 'static>,
+    ) -> Result<Self, Error> {
         let factory = RequestHandlerFactory::new(db);
         let comm = Communicator::build(addr, factory)?;
         Ok(Self { comm })

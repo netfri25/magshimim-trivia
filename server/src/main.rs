@@ -2,8 +2,8 @@ use std::sync::Mutex;
 
 use trivia::db::{Database, SqliteDatabase};
 
-mod defer;
 mod communicator;
+mod defer;
 
 mod server;
 use server::Server;
