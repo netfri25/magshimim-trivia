@@ -107,7 +107,7 @@ impl MenuRequestHandler {
         }
 
         if room.room_data().state == RoomState::InGame {
-            return RequestResult::new_error("room is already running");
+            return RequestResult::new_error("can't join a room that is already in game");
         }
 
         room.add_user(self.user.clone());
