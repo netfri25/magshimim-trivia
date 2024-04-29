@@ -1,17 +1,16 @@
 use std::net::ToSocketAddrs;
 use std::sync::{Arc, Mutex};
 
-pub mod communicator;
-use communicator::Communicator;
+use crate::communicator::{self, Communicator};
 
-use crate::db::{self, Database};
-use crate::handler::RequestHandlerFactory;
+use trivia::db::{self, Database};
+use trivia::handler::RequestHandlerFactory;
 
-pub struct TriviaServer {
+pub struct Server {
     comm: Communicator,
 }
 
-impl TriviaServer {
+impl Server {
     pub fn build(addr: impl ToSocketAddrs, db: impl Database + 'static) -> Result<Self, Error> {
         let db = Arc::new(Mutex::new(db));
         let factory = Arc::new(RequestHandlerFactory::new(db.clone()));
@@ -45,8 +44,8 @@ mod tests {
     use std::net::TcpStream;
     use std::sync::OnceLock;
 
-    use crate::db::SqliteDatabase;
-    use crate::messages::{Request, Response};
+    use trivia::db::SqliteDatabase;
+    use trivia::messages::{Request, Response};
 
     use super::*;
 
@@ -62,7 +61,7 @@ mod tests {
 
             db.open().unwrap();
 
-            let Ok(server) = TriviaServer::build(ADDR, db) else {
+            let Ok(server) = Server::build(ADDR, db) else {
                 return;
             };
 

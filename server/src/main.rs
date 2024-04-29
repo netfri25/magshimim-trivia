@@ -1,5 +1,10 @@
 use trivia::db::{Database, SqliteDatabase};
-use trivia::server::TriviaServer;
+
+mod defer;
+mod communicator;
+
+mod server;
+use server::Server;
 
 fn main() {
     let mut db = match SqliteDatabase::connect("trivia-db.sqlite") {
@@ -19,7 +24,7 @@ fn main() {
         eprintln!("[WARN] unable to add questions to db: {}", err);
     }
 
-    let server = match TriviaServer::build("127.0.0.1:6969", db) {
+    let server = match Server::build("127.0.0.1:6969", db) {
         Ok(server) => server,
         Err(err) => {
             eprintln!("[FATAL ERROR] unable to run server: {}", err);
