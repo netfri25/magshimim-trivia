@@ -9,7 +9,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use trivia::managers::room::{Room, RoomData, RoomID};
+use trivia::managers::room::{Room, RoomData, RoomID, RoomState};
 use trivia::messages::{Request, Response};
 
 use super::room::RoomPage;
@@ -30,7 +30,13 @@ impl Page for JoinRoomPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::RoomList(rooms) => self.rooms = rooms.clone(),
+                Response::RoomList(rooms) => {
+                    self.rooms = rooms
+                        .iter()
+                        .filter(|r| r.room_data().state == RoomState::Waiting)
+                        .cloned()
+                        .collect()
+                }
 
                 &Response::JoinRoom => {
                     let page = RoomPage::new(false);
