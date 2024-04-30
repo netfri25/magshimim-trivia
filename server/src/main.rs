@@ -7,6 +7,7 @@ mod server;
 use server::Server;
 
 fn main() {
+    eprintln!("[INFO] starting...");
     let db = match SqliteDatabase::connect("trivia-db.sqlite") {
         Ok(db) => db,
         Err(err) => {

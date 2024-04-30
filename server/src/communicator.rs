@@ -27,6 +27,7 @@ impl<'db, 'me: 'db> Communicator<'db> {
 
     fn listen(&'me self) {
         std::thread::scope(|scope| {
+            eprintln!("[INFO] listening: {:?}", self.socket);
             for client in self.socket.incoming() {
                 let Ok(client) = client else {
                     eprintln!("[ERROR] connection error: {:?}", client);
