@@ -20,38 +20,37 @@ impl<'db> LoginManager<'db> {
         username: impl Into<String>,
         password: &str,
         email: &str,
-    ) -> Result<Option<String>, crate::db::Error> {
+    ) -> Result<Option<Error>, crate::db::Error> {
         let username = username.into();
 
         if self.db.user_exists(&username)? {
-            return Ok(Some("username already exists".into())); // no error, but the user already exists
+            return Ok(Some(Error::UserAlreadyExists(username))); // no error, but the user already exists
         }
 
         self.db.add_user(&username, password, email)?;
         Ok(None) // everything is ok
     }
 
-    // TODO: return proper types to represent the outcome better
     pub fn login(
         &mut self,
         username: impl Into<String>,
         password: &str,
-    ) -> Result<Option<String>, crate::db::Error> {
+    ) -> Result<Option<Error>, crate::db::Error> {
         let username = username.into();
         if self
             .connected
             .iter()
             .any(|user| user.username() == username)
         {
-            return Ok(Some("user already connected".into()));
+            return Ok(Some(Error::UserAlreadyConnected(username)));
         }
 
         if !self.db.user_exists(&username)? {
-            return Ok(Some("user doesn't exist".into()));
+            return Ok(Some(Error::UserDoesntExist(username)));
         }
 
         if !self.db.password_matches(&username, password)? {
-            return Ok(Some("invalid password".into()));
+            return Ok(Some(Error::InvalidPassword));
         }
 
         self.connected.push(LoggedUser::new(username));
@@ -92,4 +91,19 @@ impl PartialEq<str> for LoggedUser {
     fn eq(&self, other: &str) -> bool {
         self.username() == other
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("user {0:?} already connected")]
+    UserAlreadyConnected(String),
+
+    #[error("user {0:?} already exists")]
+    UserAlreadyExists(String),
+
+    #[error("user {0:?} doesn't exist")]
+    UserDoesntExist(String),
+
+    #[error("invalid password")]
+    InvalidPassword,
 }

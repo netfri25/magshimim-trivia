@@ -48,6 +48,7 @@ mod tests {
     use std::sync::{mpsc, OnceLock};
 
     use trivia::db::SqliteDatabase;
+    use trivia::managers::login;
     use trivia::messages::{Request, Response};
 
     use super::*;
@@ -80,11 +81,14 @@ mod tests {
         let mut client = TcpStream::connect(ADDR).unwrap();
         let username = "user1234".to_string();
         let password = "pass1234".to_string();
-        let request = Request::Login { username, password };
+        let request = Request::Login {
+            username: username.clone(),
+            password,
+        };
 
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error("user doesn't exist");
+        let expected = Response::new_error(login::Error::UserDoesntExist(username));
 
         assert_eq!(response, expected);
     }
@@ -120,9 +124,10 @@ mod tests {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
+        let username = "double".to_string();
 
         let request = Request::Signup {
-            username: "double".to_string(),
+            username: username.clone(),
             password: "pass1234".to_string(),
             email: "email@example.com".to_string(),
         };
@@ -132,13 +137,13 @@ mod tests {
         assert_eq!(response, expected);
 
         let request = Request::Signup {
-            username: "double".to_string(),
+            username: username.clone(),
             password: "pass1234".to_string(),
             email: "email@example.com".to_string(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Error("username already exists".into());
+        let expected = Response::new_error(login::Error::UserAlreadyExists(username));
         assert_eq!(response, expected);
     }
 
@@ -187,9 +192,10 @@ mod tests {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
+        let username = "login-abuser".to_string();
 
         let request = Request::Signup {
-            username: "login-abuser".to_string(),
+            username: username.clone(),
             password: "pass1234".to_string(),
             email: "email@example.com".to_string(),
         };
@@ -199,7 +205,7 @@ mod tests {
         assert_eq!(response, expected);
 
         let request = Request::Login {
-            username: "login-abuser".to_string(),
+            username: username.clone(),
             password: "pass1234".to_string(),
         };
         request.write_to(&mut client).unwrap();
@@ -210,12 +216,12 @@ mod tests {
         let mut client = TcpStream::connect(ADDR).unwrap();
 
         let request = Request::Login {
-            username: "login-abuser".to_string(),
+            username: username.clone(),
             password: "pass1234".to_string(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Error("user already connected".to_string());
+        let expected = Response::new_error(login::Error::UserAlreadyConnected(username));
         assert_eq!(response, expected);
     }
 }
