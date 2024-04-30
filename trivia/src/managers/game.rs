@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::iter;
-use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -15,12 +14,12 @@ pub type Score = f64;
 pub type GameID = RoomID;
 
 pub struct GameManager<'db> {
-    db: &'db Mutex<dyn Database>,
+    db: &'db (dyn Database + Sync),
     games: HashMap<GameID, Game>,
 }
 
 impl<'db> GameManager<'db> {
-    pub fn new(db: &'db Mutex<dyn Database>) -> Self {
+    pub fn new(db: &'db (dyn Database + Sync)) -> Self {
         Self {
             db,
             games: Default::default(),
@@ -28,11 +27,7 @@ impl<'db> GameManager<'db> {
     }
 
     pub fn create_game(&mut self, room: &Room) -> Result<&Game, db::Error> {
-        let questions = self
-            .db
-            .lock()
-            .unwrap()
-            .get_questions(room.room_data().questions_count)?;
+        let questions = self.db.get_questions(room.room_data().questions_count)?;
         let game = Game::new(
             room.room_data().room_id,
             room.users().iter().cloned(),
@@ -48,6 +43,10 @@ impl<'db> GameManager<'db> {
         self.games.remove(id);
     }
 
+    pub fn game(&self, game_id: &GameID) -> Option<&Game> {
+        self.games.get(game_id)
+    }
+
     pub fn game_mut(&mut self, game_id: &GameID) -> Option<&mut Game> {
         self.games.get_mut(game_id)
     }
@@ -58,12 +57,9 @@ impl<'db> GameManager<'db> {
             .remove(game_id)
             .ok_or(anyhow!("game {game_id} doesn't exist"))?; // TODO: proper error
 
-        game.players.into_iter().try_for_each(|(user, data)| {
-            self.db
-                .lock()
-                .unwrap()
-                .submit_game_data(user.username(), data)
-        })
+        game.players
+            .into_iter()
+            .try_for_each(|(user, data)| self.db.submit_game_data(user.username(), data))
     }
 }
 

@@ -1,16 +1,14 @@
-use std::sync::Mutex;
-
 use serde::{Deserialize, Serialize};
 
 use crate::db::Database;
 
 pub struct LoginManager<'db> {
-    db: &'db Mutex<dyn Database>,
+    db: &'db (dyn Database + Sync),
     connected: Vec<LoggedUser>,
 }
 
 impl<'db> LoginManager<'db> {
-    pub fn new(db: &'db Mutex<dyn Database>) -> Self {
+    pub fn new(db: &'db (dyn Database + Sync)) -> Self {
         Self {
             db,
             connected: Default::default(),
@@ -25,14 +23,11 @@ impl<'db> LoginManager<'db> {
     ) -> Result<Option<String>, crate::db::Error> {
         let username = username.into();
 
-        if self.db.lock().unwrap().user_exists(&username)? {
+        if self.db.user_exists(&username)? {
             return Ok(Some("username already exists".into())); // no error, but the user already exists
         }
 
-        self.db
-            .lock()
-            .unwrap()
-            .add_user(&username, password, email)?;
+        self.db.add_user(&username, password, email)?;
         Ok(None) // everything is ok
     }
 
@@ -51,16 +46,11 @@ impl<'db> LoginManager<'db> {
             return Ok(Some("user already connected".into()));
         }
 
-        if !self.db.lock().unwrap().user_exists(&username)? {
+        if !self.db.user_exists(&username)? {
             return Ok(Some("user doesn't exist".into()));
         }
 
-        if !self
-            .db
-            .lock()
-            .unwrap()
-            .password_matches(&username, password)?
-        {
+        if !self.db.password_matches(&username, password)? {
             return Ok(Some("invalid password".into()));
         }
 

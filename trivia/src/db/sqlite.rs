@@ -20,7 +20,7 @@ impl SqliteDatabase {
         Ok(Self { conn })
     }
 
-    pub fn populate_questions(&mut self, amount: u8) -> Result<(), Error> {
+    pub fn populate_questions(&self, amount: u8) -> Result<(), Error> {
         let questions = opentdb::get_questions(amount)?;
 
         for question in questions {
@@ -102,7 +102,7 @@ impl SqliteDatabase {
 }
 
 impl Database for SqliteDatabase {
-    fn open(&mut self) -> Result<(), Error> {
+    fn open(&self) -> Result<(), Error> {
         // already opens the connection on creation
         // to design it like the cpp way where you have uninitialized variables (the
         // database connection) is unsafe, and I don't really want to deal with unsafe.
@@ -150,7 +150,7 @@ impl Database for SqliteDatabase {
     }
 
     /// doesn't check whether the user exists or not
-    fn add_user(&mut self, username: &str, password: &str, email: &str) -> Result<(), Error> {
+    fn add_user(&self, username: &str, password: &str, email: &str) -> Result<(), Error> {
         let statement = query::Query::insert()
             .into_table(User::Table)
             .columns([User::Username, User::Password, User::Email])
@@ -269,7 +269,7 @@ impl Database for SqliteDatabase {
     }
 
     // NOTE: not tested, hoping that this function works as expected
-    fn submit_game_data(&mut self, username: &str, game_data: GameData) -> Result<(), Error> {
+    fn submit_game_data(&self, username: &str, game_data: GameData) -> Result<(), Error> {
         let GameData {
             correct_answers: current_correct_answers,
             wrong_answers: current_wrong_answers,
@@ -500,7 +500,7 @@ mod tests {
 
     #[test]
     fn signup() {
-        let mut db = SqliteDatabase::connect(":memory:").unwrap();
+        let db = SqliteDatabase::connect(":memory:").unwrap();
         db.open().unwrap();
         assert!(!db.user_exists("me").unwrap());
         db.add_user("me", "password1234", "main@example.com")
@@ -513,7 +513,7 @@ mod tests {
     #[test]
     #[ignore = "prevent API spamming"]
     fn populate_questions() -> anyhow::Result<()> {
-        let mut db = SqliteDatabase::connect(":memory:")?;
+        let db = SqliteDatabase::connect(":memory:")?;
         db.open()?;
         db.populate_questions(100)?;
         db.get_questions(10)?;

@@ -48,7 +48,7 @@ impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
 
     fn leave_room(&mut self) -> Result<RequestResult<'db>, Error> {
         let room_manager = self.factory.get_room_manager();
-        let mut room_manager_lock = room_manager.lock().unwrap();
+        let mut room_manager_lock = room_manager.write().unwrap();
         if let Some(room) = room_manager_lock.room_mut(self.room_id) {
             room.remove_user(&self.user);
             if room.is_empty() {
@@ -65,7 +65,7 @@ impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
 
     fn room_state(&mut self) -> Result<RequestResult<'db>, Error> {
         let room_manager = self.factory.get_room_manager();
-        let Some(room) = room_manager.lock().unwrap().room(self.room_id).cloned() else {
+        let Some(room) = room_manager.read().unwrap().room(self.room_id).cloned() else {
             return self.leave_room();
         };
 
@@ -94,7 +94,7 @@ impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
         }
 
         let room_manager = self.factory.get_room_manager();
-        room_manager.lock().unwrap().delete_room(self.room_id);
+        room_manager.write().unwrap().delete_room(self.room_id);
         let resp = Response::CloseRoom;
         let handler = self.factory.create_menu_request_handler(self.user.clone());
         Ok(RequestResult::new(resp, handler))
@@ -109,7 +109,7 @@ impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
 
         let room_manager = self.factory.get_room_manager();
         if !room_manager
-            .lock()
+            .write()
             .unwrap()
             .set_state(self.room_id, RoomState::InGame)
         {
@@ -117,7 +117,7 @@ impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
         }
 
         let room_manager = self.factory.get_room_manager();
-        let room_manager_lock = room_manager.lock().unwrap();
+        let room_manager_lock = room_manager.read().unwrap();
 
         let Some(room) = room_manager_lock.room(self.room_id) else {
             return Ok(RequestResult::new_error("Room doesn't exist"));
@@ -126,7 +126,7 @@ impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
         let game_id = self
             .factory
             .get_game_manager()
-            .lock()
+            .write()
             .unwrap()
             .create_game(room)?
             .id();

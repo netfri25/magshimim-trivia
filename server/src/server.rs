@@ -1,5 +1,4 @@
 use std::net::ToSocketAddrs;
-use std::sync::Mutex;
 
 use crate::communicator::{self, Communicator};
 
@@ -13,7 +12,7 @@ pub struct Server<'db> {
 impl<'db, 'me: 'db> Server<'db> {
     pub fn build(
         addr: impl ToSocketAddrs,
-        db: &'db Mutex<impl Database + 'static>,
+        db: &'db (impl Database + Sync + 'static),
     ) -> Result<Self, Error> {
         let factory = RequestHandlerFactory::new(db);
         let comm = Communicator::build(addr, factory)?;
@@ -46,7 +45,7 @@ impl<'db, 'me: 'db> Server<'db> {
 #[cfg(test)]
 mod tests {
     use std::net::TcpStream;
-    use std::sync::{Arc, Condvar, OnceLock};
+    use std::sync::{mpsc, OnceLock};
 
     use trivia::db::SqliteDatabase;
     use trivia::messages::{Request, Response};
@@ -59,29 +58,26 @@ mod tests {
 
     fn start_server() {
         START_SERVER.get_or_init(|| {
-            let cond = Arc::new(Condvar::new());
-            let cond2 = cond.clone();
+            let (sender, receiver) = mpsc::sync_channel(1);
 
             std::thread::spawn(move || {
-                let Ok(mut db) = SqliteDatabase::connect(":memory:") else {
+                let Ok(db) = SqliteDatabase::connect(":memory:") else {
                     return;
                 };
 
                 db.open().unwrap();
-
-                let db = Mutex::new(db);
 
                 let Ok(server) = Server::build(ADDR, &db) else {
                     return;
                 };
 
                 // notify that the server has started running
-                cond2.notify_one();
+                sender.send(()).unwrap();
                 server.run();
             });
 
-            let dummy = Mutex::new(());
-            drop(cond.wait(dummy.lock().unwrap()));
+            // wait until the server starts
+            receiver.recv().unwrap();
         });
     }
 

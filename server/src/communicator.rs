@@ -61,7 +61,7 @@ impl<'db, 'me: 'db> Communicator<'db> {
                 eprintln!("[LOG] {:?} disconnected", username);
                 self.factory
                     .get_login_manager()
-                    .lock()
+                    .write()
                     .unwrap()
                     .logut(username);
             }

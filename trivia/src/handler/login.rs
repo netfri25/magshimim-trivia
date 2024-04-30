@@ -25,7 +25,7 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
         let result = match request.data {
             Request::Login { username, password } => {
                 if let Some(err) = login_manager
-                    .lock()
+                    .write()
                     .unwrap()
                     .login(username.clone(), &password)?
                 {
@@ -46,7 +46,7 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
                 email,
             } => {
                 if let Some(err) = login_manager
-                    .lock()
+                    .write()
                     .unwrap()
                     .signup(username, &password, &email)?
                 {

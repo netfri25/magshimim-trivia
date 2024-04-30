@@ -63,7 +63,7 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
 
     fn get_rooms(&self) -> RequestResult<'db> {
         let room_manager = self.factory.get_room_manager();
-        let room_manager_lock = room_manager.lock().unwrap();
+        let room_manager_lock = room_manager.read().unwrap();
         let rooms = room_manager_lock.rooms().cloned().collect();
         let response = Response::RoomList(rooms);
         RequestResult::without_handler(response)
@@ -72,7 +72,7 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
     #[allow(unused)]
     fn get_players_in_room(&self, id: RoomID) -> RequestResult {
         let room_manager = self.factory.get_room_manager();
-        let room_manager_lock = room_manager.lock().unwrap();
+        let room_manager_lock = room_manager.read().unwrap();
         if let Some(room) = room_manager_lock.room(id) {
             let users = room.users().to_vec();
             let response = Response::PlayersInRoom(users);
@@ -84,20 +84,20 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
 
     fn get_personal_stats(&self) -> Result<Statistics, crate::db::Error> {
         let statistics_manager = self.factory.get_statistics_manager();
-        let statistics_manager_lock = statistics_manager.lock().unwrap();
+        let statistics_manager_lock = statistics_manager.read().unwrap();
         statistics_manager_lock.get_user_statistics(self.user.username())
     }
 
     fn get_high_scores(&self) -> Result<[Option<(String, Score)>; 5], crate::db::Error> {
         let statistics_manager = self.factory.get_statistics_manager();
-        let statistics_manager_lock = statistics_manager.lock().unwrap();
+        let statistics_manager_lock = statistics_manager.read().unwrap();
         statistics_manager_lock.get_high_scores()
     }
 
     fn join_room(&self, id: RoomID) -> RequestResult<'db> {
         let room_manager = self.factory.get_room_manager();
-        let mut room_manager_lock = room_manager.lock().unwrap();
-        let Some(room) = room_manager_lock.room_mut(id) else {
+        let room_manager_lock = room_manager.read().unwrap();
+        let Some(room) = room_manager_lock.room(id) else {
             return RequestResult::new_error("invalid room ID");
         };
 
@@ -108,6 +108,12 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
         if room.room_data().state == RoomState::InGame {
             return RequestResult::new_error("can't join a room that is already in game");
         }
+
+        drop(room_manager_lock);
+        let mut room_manager_lock = room_manager.write().unwrap();
+        let Some(room) = room_manager_lock.room_mut(id) else {
+            return RequestResult::new_error("invalid room ID"); // should never reach here
+        };
 
         room.add_user(self.user.clone());
         let resp = Response::JoinRoom;
@@ -127,7 +133,7 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
         let room_data = RoomData::new(room_name, max_users, questions, answer_timeout);
         let id = room_data.room_id;
         let room_manager = self.factory.get_room_manager();
-        let mut room_manager_lock = room_manager.lock().unwrap();
+        let mut room_manager_lock = room_manager.write().unwrap();
         room_manager_lock.create_room(self.user.clone(), room_data);
         let resp = Response::CreateRoom;
         let handler = self

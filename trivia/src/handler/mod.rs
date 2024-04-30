@@ -18,7 +18,7 @@ use crate::messages::{RequestInfo, RequestResult};
 
 pub use db::Error;
 
-pub trait Handler<'db>: Send {
+pub trait Handler<'db> {
     fn relevant(&self, request_info: &RequestInfo) -> bool;
     fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, Error>;
 }

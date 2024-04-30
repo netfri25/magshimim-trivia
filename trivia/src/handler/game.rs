@@ -57,7 +57,7 @@ impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
 
     fn get_question(&self) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
-        let mut game_manager_lock = game_manager.lock().unwrap();
+        let mut game_manager_lock = game_manager.write().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
             return Ok(RequestResult::new_error("Invalid Game ID".to_string()));
         };
@@ -83,7 +83,7 @@ impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
 
     fn leave_game(&self) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
-        let mut game_manager_lock = game_manager.lock().unwrap();
+        let mut game_manager_lock = game_manager.write().unwrap();
         if let Some(game) = game_manager_lock.game_mut(&self.game_id) {
             game.remove_user(&self.user);
 
@@ -92,7 +92,7 @@ impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
                 game_manager_lock.delete_game(&self.game_id);
                 self.factory
                     .get_room_manager()
-                    .lock()
+                    .write()
                     .unwrap()
                     .delete_room(self.game_id);
             }
@@ -113,7 +113,7 @@ impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
         answer_duration: Duration,
     ) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
-        let mut game_manager_lock = game_manager.lock().unwrap();
+        let mut game_manager_lock = game_manager.write().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
             return Ok(RequestResult::new_error("Invalid Game ID".to_string()));
         };
@@ -128,8 +128,8 @@ impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
 
     fn game_results(&self) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
-        let mut game_manager_lock = game_manager.lock().unwrap();
-        let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
+        let game_manager_lock = game_manager.read().unwrap();
+        let Some(game) = game_manager_lock.game(&self.game_id) else {
             return Ok(RequestResult::without_handler(Response::LeaveGame));
         };
 

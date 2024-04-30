@@ -10,15 +10,15 @@ use crate::managers::game::{GameData, Score};
 
 pub mod opentdb;
 
-pub trait Database: Send {
-    fn open(&mut self) -> Result<(), Error>;
+pub trait Database {
+    fn open(&self) -> Result<(), Error>;
 
     // consumes the connection, meaning that it can't be used anymore
     fn close(self) -> Result<(), Error>;
 
     fn user_exists(&self, username: &str) -> Result<bool, Error>;
     fn password_matches(&self, username: &str, password: &str) -> Result<bool, Error>;
-    fn add_user(&mut self, username: &str, password: &str, email: &str) -> Result<(), Error>;
+    fn add_user(&self, username: &str, password: &str, email: &str) -> Result<(), Error>;
 
     fn get_questions(&self, amount: usize) -> Result<Vec<QuestionData>, Error>;
     fn get_player_average_answer_time(&self, username: &str) -> Result<Duration, Error>;
@@ -29,7 +29,7 @@ pub trait Database: Send {
 
     // if there are less than 5 scores, it will be filled with zeros
     fn get_five_highscores(&self) -> Result<[Option<(String, Score)>; 5], Error>;
-    fn submit_game_data(&mut self, username: &str, game_data: GameData) -> Result<(), Error>;
+    fn submit_game_data(&self, username: &str, game_data: GameData) -> Result<(), Error>;
 }
 
 #[derive(Debug, thiserror::Error)]
