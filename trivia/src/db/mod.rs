@@ -21,9 +21,8 @@ pub trait Database {
     fn get_total_answers_count(&self, username: &str) -> Result<i64, Error>;
     fn get_games_count(&self, username: &str) -> Result<i64, Error>;
     fn get_score(&self, username: &str) -> Result<Score, Error>;
-
-    // if there are less than 5 scores, it will be filled with zeros
     fn get_five_highscores(&self) -> Result<[Option<(String, Score)>; 5], Error>;
+
     fn submit_game_data(&self, username: &str, game_data: GameData) -> Result<(), Error>;
 }
 
