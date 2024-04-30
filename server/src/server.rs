@@ -58,26 +58,18 @@ mod tests {
 
     fn start_server() {
         START_SERVER.get_or_init(|| {
-            let (sender, receiver) = mpsc::sync_channel(1);
+            let (send, recv) = mpsc::sync_channel(1);
 
             std::thread::spawn(move || {
-                let Ok(db) = SqliteDatabase::connect(":memory:") else {
-                    return;
-                };
-
-                db.open().unwrap();
-
-                let Ok(server) = Server::build(ADDR, &db) else {
-                    return;
-                };
-
+                let db = SqliteDatabase::connect(":memory:").unwrap();
+                let server = Server::build(ADDR, &db).unwrap();
                 // notify that the server has started running
-                sender.send(()).unwrap();
+                send.send(()).unwrap();
                 server.run();
             });
 
             // wait until the server starts
-            receiver.recv().unwrap();
+            recv.recv().unwrap();
         });
     }
 

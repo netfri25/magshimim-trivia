@@ -1,4 +1,4 @@
-use trivia::db::{Database, SqliteDatabase};
+use trivia::db::SqliteDatabase;
 
 mod communicator;
 mod defer;
@@ -11,15 +11,10 @@ fn main() {
     let db = match SqliteDatabase::connect("trivia-db.sqlite") {
         Ok(db) => db,
         Err(err) => {
-            eprintln!("[FATAL ERROR] unable to connect to db: {}", err);
+            eprintln!("[FATAL ERROR] unable to initialize db: {}", err);
             return;
         }
     };
-
-    if let Err(err) = db.open() {
-        eprintln!("[FATAL ERROR] unable to open db: {}", err);
-        return;
-    }
 
     if let Err(err) = db.populate_questions(50) {
         eprintln!("[WARN] unable to add questions to db: {}", err);

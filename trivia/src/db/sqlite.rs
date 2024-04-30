@@ -17,6 +17,17 @@ pub struct SqliteDatabase {
 impl SqliteDatabase {
     pub fn connect(path: impl AsRef<Path>) -> Result<Self, Error> {
         let conn = Connection::open_thread_safe(path)?;
+        let statements = [
+            User::create_table_statement(),
+            Question::create_table_statement(),
+            Answer::create_table_statement(),
+            Statistics::create_table_statement(),
+        ];
+
+        for statement in statements {
+            conn.execute(statement.to_string(query::SqliteQueryBuilder))?;
+        }
+
         Ok(Self { conn })
     }
 
@@ -102,30 +113,6 @@ impl SqliteDatabase {
 }
 
 impl Database for SqliteDatabase {
-    fn open(&self) -> Result<(), Error> {
-        // already opens the connection on creation
-        // to design it like the cpp way where you have uninitialized variables (the
-        // database connection) is unsafe, and I don't really want to deal with unsafe.
-
-        let statements = [
-            User::create_table_statement(),
-            Question::create_table_statement(),
-            Answer::create_table_statement(),
-            Statistics::create_table_statement(),
-        ];
-
-        for statement in statements {
-            self.conn
-                .execute(statement.to_string(query::SqliteQueryBuilder))?;
-        }
-
-        Ok(())
-    }
-
-    fn close(self) -> Result<(), Error> {
-        Ok(()) // drop the connection and return without any errors
-    }
-
     fn user_exists(&self, username: &str) -> Result<bool, Error> {
         let statement = query::Query::select()
             .column(User::Username)
@@ -501,7 +488,6 @@ mod tests {
     #[test]
     fn signup() {
         let db = SqliteDatabase::connect(":memory:").unwrap();
-        db.open().unwrap();
         assert!(!db.user_exists("me").unwrap());
         db.add_user("me", "password1234", "main@example.com")
             .unwrap();
@@ -514,7 +500,6 @@ mod tests {
     #[ignore = "prevent API spamming"]
     fn populate_questions() -> anyhow::Result<()> {
         let db = SqliteDatabase::connect(":memory:")?;
-        db.open()?;
         db.populate_questions(100)?;
         db.get_questions(10)?;
         Ok(())
@@ -556,7 +541,6 @@ mod tests {
     #[test]
     fn top_four() -> anyhow::Result<()> {
         let mut db = SqliteDatabase::connect(":memory:")?;
-        db.open()?;
 
         for user_id in 1..=4 {
             let username = format!("user{}", user_id);

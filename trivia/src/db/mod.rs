@@ -11,11 +11,6 @@ use crate::managers::game::{GameData, Score};
 pub mod opentdb;
 
 pub trait Database {
-    fn open(&self) -> Result<(), Error>;
-
-    // consumes the connection, meaning that it can't be used anymore
-    fn close(self) -> Result<(), Error>;
-
     fn user_exists(&self, username: &str) -> Result<bool, Error>;
     fn password_matches(&self, username: &str, password: &str) -> Result<bool, Error>;
     fn add_user(&self, username: &str, password: &str, email: &str) -> Result<(), Error>;
