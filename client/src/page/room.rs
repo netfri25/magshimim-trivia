@@ -72,7 +72,7 @@ impl Page for RoomPage {
 
         match msg {
             Msg::UpdatePlayers => Action::request(Request::RoomState),
-            Msg::StartGame => Action::request(Request::StartGame), // TODO: switch to the game page
+            Msg::StartGame => Action::request(Request::StartGame),
             Msg::CloseRoom => Action::switch_and_request(MainMenuPage, Request::CloseRoom),
             Msg::LeaveRoom => Action::switch_and_request(MainMenuPage, Request::LeaveRoom),
         }
