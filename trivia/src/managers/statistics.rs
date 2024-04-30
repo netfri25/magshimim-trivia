@@ -6,7 +6,7 @@ use crate::db::Database;
 
 use crate::managers::game::Score;
 
-pub type Highscores = [Option<(String, Score)>; 2];
+pub type Highscores = [Option<(String, Score)>; 5];
 
 pub struct StatisticsManager<'db> {
     db: &'db (dyn Database + Sync),
