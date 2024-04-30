@@ -9,9 +9,10 @@ use crate::message::Message;
 use super::Page;
 
 use trivia::managers::game::Score;
+use trivia::managers::statistics::Highscores;
 
 pub struct HighScoresPage {
-    scores: [Option<(String, Score)>; 5],
+    scores: Highscores,
 }
 
 impl Page for HighScoresPage {
@@ -59,7 +60,7 @@ impl Page for HighScoresPage {
 }
 
 impl HighScoresPage {
-    pub fn new(scores: [Option<(String, Score)>; 5]) -> Self {
+    pub fn new(scores: Highscores) -> Self {
         Self { scores }
     }
 }

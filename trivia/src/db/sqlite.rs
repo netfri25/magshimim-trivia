@@ -6,6 +6,7 @@ use sea_query as query;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
 use crate::managers::game::{calc_score, GameData};
+use crate::managers::statistics::Highscores;
 
 use super::question::QuestionData;
 use super::{opentdb, Database, Error, Score};
@@ -228,7 +229,7 @@ impl Database for SqliteDatabase {
         self.get_stats(username, Statistics::OverallScore)
     }
 
-    fn get_five_highscores(&self) -> Result<[Option<(String, Score)>; 5], Error> {
+    fn get_five_highscores(&self) -> Result<Highscores, Error> {
         let statement = query::Query::select()
             .column(User::Username)
             .column(Statistics::OverallScore)
@@ -242,7 +243,7 @@ impl Database for SqliteDatabase {
             .limit(5)
             .to_string(query::SqliteQueryBuilder);
 
-        let mut scores: [Option<(String, Score)>; 5] = Default::default();
+        let mut scores: Highscores = Default::default();
         let mut index = 0;
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {

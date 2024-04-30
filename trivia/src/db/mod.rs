@@ -7,6 +7,7 @@ pub mod question;
 use question::QuestionData;
 
 use crate::managers::game::{GameData, Score};
+use crate::managers::statistics::Highscores;
 
 pub mod opentdb;
 
@@ -21,7 +22,7 @@ pub trait Database {
     fn get_total_answers_count(&self, username: &str) -> Result<i64, Error>;
     fn get_games_count(&self, username: &str) -> Result<i64, Error>;
     fn get_score(&self, username: &str) -> Result<Score, Error>;
-    fn get_five_highscores(&self) -> Result<[Option<(String, Score)>; 5], Error>;
+    fn get_five_highscores(&self) -> Result<Highscores, Error>;
 
     fn submit_game_data(&self, username: &str, game_data: GameData) -> Result<(), Error>;
 }

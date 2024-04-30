@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
 use crate::handler::Handler;
-use crate::managers::game::{calc_score, Score};
+use crate::managers::game::calc_score;
 use crate::managers::login::LoggedUser;
 use crate::managers::room::{Room, RoomState};
-use crate::managers::statistics::Statistics;
+use crate::managers::statistics::{Highscores, Statistics};
 
 use super::Error;
 
@@ -24,7 +24,7 @@ pub enum Response {
     CreateRoom,
     Statistics {
         user_statistics: Statistics,
-        high_scores: [Option<(String, Score)>; 5],
+        high_scores: Highscores,
     },
     CloseRoom,
     StartGame,

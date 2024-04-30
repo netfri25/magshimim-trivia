@@ -6,6 +6,8 @@ use crate::db::Database;
 
 use crate::managers::game::Score;
 
+pub type Highscores = [Option<(String, Score)>; 2];
+
 pub struct StatisticsManager<'db> {
     db: &'db (dyn Database + Sync),
 }
@@ -15,7 +17,7 @@ impl<'db> StatisticsManager<'db> {
         Self { db }
     }
 
-    pub fn get_high_scores(&self) -> Result<[Option<(String, Score)>; 5], crate::db::Error> {
+    pub fn get_high_scores(&self) -> Result<Highscores, crate::db::Error> {
         self.db.get_five_highscores()
     }
 

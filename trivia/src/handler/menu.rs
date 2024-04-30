@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use crate::managers::game::Score;
 use crate::managers::login::LoggedUser;
 use crate::managers::room::{RoomData, RoomID, RoomState};
-use crate::managers::statistics::Statistics;
+use crate::managers::statistics::{Highscores, Statistics};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
@@ -88,7 +87,7 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
         statistics_manager_lock.get_user_statistics(self.user.username())
     }
 
-    fn get_high_scores(&self) -> Result<[Option<(String, Score)>; 5], crate::db::Error> {
+    fn get_high_scores(&self) -> Result<Highscores, crate::db::Error> {
         let statistics_manager = self.factory.get_statistics_manager();
         let statistics_manager_lock = statistics_manager.read().unwrap();
         statistics_manager_lock.get_high_scores()
