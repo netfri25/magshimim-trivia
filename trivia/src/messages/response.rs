@@ -43,6 +43,9 @@ pub enum Response {
     // additionally, the answers will be shuffled when sent to the user
     Question(Option<QuestionData>), // None => no more questions
     GameResult(Vec<PlayerResults>), // Will be sent to everyone when the game is over
+    CreateQuestion {
+        already_exists: bool,
+    },
 }
 
 impl Response {

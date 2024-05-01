@@ -73,3 +73,24 @@ impl QuestionData {
         &self.answers[self.correct_answer_index]
     }
 }
+
+impl From<Question> for QuestionData {
+    fn from(question: Question) -> Self {
+        let Question {
+            question,
+            correct_answer,
+            incorrect_answers,
+            ..
+        } = question;
+
+        let correct_answer_index = incorrect_answers.len();
+
+        let answers = {
+            let mut answers = incorrect_answers;
+            answers.push(correct_answer);
+            answers
+        };
+
+        Self::new(question, answers, correct_answer_index)
+    }
+}

@@ -25,6 +25,9 @@ pub trait Database {
     fn get_five_highscores(&self) -> Result<Highscores, Error>;
 
     fn submit_game_data(&self, username: &str, game_data: GameData) -> Result<(), Error>;
+
+    // the Ok variant tells if the question was added
+    fn add_question(&self, question: &QuestionData) -> Result<bool, Error>;
 }
 
 #[derive(Debug, thiserror::Error)]

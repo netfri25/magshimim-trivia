@@ -3,11 +3,12 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
+use crate::db::question::QuestionData;
 use crate::managers::room::RoomID;
 
 use super::Error;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Request {
     Login {
         username: String,
@@ -36,6 +37,7 @@ pub enum Request {
     Question,
     SubmitAnswer(String),
     GameResult,
+    CreateQuestion(QuestionData),
 }
 
 impl Request {
