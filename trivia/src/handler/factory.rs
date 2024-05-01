@@ -15,6 +15,7 @@ pub struct RequestHandlerFactory<'db> {
     room_manager: RwLock<RoomManager>,
     statistics_manager: RwLock<StatisticsManager<'db>>,
     game_manager: RwLock<GameManager<'db>>,
+    db: &'db (dyn Database + Sync),
 }
 
 impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
@@ -28,11 +29,16 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
         let game_manager = GameManager::new(db);
         let game_manager = RwLock::new(game_manager);
         Self {
+            db,
             login_manager,
             room_manager,
             statistics_manager,
             game_manager,
         }
+    }
+
+    pub fn db(&'me self) -> &'db (dyn Database + Sync) {
+        self.db
     }
 
     pub fn create_login_request_handler(&'me self) -> impl Handler<'db> + 'me {

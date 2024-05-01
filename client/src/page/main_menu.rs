@@ -6,13 +6,14 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{CreateRoomPage, JoinRoomPage, Page, StatisticsPage};
+use super::{CreateQuestionPage, CreateRoomPage, JoinRoomPage, Page, StatisticsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     CreateRoom,
     JoinRoom,
     Statistics,
+    CreateQuestion,
     Quit,
 }
 
@@ -32,6 +33,7 @@ impl Page for MainMenuPage {
                 Action::switch_and_request(page, req)
             }
             Msg::Statistics => Action::switch(StatisticsPage::default()),
+            Msg::CreateQuestion => Action::switch(CreateQuestionPage::default()),
             Msg::Quit => Action::quit(),
         }
     }
@@ -48,6 +50,8 @@ impl Page for MainMenuPage {
             menu_button("Join Room", Msg::JoinRoom),
             vertical_space(),
             menu_button("Statistics", Msg::Statistics),
+            vertical_space(),
+            menu_button("New Question", Msg::CreateQuestion),
             vertical_space(),
             menu_button("Quit", Msg::Quit),
         ]

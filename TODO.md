@@ -24,7 +24,7 @@
         - phone (prefix, number)
         - address (city, street, apartment)
         - birth date [feature: date_picker](https://github.com/iced-rs/iced_aw/tree/main/examples/date_picker/src/main.rs)
- - [ ] page for adding questions
+ - [x] page for adding questions
 
 ### my own additions
  - [ ] add more room info in the Join Room page

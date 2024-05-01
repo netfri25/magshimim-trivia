@@ -33,59 +33,9 @@ impl SqliteDatabase {
     }
 
     pub fn populate_questions(&self, amount: u8) -> Result<(), Error> {
-        let questions = opentdb::get_questions(amount)?;
-
-        for question in questions {
-            let question_insert_query = query::Query::insert()
-                .into_table(Question::Table)
-                .columns([Question::Content])
-                .values_panic([question.question().into()])
-                .to_string(query::SqliteQueryBuilder);
-
-            // when encountering a question that already exists on the db (19 => unique constraint
-            // conflict) just skip it and go to the next question
-            match self.conn.execute(question_insert_query) {
-                Err(sqlite::Error { code: Some(19), .. }) => continue,
-                res => res?,
-            };
-
-            let question_id = {
-                let select_query = query::Query::select()
-                    .columns([Question::Id])
-                    .from(Question::Table)
-                    .cond_where(query::Expr::col(Question::Content).is(question.question()))
-                    .to_string(query::SqliteQueryBuilder);
-
-                let mut statement = self.conn.prepare(&select_query)?;
-                let State::Row = statement.next()? else {
-                    return Err(anyhow::anyhow!("question doesn't exist after insertion").into());
-                };
-
-                statement.read::<i64, _>(Question::Id.to_string().as_str())?
-            };
-
-            let correct_answer_insert_query = query::Query::insert()
-                .into_table(Answer::Table)
-                .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
-                .values_panic([
-                    question.correct_answer().into(),
-                    true.into(),
-                    question_id.into(),
-                ])
-                .to_string(query::SqliteQueryBuilder);
-            self.conn.execute(correct_answer_insert_query)?;
-
-            for incorrect_answer in question.incorrect_answers() {
-                let incorrect_answer_insert_query = query::Query::insert()
-                    .into_table(Answer::Table)
-                    .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
-                    .values_panic([incorrect_answer.into(), false.into(), question_id.into()])
-                    .to_string(query::SqliteQueryBuilder);
-                self.conn.execute(incorrect_answer_insert_query)?;
-            }
-        }
-
-        Ok(())
+        opentdb::get_questions(amount)?
+            .into_iter()
+            .try_for_each(|question| self.add_question(&QuestionData::from(question)).map(drop))
     }
 
     fn get_stats<T: sqlite::ReadableWithIndex>(
@@ -323,6 +273,48 @@ impl Database for SqliteDatabase {
             .to_string(query::SqliteQueryBuilder);
 
         Ok(self.conn.execute(statement)?)
+    }
+
+    fn add_question(&self, question: &QuestionData) -> Result<bool, Error> {
+        let question_insert_query = query::Query::insert()
+            .into_table(Question::Table)
+            .columns([Question::Content])
+            .values_panic([question.question.as_str().into()])
+            .to_string(query::SqliteQueryBuilder);
+
+        // when encountering a question that already exists on the db (19 => unique constraint
+        // conflict) just skip it and go to the next question
+        match self.conn.execute(question_insert_query) {
+            Err(sqlite::Error { code: Some(19), .. }) => return Ok(false),
+            res => res?,
+        };
+
+        let question_id = {
+            let select_query = query::Query::select()
+                .columns([Question::Id])
+                .from(Question::Table)
+                .cond_where(query::Expr::col(Question::Content).is(question.question.as_str()))
+                .to_string(query::SqliteQueryBuilder);
+
+            let mut statement = self.conn.prepare(&select_query)?;
+            let State::Row = statement.next()? else {
+                return Err(anyhow::anyhow!("question doesn't exist after insertion").into());
+            };
+
+            statement.read::<i64, _>(Question::Id.to_string().as_str())?
+        };
+
+        for (i, answer) in question.answers.iter().enumerate() {
+            let correct = i == question.correct_answer_index;
+            let answer_insert_query = query::Query::insert()
+                .into_table(Answer::Table)
+                .columns([Answer::Content, Answer::Correct, Answer::QuestionId])
+                .values_panic([answer.into(), correct.into(), question_id.into()])
+                .to_string(query::SqliteQueryBuilder);
+            self.conn.execute(answer_insert_query)?;
+        }
+
+        Ok(true)
     }
 }
 

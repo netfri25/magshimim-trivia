@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use crate::db::question::QuestionData;
 use crate::managers::login::LoggedUser;
 use crate::managers::room::{RoomData, RoomID, RoomState};
 use crate::managers::statistics::{Highscores, Statistics};
@@ -17,7 +18,7 @@ impl<'db, 'factory: 'db> Handler<'db> for MenuRequestHandler<'db, 'factory> {
         use Request::*;
         matches!(
             request_info.data,
-            CreateRoom { .. } | RoomList | JoinRoom(_) | Statistics | Logout
+            CreateRoom { .. } | RoomList | JoinRoom(_) | Statistics | CreateQuestion(_) | Logout
         )
     }
 
@@ -42,6 +43,7 @@ impl<'db, 'factory: 'db> Handler<'db> for MenuRequestHandler<'db, 'factory> {
             }
             Request::Logout => Ok(self.logout()),
             Request::RoomList => Ok(self.get_rooms()),
+            Request::CreateQuestion(question) => self.create_question(question),
 
             _ => Ok(RequestResult::new_error("Invalid request")),
         }
@@ -139,5 +141,15 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
             .factory
             .create_room_user_request_handler(self.user.clone(), true, id);
         RequestResult::new(resp, handler)
+    }
+
+    fn create_question(&self, question: QuestionData) -> Result<RequestResult<'db>, Error> {
+        let added = self.factory.db().add_question(&question)?;
+        if !added {
+            Ok(RequestResult::new_error("question already exists"))
+        } else {
+            let resp = Response::CreateQuestion;
+            Ok(RequestResult::without_handler(resp))
+        }
     }
 }
