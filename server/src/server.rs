@@ -265,13 +265,13 @@ mod tests {
         // shouldn't exists, new question
         create_question.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::CreateQuestion { already_exists: false };
+        let expected = Response::CreateQuestion;
         assert_eq!(response, expected);
 
         // the same question as before, should already exist
         create_question.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::CreateQuestion { already_exists: true };
+        let expected = Response::new_error("question already exists");
         assert_eq!(response, expected);
     }
 }

@@ -145,9 +145,11 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
 
     fn create_question(&self, question: QuestionData) -> Result<RequestResult<'db>, Error> {
         let added = self.factory.db().add_question(&question)?;
-        let resp = Response::CreateQuestion {
-            already_exists: !added,
-        };
-        Ok(RequestResult::without_handler(resp))
+        if !added {
+            Ok(RequestResult::new_error("question already exists"))
+        } else {
+            let resp = Response::CreateQuestion;
+            Ok(RequestResult::without_handler(resp))
+        }
     }
 }
