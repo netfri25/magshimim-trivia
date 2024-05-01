@@ -31,7 +31,7 @@ impl<'db, 'me: 'db> Server<'db> {
                 let cmd = line.trim().to_lowercase();
 
                 match cmd.as_str() {
-                    "exit" => break,
+                    "exit" => std::process::exit(0),
                     _ => eprintln!("Unknown command: {:?}", cmd),
                 }
             }
