@@ -4,7 +4,7 @@ use trivia::messages::Response;
 
 use crate::connection;
 use crate::page::{
-    createroom, game, joinroom, login, mainmenu, register, results, room, statistics,
+    createquestion, createroom, game, joinroom, login, mainmenu, register, results, room, statistics
 };
 
 #[derive(From, Debug, Clone)]
@@ -43,4 +43,7 @@ pub enum Message {
 
     #[from]
     Results(results::Msg),
+
+    #[from]
+    CreateQuestion(createquestion::Msg),
 }
