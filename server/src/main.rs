@@ -16,17 +16,23 @@ fn main() {
         }
     };
 
-    if let Err(err) = db.populate_questions(50) {
-        eprintln!("[WARN] unable to add questions to db: {}", err);
-    }
+    std::thread::scope(|s| {
+        s.spawn(|| {
+            if let Err(err) = db.populate_questions(50) {
+                eprintln!("[WARN] unable to add questions to db: {}", err);
+            } else {
+                eprintln!("[INFO] successfully added 50 (or less) questions to the db");
+            }
+        });
 
-    let server = match Server::build("127.0.0.1:6969", &db) {
-        Ok(server) => server,
-        Err(err) => {
-            eprintln!("[FATAL ERROR] unable to run server: {}", err);
-            return;
-        }
-    };
+        let server = match Server::build("127.0.0.1:6969", &db) {
+            Ok(server) => server,
+            Err(err) => {
+                eprintln!("[FATAL ERROR] unable to run server: {}", err);
+                return;
+            }
+        };
 
-    server.run()
+        server.run()
+    });
 }
