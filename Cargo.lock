@@ -275,6 +275,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77e53693616d3075149f4ead59bdeecd204ac6b8192d8969757601b74bddf00f"
 
 [[package]]
+name = "chrono"
+version = "0.4.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
+dependencies = [
+ "num-traits",
+ "serde",
+ "windows-targets 0.52.4",
+]
+
+[[package]]
 name = "client"
 version = "0.1.0"
 dependencies = [
@@ -2130,6 +2141,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.22.0",
+ "chrono",
  "sea-query",
  "serde",
  "serde_json",

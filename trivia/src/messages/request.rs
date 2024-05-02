@@ -1,12 +1,13 @@
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
 use crate::managers::room::RoomID;
 
-use super::Error;
+use super::{Address, PhoneNumber, Error};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Request {
@@ -18,6 +19,9 @@ pub enum Request {
         username: String,
         password: String,
         email: String,
+        phone: PhoneNumber,
+        address: Address,
+        birth_date: NaiveDate,
     },
     JoinRoom(RoomID),
     CreateRoom {
