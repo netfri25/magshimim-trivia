@@ -33,6 +33,10 @@ impl FromStr for PhoneNumber {
             return Err(Error::NoPrefix);
         };
 
+        if !prefix.starts_with('0') {
+            return Err(Error::NonZeroPrefix);
+        }
+
         if !prefix
             .chars()
             .chain(number.chars())
@@ -43,6 +47,10 @@ impl FromStr for PhoneNumber {
 
         if !(2..=3).contains(&prefix.len()) {
             return Err(Error::InvalidPrefixLength);
+        }
+
+        if number.len() != 7 {
+            return Err(Error::InvalidNumberLength);
         }
 
         let prefix = prefix.into();
@@ -56,9 +64,15 @@ pub enum Error {
     #[error("unable to find the phone prefix")]
     NoPrefix,
 
+    #[error("phone prefix should start with the digit 0")]
+    NonZeroPrefix,
+
     #[error("phone prefix should be between 2 to 3 digits")]
     InvalidPrefixLength,
 
     #[error("phone number should only contain digits (except for the prefix seperator)")]
     UnexpectedCharacter,
+
+    #[error("number should be 7 digits (not including the prefix)")]
+    InvalidNumberLength,
 }
