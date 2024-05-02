@@ -1,12 +1,14 @@
 use std::path::Path;
 use std::time::Duration;
 
+use chrono::NaiveDate;
 use query::Iden;
 use sea_query as query;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
 use crate::managers::game::{calc_score, GameData};
 use crate::managers::statistics::Highscores;
+use crate::messages::{Address, PhoneNumber, DATE_FORMAT};
 
 use super::question::QuestionData;
 use super::{opentdb, Database, Error, Score};
@@ -88,11 +90,37 @@ impl Database for SqliteDatabase {
     }
 
     /// doesn't check whether the user exists or not
-    fn add_user(&self, username: &str, password: &str, email: &str) -> Result<(), Error> {
+    fn add_user(
+        &self,
+        username: &str,
+        password: &str,
+        email: &str,
+        phone: PhoneNumber,
+        address: Address,
+        birth_date: NaiveDate,
+    ) -> Result<(), Error> {
         let statement = query::Query::insert()
             .into_table(User::Table)
-            .columns([User::Username, User::Password, User::Email])
-            .values_panic([username.into(), password.into(), email.into()])
+            .columns([
+                User::Username,
+                User::Password,
+                User::Email,
+                User::Phone,
+                User::City,
+                User::Street,
+                User::Apartment,
+                User::BirthDate,
+            ])
+            .values_panic([
+                username.into(),
+                password.into(),
+                email.into(),
+                phone.to_string().into(),
+                address.city().into(),
+                address.street().into(),
+                address.apartment().into(),
+                birth_date.format(DATE_FORMAT).to_string().into(),
+            ])
             .to_string(query::SqliteQueryBuilder);
         self.conn.execute(statement)?;
         Ok(())
@@ -326,6 +354,11 @@ enum User {
     Username,
     Password,
     Email,
+    Phone,
+    City,
+    Street,
+    Apartment,
+    BirthDate,
 }
 
 impl User {
@@ -348,6 +381,11 @@ impl User {
             )
             .col(query::ColumnDef::new(User::Password).text().not_null())
             .col(query::ColumnDef::new(User::Email).text().not_null())
+            .col(query::ColumnDef::new(User::Phone).text().not_null())
+            .col(query::ColumnDef::new(User::City).text().not_null())
+            .col(query::ColumnDef::new(User::Street).text().not_null())
+            .col(query::ColumnDef::new(User::Apartment).unsigned().not_null())
+            .col(query::ColumnDef::new(User::BirthDate).text().not_null())
             .to_owned()
     }
 }
@@ -482,8 +520,15 @@ mod tests {
     fn signup() {
         let db = SqliteDatabase::connect(":memory:").unwrap();
         assert!(!db.user_exists("me").unwrap());
-        db.add_user("me", "password1234", "main@example.com")
-            .unwrap();
+        db.add_user(
+            "me",
+            "password1234",
+            "main@example.com",
+            "052-1122333".parse().unwrap(),
+            Address::new("Netanya", "Alonim", 69),
+            NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
+        )
+        .unwrap();
         assert!(db.user_exists("me").unwrap());
         assert!(db.password_matches("me", "password1234").unwrap());
         assert!(!db.password_matches("me", "jqwemnedfk").unwrap());
@@ -537,7 +582,14 @@ mod tests {
 
         for user_id in 1..=4 {
             let username = format!("user{}", user_id);
-            db.add_user(&username, "pass", "email@example.com")?;
+            db.add_user(
+                &username,
+                "pass",
+                "email@example.com",
+                "052-1122333".parse().unwrap(),
+                Address::new("Netanya", "Alonim", 69),
+                NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
+            )?;
         }
 
         let stats = [(10, 20, 2.2), (12, 20, 1.3), (15, 20, 2.6), (17, 20, 3.2)];

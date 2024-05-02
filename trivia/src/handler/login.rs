@@ -44,11 +44,14 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
                 username,
                 password,
                 email,
+                phone,
+                address,
+                birth_date,
             } => {
                 if let Some(err) = login_manager
                     .write()
                     .unwrap()
-                    .signup(username, &password, &email)?
+                    .signup(username, &password, &email, phone, address, birth_date)?
                 {
                     return Ok(RequestResult::new_error(err));
                 }

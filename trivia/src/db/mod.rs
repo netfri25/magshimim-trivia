@@ -1,20 +1,31 @@
-pub mod sqlite;
 use std::time::Duration;
 
-pub use sqlite::SqliteDatabase;
-
-pub mod question;
-use question::QuestionData;
+use chrono::NaiveDate;
 
 use crate::managers::game::{GameData, Score};
 use crate::managers::statistics::Highscores;
+use crate::messages::{Address, PhoneNumber};
+
+pub mod sqlite;
+pub use sqlite::SqliteDatabase;
+
+pub mod question;
+pub use question::QuestionData;
 
 pub mod opentdb;
 
 pub trait Database {
     fn user_exists(&self, username: &str) -> Result<bool, Error>;
     fn password_matches(&self, username: &str, password: &str) -> Result<bool, Error>;
-    fn add_user(&self, username: &str, password: &str, email: &str) -> Result<(), Error>;
+    fn add_user(
+        &self,
+        username: &str,
+        password: &str,
+        email: &str,
+        phone: PhoneNumber,
+        address: Address,
+        birth_date: NaiveDate,
+    ) -> Result<(), Error>;
 
     fn get_questions(&self, amount: usize) -> Result<Vec<QuestionData>, Error>;
     fn get_player_average_answer_time(&self, username: &str) -> Result<Duration, Error>;

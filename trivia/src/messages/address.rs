@@ -17,6 +17,18 @@ impl Address {
             apartment,
         }
     }
+
+    pub fn city(&self) -> &str {
+        &self.city
+    }
+
+    pub fn street(&self) -> &str {
+        &self.street
+    }
+
+    pub fn apartment(&self) -> u64 {
+        self.apartment
+    }
 }
 
 impl ToString for Address {

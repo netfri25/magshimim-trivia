@@ -1,6 +1,8 @@
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::db::Database;
+use crate::messages::{Address, PhoneNumber};
 
 pub struct LoginManager<'db> {
     db: &'db (dyn Database + Sync),
@@ -20,14 +22,21 @@ impl<'db> LoginManager<'db> {
         username: impl Into<String>,
         password: &str,
         email: &str,
+        phone: PhoneNumber,
+        address: Address,
+        birth_date: NaiveDate,
     ) -> Result<Option<Error>, crate::db::Error> {
         let username = username.into();
+
+        // TODO: check username/password/email using regex, and maybe even create a type for each
+        // one of them, e.g. Username, Password, Email, and check them using regex on creation
 
         if self.db.user_exists(&username)? {
             return Ok(Some(Error::UserAlreadyExists(username))); // no error, but the user already exists
         }
 
-        self.db.add_user(&username, password, email)?;
+        self.db
+            .add_user(&username, password, email, phone, address, birth_date)?;
         Ok(None) // everything is ok
     }
 
