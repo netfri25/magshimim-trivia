@@ -4,7 +4,8 @@ use trivia::messages::Response;
 
 use crate::connection;
 use crate::page::{
-    create_question, create_room, game, join_room, login, main_menu, register, results, room, statistics
+    create_question, create_room, game, join_room, login, main_menu, register, results, room,
+    statistics,
 };
 
 #[derive(From, Debug, Clone)]
