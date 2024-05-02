@@ -1,12 +1,12 @@
-use crate::managers::login::LoggedUser;
 use crate::managers::room::{RoomID, RoomState};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
+use crate::username::Username;
 
 use super::{Error, Handler, RequestHandlerFactory};
 
 pub struct RoomUserRequestHandler<'db, 'factory> {
     room_id: RoomID,
-    user: LoggedUser,
+    user: Username,
     is_admin: bool,
     factory: &'factory RequestHandlerFactory<'db>,
 }
@@ -34,7 +34,7 @@ impl<'db, 'factory: 'db> Handler<'db> for RoomUserRequestHandler<'db, 'factory> 
 impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
     pub fn new(
         factory: &'factory RequestHandlerFactory<'db>,
-        user: LoggedUser,
+        user: Username,
         is_admin: bool,
         room_id: RoomID,
     ) -> Self {

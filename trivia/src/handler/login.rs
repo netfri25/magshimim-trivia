@@ -1,4 +1,3 @@
-use crate::managers::login::LoggedUser;
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 
 use super::{Error, Handler, RequestHandlerFactory};
@@ -27,16 +26,15 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
                 if let Some(err) = login_manager
                     .write()
                     .unwrap()
-                    .login(username.clone(), &password)?
+                    .login(username.clone(), password)?
                 {
                     return Ok(RequestResult::new_error(err));
                 }
 
-                let logged_user = LoggedUser::new(username);
                 let response = Response::Login;
                 RequestResult::new(
                     response,
-                    self.factory.create_menu_request_handler(logged_user),
+                    self.factory.create_menu_request_handler(username),
                 )
             }
 
@@ -51,7 +49,7 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
                 if let Some(err) = login_manager
                     .write()
                     .unwrap()
-                    .signup(username, &password, &email, phone, address, birth_date)?
+                    .signup(username, password, email, phone, address, birth_date)?
                 {
                     return Ok(RequestResult::new_error(err));
                 }

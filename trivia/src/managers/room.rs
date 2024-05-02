@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use super::login::LoggedUser;
+use crate::username::Username;
 
 pub type RoomID = usize;
 
@@ -18,7 +18,7 @@ impl RoomManager {
         Self::default()
     }
 
-    pub fn create_room(&mut self, user: LoggedUser, data: RoomData) {
+    pub fn create_room(&mut self, user: Username, data: RoomData) {
         let mut room = Room::new(data);
         room.add_user(user);
         self.rooms.insert(room.data.room_id, room);
@@ -55,7 +55,7 @@ impl RoomManager {
 #[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Room {
     data: RoomData,
-    users: Vec<LoggedUser>,
+    users: Vec<Username>,
 }
 
 impl Room {
@@ -64,11 +64,11 @@ impl Room {
         Self { data, users }
     }
 
-    pub fn add_user(&mut self, user: LoggedUser) {
+    pub fn add_user(&mut self, user: Username) {
         self.users.push(user)
     }
 
-    pub fn remove_user(&mut self, user: &LoggedUser) {
+    pub fn remove_user(&mut self, user: &Username) {
         let Some(index) = self.users.iter().position(|u| u == user) else {
             return;
         };
@@ -76,7 +76,7 @@ impl Room {
         self.users.swap_remove(index);
     }
 
-    pub fn users(&self) -> &[LoggedUser] {
+    pub fn users(&self) -> &[Username] {
         &self.users
     }
 

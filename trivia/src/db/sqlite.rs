@@ -6,9 +6,12 @@ use query::Iden;
 use sea_query as query;
 use sqlite::{Connection, ConnectionThreadSafe, State};
 
+use crate::email::Email;
 use crate::managers::game::{calc_score, GameData};
 use crate::managers::statistics::Highscores;
 use crate::messages::{Address, PhoneNumber, DATE_FORMAT};
+use crate::password::Password;
+use crate::username::Username;
 
 use super::question::QuestionData;
 use super::{opentdb, Database, Error, Score};
@@ -42,7 +45,7 @@ impl SqliteDatabase {
 
     fn get_stats<T: sqlite::ReadableWithIndex>(
         &self,
-        username: &str,
+        username: &Username,
         col: Statistics,
     ) -> Result<T, Error> {
         let statement = query::Query::select()
@@ -53,12 +56,12 @@ impl SqliteDatabase {
                 query::Expr::col((Statistics::Table, Statistics::Id))
                     .equals((User::Table, User::Id)),
             )
-            .and_where(query::Expr::col((User::Table, User::Username)).eq(username))
+            .and_where(query::Expr::col((User::Table, User::Username)).eq(username.as_ref()))
             .to_string(query::SqliteQueryBuilder);
 
         let mut iter = self.conn.prepare(statement)?;
         if let State::Done = iter.next()? {
-            return Err(Error::UserDoesntExist(username.to_string()));
+            return Err(Error::UserDoesntExist(username.clone()));
         }
 
         Ok(iter.read::<T, _>(col.to_string().as_str())?)
@@ -66,23 +69,23 @@ impl SqliteDatabase {
 }
 
 impl Database for SqliteDatabase {
-    fn user_exists(&self, username: &str) -> Result<bool, Error> {
+    fn user_exists(&self, username: &Username) -> Result<bool, Error> {
         let statement = query::Query::select()
             .column(User::Username)
             .from(User::Table)
-            .and_where(query::Expr::col(User::Username).eq(username))
+            .and_where(query::Expr::col(User::Username).eq(username.as_ref()))
             .limit(1)
             .to_string(query::SqliteQueryBuilder);
 
         Ok(self.conn.prepare(statement)?.next()? == State::Row)
     }
 
-    fn password_matches(&self, username: &str, password: &str) -> Result<bool, Error> {
+    fn password_matches(&self, username: &Username, password: &Password) -> Result<bool, Error> {
         let statement = query::Query::select()
             .columns([User::Username, User::Password])
             .from(User::Table)
-            .and_where(query::Expr::col(User::Username).eq(username))
-            .and_where(query::Expr::col(User::Password).eq(password))
+            .and_where(query::Expr::col(User::Username).eq(username.as_ref()))
+            .and_where(query::Expr::col(User::Password).eq(password.as_ref()))
             .limit(1)
             .to_string(query::SqliteQueryBuilder);
 
@@ -92,9 +95,9 @@ impl Database for SqliteDatabase {
     /// doesn't check whether the user exists or not
     fn add_user(
         &self,
-        username: &str,
-        password: &str,
-        email: &str,
+        username: Username,
+        password: Password,
+        email: Email,
         phone: PhoneNumber,
         address: Address,
         birth_date: NaiveDate,
@@ -112,9 +115,9 @@ impl Database for SqliteDatabase {
                 User::BirthDate,
             ])
             .values_panic([
-                username.into(),
-                password.into(),
-                email.into(),
+                username.as_ref().into(),
+                password.as_ref().into(),
+                email.as_ref().into(),
                 phone.to_string().into(),
                 address.city().into(),
                 address.street().into(),
@@ -186,24 +189,24 @@ impl Database for SqliteDatabase {
         Ok(output)
     }
 
-    fn get_player_average_answer_time(&self, username: &str) -> Result<Duration, Error> {
+    fn get_player_average_answer_time(&self, username: &Username) -> Result<Duration, Error> {
         self.get_stats(username, Statistics::AverageAnswerTime)
             .map(Duration::from_secs_f64)
     }
 
-    fn get_correct_answers_count(&self, username: &str) -> Result<i64, Error> {
+    fn get_correct_answers_count(&self, username: &Username) -> Result<i64, Error> {
         self.get_stats(username, Statistics::CorrectAnswers)
     }
 
-    fn get_total_answers_count(&self, username: &str) -> Result<i64, Error> {
+    fn get_total_answers_count(&self, username: &Username) -> Result<i64, Error> {
         self.get_stats(username, Statistics::TotalAnswers)
     }
 
-    fn get_games_count(&self, username: &str) -> Result<i64, Error> {
+    fn get_games_count(&self, username: &Username) -> Result<i64, Error> {
         self.get_stats(username, Statistics::TotalGames)
     }
 
-    fn get_score(&self, username: &str) -> Result<Score, Error> {
+    fn get_score(&self, username: &Username) -> Result<Score, Error> {
         self.get_stats(username, Statistics::OverallScore)
     }
 
@@ -225,7 +228,7 @@ impl Database for SqliteDatabase {
         let mut index = 0;
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {
-            let username = iter.read::<String, _>(User::Username.to_string().as_str())?;
+            let username = iter.read::<String, _>(User::Username.to_string().as_str())?.parse()?;
             let score = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
             scores[index] = Some((username, score));
             index += 1;
@@ -235,7 +238,7 @@ impl Database for SqliteDatabase {
     }
 
     // NOTE: not tested, hoping that this function works as expected
-    fn submit_game_data(&self, username: &str, game_data: GameData) -> Result<(), Error> {
+    fn submit_game_data(&self, username: &Username, game_data: GameData) -> Result<(), Error> {
         let GameData {
             correct_answers: current_correct_answers,
             wrong_answers: current_wrong_answers,
@@ -247,12 +250,12 @@ impl Database for SqliteDatabase {
             let statement = query::Query::select()
                 .column(User::Id)
                 .from(User::Table)
-                .and_where(query::Expr::col(User::Username).eq(username))
+                .and_where(query::Expr::col(User::Username).eq(username.as_ref()))
                 .to_string(query::SqliteQueryBuilder);
 
             let mut iter = self.conn.prepare(statement)?;
             let State::Row = iter.next()? else {
-                return Err(Error::UserDoesntExist(username.to_string()));
+                return Err(Error::UserDoesntExist(username.clone()));
             };
 
             iter.read::<i64, _>(User::Id.to_string().as_str())?
@@ -519,19 +522,23 @@ mod tests {
     #[test]
     fn signup() {
         let db = SqliteDatabase::connect(":memory:").unwrap();
-        assert!(!db.user_exists("me").unwrap());
+        assert!(!db.user_exists(&"me".parse().unwrap()).unwrap());
         db.add_user(
-            "me",
-            "password1234",
-            "main@example.com",
+            "me".parse().unwrap(),
+            "Pass@123".parse().unwrap(),
+            "main@example.com".parse().unwrap(),
             "052-1122333".parse().unwrap(),
             Address::new("Netanya", "Alonim", 69),
             NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
         )
         .unwrap();
-        assert!(db.user_exists("me").unwrap());
-        assert!(db.password_matches("me", "password1234").unwrap());
-        assert!(!db.password_matches("me", "jqwemnedfk").unwrap());
+        assert!(db.user_exists(&"me".parse().unwrap()).unwrap());
+        assert!(db
+            .password_matches(&"me".parse().unwrap(), &"Pass@123".parse().unwrap())
+            .unwrap());
+        assert!(!db
+            .password_matches(&"me".parse().unwrap(), &"NotPass@123".parse().unwrap())
+            .unwrap());
     }
 
     #[test]
@@ -583,9 +590,9 @@ mod tests {
         for user_id in 1..=4 {
             let username = format!("user{}", user_id);
             db.add_user(
-                &username,
-                "pass",
-                "email@example.com",
+                username.parse().unwrap(),
+                "Pass@123".parse().unwrap(),
+                "email@example.com".parse().unwrap(),
                 "052-1122333".parse().unwrap(),
                 Address::new("Netanya", "Alonim", 69),
                 NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
@@ -605,10 +612,10 @@ mod tests {
         assert_eq!(
             highscores,
             [
-                Some(("user2".to_string(), scores[1])),
-                Some(("user3".to_string(), scores[2])),
-                Some(("user4".to_string(), scores[3])),
-                Some(("user1".to_string(), scores[0])),
+                Some(("user2".parse().unwrap(), scores[1])),
+                Some(("user3".parse().unwrap(), scores[2])),
+                Some(("user4".parse().unwrap(), scores[3])),
+                Some(("user1".parse().unwrap(), scores[0])),
                 None
             ]
         );

@@ -2,9 +2,9 @@ use std::sync::RwLock;
 
 use crate::db::Database;
 use crate::managers::game::GameID;
-use crate::managers::login::LoggedUser;
 use crate::managers::room::RoomID;
 use crate::managers::{GameManager, LoginManager, RoomManager, StatisticsManager};
+use crate::username::Username;
 
 use super::{
     GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomUserRequestHandler,
@@ -47,14 +47,14 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
 
     pub fn create_menu_request_handler(
         &'me self,
-        logged_user: LoggedUser,
+        logged_user: Username,
     ) -> impl Handler<'db> + 'me {
         MenuRequestHandler::new(self, logged_user)
     }
 
     pub fn create_room_user_request_handler(
         &'me self,
-        user: LoggedUser,
+        user: Username,
         is_admin: bool,
         room_id: RoomID,
     ) -> impl Handler<'db> + 'me {
@@ -63,7 +63,7 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
 
     pub fn create_game_request_handler(
         &'me self,
-        user: LoggedUser,
+        user: Username,
         game_id: GameID,
     ) -> impl Handler<'db> + 'me {
         GameRequestHandler::new(self, user, game_id)

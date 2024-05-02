@@ -3,14 +3,14 @@ use std::time::{self, Duration, Instant, SystemTime};
 use tiny_rng::{Rand, Rng};
 
 use crate::managers::game::GameID;
-use crate::managers::login::LoggedUser;
 use crate::messages::{PlayerResults, Request, RequestInfo, RequestResult, Response};
+use crate::username::Username;
 
 use super::{Error, Handler, RequestHandlerFactory};
 
 pub struct GameRequestHandler<'db, 'factory> {
     game_id: GameID,
-    user: LoggedUser,
+    user: Username,
     question_sent_at: Instant,
     factory: &'factory RequestHandlerFactory<'db>,
 }
@@ -44,7 +44,7 @@ impl<'db, 'factory: 'db> Handler<'db> for GameRequestHandler<'db, 'factory> {
 impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
     pub fn new(
         factory: &'factory RequestHandlerFactory<'db>,
-        user: LoggedUser,
+        user: Username,
         game_id: GameID,
     ) -> Self {
         Self {
@@ -138,7 +138,7 @@ impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
                 .results()
                 .map(|(user, data)| {
                     PlayerResults::new(
-                        user.username(),
+                        user.clone(),
                         data.correct_answers,
                         data.wrong_answers,
                         data.avg_time,
