@@ -6,8 +6,8 @@ use iced::widget::{
     button, column, container, horizontal_space, row, scrollable, text, vertical_space, Column,
 };
 use iced::{theme, Alignment, Length};
-use trivia::managers::login::LoggedUser;
 use trivia::messages::{Request, Response};
+use trivia::username::Username;
 
 use crate::action::Action;
 use crate::consts;
@@ -28,7 +28,7 @@ pub enum Msg {
 
 pub struct RoomPage {
     room_name: String,
-    players: Vec<LoggedUser>,
+    players: Vec<Username>,
     time_per_question: Duration,
     is_admin: bool, // true when the current user is the admin
     question_count: usize,
@@ -149,8 +149,8 @@ impl RoomPage {
     }
 }
 
-fn player_element(user: &LoggedUser) -> iced::Element<Message> {
-    let user = text(user.username()).size(30);
+fn player_element(user: &Username) -> iced::Element<Message> {
+    let user = text(user.as_ref()).size(30);
 
     container(column![user].align_items(Alignment::Center))
         .style(theme::Container::Box)

@@ -117,7 +117,6 @@ impl PlayerResults {
         wrong_answers: u32,
         avg_time: Duration,
     ) -> Self {
-        let username = username.into();
         let score = calc_score(avg_time, correct_answers as i64);
         Self {
             username,

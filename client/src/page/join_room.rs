@@ -122,7 +122,7 @@ pub fn room_element<'a>(room: &Room) -> iced::Element<'a, Message, iced::Theme> 
 
     // the first user is the admin
     let users = room.users();
-    let admin = users.first().map(|u| u.username()).unwrap_or_default();
+    let admin = users.first().map(|u| u.as_ref()).unwrap_or_default();
 
     let name = text(name).size(20);
     let players = text(format!("players: {}/{}", users.len(), max_players)).size(10);
@@ -145,7 +145,7 @@ pub fn room_element<'a>(room: &Room) -> iced::Element<'a, Message, iced::Theme> 
     let users = Column::from_vec(
         users
             .iter()
-            .map(|u| text(u.username()).size(10).into())
+            .map(|u| text(u.as_ref()).size(10).into())
             .collect(),
     );
 

@@ -122,7 +122,7 @@ pub fn result_elem(result: &PlayerResults) -> iced::Element<Message> {
     } = result;
 
     column![
-        text(username)
+        text(username.as_ref())
             .size(20)
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center),
