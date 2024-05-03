@@ -55,7 +55,7 @@ impl<'db> LoginManager<'db> {
         }
 
         if !self.db.password_matches(&username, &password)? {
-            return Ok(Some(Error::InvalidPassword));
+            return Ok(Some(Error::WrongPassword));
         }
 
         self.connected.push(username);
@@ -87,6 +87,6 @@ pub enum Error {
     #[error("user {:?} doesn't exist", .0.as_ref())]
     UserDoesntExist(Username),
 
-    #[error("invalid password")]
-    InvalidPassword,
+    #[error("wrong password")]
+    WrongPassword,
 }
