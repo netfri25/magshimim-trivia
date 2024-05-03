@@ -5,3 +5,5 @@ pub mod messages;
 
 pub mod constraint;
 pub use constraint::{username, password, email};
+
+pub use chrono::NaiveDate;
