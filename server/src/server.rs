@@ -47,7 +47,10 @@ mod tests {
     use trivia::db::question::QuestionData;
     use trivia::db::SqliteDatabase;
     use trivia::managers::login;
-    use trivia::messages::{Request, Response};
+    use trivia::messages::{Address, Request, Response, DATE_FORMAT};
+    use trivia::password::Password;
+    use trivia::username::Username;
+    use trivia::NaiveDate;
 
     use super::*;
 
@@ -77,8 +80,8 @@ mod tests {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
-        let username = "user1234".to_string();
-        let password = "pass1234".to_string();
+        let username: Username = "user1234".parse().unwrap();
+        let password: Password = "Pass@123".parse().unwrap();
         let request = Request::Login {
             username: username.clone(),
             password,
@@ -98,9 +101,12 @@ mod tests {
         let mut client = TcpStream::connect(ADDR).unwrap();
 
         let request = Request::Signup {
-            username: "signup1234".to_string(),
-            password: "pass1234".to_string(),
-            email: "email@example.com".to_string(),
+            username: "signup1234".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
+            email: "email@example.com".parse().unwrap(),
+            phone: "050-1122333".parse().unwrap(),
+            address: Address::new("Netanya", "Alonim", 69),
+            birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
@@ -108,8 +114,8 @@ mod tests {
         assert_eq!(response, expected);
 
         let request = Request::Login {
-            username: "signup1234".to_string(),
-            password: "pass1234".to_string(),
+            username: "signup1234".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
@@ -122,26 +128,32 @@ mod tests {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
-        let username = "double".to_string();
 
         let request = Request::Signup {
-            username: username.clone(),
-            password: "pass1234".to_string(),
-            email: "email@example.com".to_string(),
+            username: "double".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
+            email: "email@example.com".parse().unwrap(),
+            phone: "050-1122333".parse().unwrap(),
+            address: Address::new("Netanya", "Alonim", 69),
+            birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
         let expected = Response::Signup;
         assert_eq!(response, expected);
 
+
         let request = Request::Signup {
-            username: username.clone(),
-            password: "pass1234".to_string(),
-            email: "email@example.com".to_string(),
+            username: "double".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
+            email: "email@example.com".parse().unwrap(),
+            phone: "050-1122333".parse().unwrap(),
+            address: Address::new("Netanya", "Alonim", 69),
+            birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error(login::Error::UserAlreadyExists(username));
+        let expected = Response::new_error(login::Error::UserAlreadyExists("double".parse().unwrap()));
         assert_eq!(response, expected);
     }
 
@@ -152,9 +164,12 @@ mod tests {
         let mut client = TcpStream::connect(ADDR).unwrap();
 
         let request = Request::Signup {
-            username: "multiple-login".to_string(),
-            password: "pass1234".to_string(),
-            email: "email@example.com".to_string(),
+            username: "multipleLogin".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
+            email: "email@example.com".parse().unwrap(),
+            phone: "050-1122333".parse().unwrap(),
+            address: Address::new("Netanya", "Alonim", 69),
+            birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
@@ -162,8 +177,8 @@ mod tests {
         assert_eq!(response, expected);
 
         let request = Request::Login {
-            username: "multiple-login".to_string(),
-            password: "pass1234".to_string(),
+            username: "multipleLogin".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
@@ -176,8 +191,8 @@ mod tests {
         let mut client = TcpStream::connect(ADDR).unwrap();
 
         let request = Request::Login {
-            username: "multiple-login".to_string(),
-            password: "pass1234".to_string(),
+            username: "multipleLogin".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
@@ -190,12 +205,14 @@ mod tests {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
-        let username = "login-abuser".to_string();
 
         let request = Request::Signup {
-            username: username.clone(),
-            password: "pass1234".to_string(),
-            email: "email@example.com".to_string(),
+            username: "loginAbuser".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
+            email: "email@example.com".parse().unwrap(),
+            phone: "050-1122333".parse().unwrap(),
+            address: Address::new("Netanya", "Alonim", 69),
+            birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
@@ -203,8 +220,8 @@ mod tests {
         assert_eq!(response, expected);
 
         let request = Request::Login {
-            username: username.clone(),
-            password: "pass1234".to_string(),
+            username: "loginAbuser".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
@@ -214,12 +231,12 @@ mod tests {
         let mut client = TcpStream::connect(ADDR).unwrap();
 
         let request = Request::Login {
-            username: username.clone(),
-            password: "pass1234".to_string(),
+            username: "loginAbuser".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error(login::Error::UserAlreadyConnected(username));
+        let expected = Response::new_error(login::Error::UserAlreadyConnected("loginAbuser".parse().unwrap()));
         assert_eq!(response, expected);
     }
 
@@ -228,12 +245,13 @@ mod tests {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
-        let username = "creator";
-        let password = "pass";
         let signup = Request::Signup {
-            username: username.to_string(),
-            password: password.to_string(),
-            email: "".to_string(),
+            username: "creator".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
+            email: "email@example.com".parse().unwrap(),
+            phone: "050-1122333".parse().unwrap(),
+            address: Address::new("Netanya", "Alonim", 69),
+            birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
         };
 
         signup.write_to(&mut client).unwrap();
@@ -242,8 +260,8 @@ mod tests {
         assert_eq!(response, expected);
 
         let login = Request::Login {
-            username: username.to_string(),
-            password: password.to_string(),
+            username: "creator".parse().unwrap(),
+            password: "Pass@123".parse().unwrap(),
         };
 
         login.write_to(&mut client).unwrap();
