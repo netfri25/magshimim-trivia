@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::db::question::QuestionData;
 use crate::managers::room::RoomID;
 
-use super::{Address, Error, PhoneNumber};
+use super::{Address, Error};
 
 pub const DATE_FORMAT: &str = "%d/%m/%Y";
 
@@ -21,7 +21,7 @@ pub enum Request {
         username: String,
         password: String,
         email: String,
-        phone: PhoneNumber,
+        phone: String,
         address: Address,
         birth_date: NaiveDate,
     },

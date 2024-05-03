@@ -1,5 +1,6 @@
 use crate::email::{self, Email};
-use crate::messages::{Request, RequestInfo, RequestResult, Response};
+use crate::messages::phone_number::PhoneNumber;
+use crate::messages::{phone_number, Request, RequestInfo, RequestResult, Response};
 use crate::password::{self, Password};
 use crate::username::{self, Username};
 
@@ -51,10 +52,11 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
                 address,
                 birth_date,
             } => {
-                let (username, password, email) = match parse_signup(&username, &password, &email) {
-                    Ok(tup) => tup,
-                    Err(err) => return Ok(RequestResult::new_error(err)),
-                };
+                let (username, password, email, phone) =
+                    match parse_signup(&username, &password, &email, &phone) {
+                        Ok(tup) => tup,
+                        Err(err) => return Ok(RequestResult::new_error(err)),
+                    };
 
                 if let Some(err) = login_manager
                     .write()
@@ -85,10 +87,12 @@ fn parse_signup(
     username: &str,
     password: &str,
     email: &str,
-) -> Result<(Username, Password, Email), ParseError> {
+    phone: &str,
+) -> Result<(Username, Password, Email, PhoneNumber), ParseError> {
     let (username, password) = parse_login(username, password)?;
     let email = email.parse()?;
-    Ok((username, password, email))
+    let phone = phone.parse()?;
+    Ok((username, password, email, phone))
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -101,4 +105,7 @@ enum ParseError {
 
     #[error("invalid email: {0}")]
     Email(#[from] email::Error),
+
+    #[error("invalid phone number: {0}")]
+    PhoneNumber(#[from] phone_number::Error),
 }
