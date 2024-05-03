@@ -73,7 +73,16 @@ impl<'db, 'me: 'db> Communicator<'db> {
         });
 
         loop {
-            let request = Request::read_from(&mut client)?;
+            let request = match Request::read_from(&mut client) {
+                Ok(request) => request,
+                Err(messages::Error::Json(err)) => {
+                    RequestResult::new_error(err)
+                        .response
+                        .write_to(&mut client)?;
+                    continue;
+                }
+                err => err?,
+            };
             eprintln!("[REQ]:  {:?}", request);
             eprint!("[RESP]: ");
 
