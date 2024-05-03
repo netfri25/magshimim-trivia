@@ -173,8 +173,11 @@ impl Page for RegisterPage {
         ]
         .align_items(Alignment::Center);
 
-        let birth_date_button = button(text(format!("Birth date: {}", self.birth_date)))
-            .on_press(Msg::OpenPicker.into());
+        let birth_date_button = button(text(format!(
+            "Birth date: {:02}/{:02}/{:04}",
+            self.birth_date.day, self.birth_date.month, self.birth_date.year
+        )))
+        .on_press(Msg::OpenPicker.into());
         let birth_date_picker = date_picker(
             self.choosing_date,
             self.birth_date,
