@@ -31,7 +31,6 @@ impl<'db> LoginManager<'db> {
         if self.db.user_exists(&username)? {
             return Ok(Some(Error::UserAlreadyExists(username))); // no error, but the user already exists
         }
-
         self.db
             .add_user(username, password, email, phone, address, birth_date)?;
         Ok(None) // everything is ok
