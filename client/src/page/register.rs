@@ -1,7 +1,9 @@
 use iced::alignment::Horizontal;
 use iced::widget::{button, column, container, horizontal_space, row, text, text_input};
 use iced::{theme, Alignment, Length};
+use iced_aw::date_picker;
 use iced_aw::date_picker::Date;
+
 use trivia::messages::{Address, Request, Response};
 use trivia::NaiveDate;
 
@@ -28,7 +30,9 @@ pub enum Msg {
     AddressStreetSubmit,
     AddressApartmentInput(String),
     AddressApartmentSubmit,
-    // date picker event
+    PickDate(Date),
+    OpenPicker,
+    ClosePicker,
     Register,
     Login,
 }
@@ -43,6 +47,7 @@ pub struct RegisterPage {
     address_street: String,
     address_apartment: Option<u64>,
     birth_date: Date,
+    choosing_date: bool,
 }
 
 impl Page for RegisterPage {
@@ -129,6 +134,14 @@ impl Page for RegisterPage {
                 });
             }
 
+            Msg::PickDate(date) => {
+                self.birth_date = date;
+                self.choosing_date = false;
+            }
+
+            Msg::OpenPicker => self.choosing_date = true,
+            Msg::ClosePicker => self.choosing_date = false,
+
             Msg::Login => return Action::switch(LoginPage::default()),
         }
 
@@ -159,6 +172,16 @@ impl Page for RegisterPage {
             register_button
         ]
         .align_items(Alignment::Center);
+
+        let birth_date_button = button(text(format!("Birth date: {}", self.birth_date)))
+            .on_press(Msg::OpenPicker.into());
+        let birth_date_picker = date_picker(
+            self.choosing_date,
+            self.birth_date,
+            birth_date_button,
+            Msg::ClosePicker.into(),
+            |date| Msg::PickDate(date).into(),
+        );
 
         let input_fields = column![
             text_input("username:", &self.username)
@@ -216,6 +239,7 @@ impl Page for RegisterPage {
             ]
             .spacing(consts::INPUT_FIELDS_PADDING)
             .width(Length::Fill),
+            birth_date_picker,
             container(buttons)
                 .padding(consts::BUTTONS_PADDING)
                 .center_y(),
@@ -266,6 +290,7 @@ impl Default for RegisterPage {
             address_street: String::new(),
             address_apartment: None,
             birth_date: Date::today(),
+            choosing_date: false,
         }
     }
 }
