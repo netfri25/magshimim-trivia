@@ -48,8 +48,6 @@ mod tests {
     use trivia::db::SqliteDatabase;
     use trivia::managers::login;
     use trivia::messages::{Address, Request, Response, DATE_FORMAT};
-    use trivia::password::Password;
-    use trivia::username::Username;
     use trivia::NaiveDate;
 
     use super::*;
@@ -80,16 +78,14 @@ mod tests {
         start_server();
 
         let mut client = TcpStream::connect(ADDR).unwrap();
-        let username: Username = "user1234".parse().unwrap();
-        let password: Password = "Pass@123".parse().unwrap();
-        let request = Request::Login {
-            username: username.clone(),
-            password,
-        };
+        let username = "user1234".to_string();
+        let password = "Pass@123".to_string();
+        let request = Request::Login { username, password };
 
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error(login::Error::UserDoesntExist(username));
+        let expected =
+            Response::new_error(login::Error::UserDoesntExist("user1234".parse().unwrap()));
 
         assert_eq!(response, expected);
     }
@@ -142,7 +138,6 @@ mod tests {
         let expected = Response::Signup;
         assert_eq!(response, expected);
 
-
         let request = Request::Signup {
             username: "double".parse().unwrap(),
             password: "Pass@123".parse().unwrap(),
@@ -153,7 +148,8 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error(login::Error::UserAlreadyExists("double".parse().unwrap()));
+        let expected =
+            Response::new_error(login::Error::UserAlreadyExists("double".parse().unwrap()));
         assert_eq!(response, expected);
     }
 
@@ -236,7 +232,9 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error(login::Error::UserAlreadyConnected("loginAbuser".parse().unwrap()));
+        let expected = Response::new_error(login::Error::UserAlreadyConnected(
+            "loginAbuser".parse().unwrap(),
+        ));
         assert_eq!(response, expected);
     }
 

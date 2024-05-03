@@ -88,7 +88,7 @@ impl<'db, 'me: 'db> Communicator<'db> {
 
             // save the username, so it can be removed at the end of communication
             if let Request::Login { ref username, .. } = request {
-                login_username.set(Some(username.clone()));
+                login_username.set(username.parse().ok());
             }
 
             let request_info = RequestInfo::new_now(request);

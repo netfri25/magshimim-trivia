@@ -5,10 +5,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
-use crate::email::Email;
 use crate::managers::room::RoomID;
-use crate::password::Password;
-use crate::username::Username;
 
 use super::{Address, Error, PhoneNumber};
 
@@ -17,13 +14,13 @@ pub const DATE_FORMAT: &str = "%d/%m/%Y";
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Request {
     Login {
-        username: Username,
-        password: Password,
+        username: String,
+        password: String,
     },
     Signup {
-        username: Username,
-        password: Password,
-        email: Email,
+        username: String,
+        password: String,
+        email: String,
         phone: PhoneNumber,
         address: Address,
         birth_date: NaiveDate,

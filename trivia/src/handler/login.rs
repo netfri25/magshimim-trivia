@@ -1,4 +1,7 @@
+use crate::email::{self, Email};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
+use crate::password::{self, Password};
+use crate::username::{self, Username};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
@@ -23,19 +26,21 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
 
         let result = match request.data {
             Request::Login { username, password } => {
+                let (username, password) = match parse_login(&username, &password) {
+                    Ok(tup) => tup,
+                    Err(err) => return Ok(RequestResult::new_error(err)),
+                };
+
                 if let Some(err) = login_manager
                     .write()
                     .unwrap()
                     .login(username.clone(), password)?
                 {
-                    return Ok(RequestResult::new_error(err));
+                    RequestResult::new_error(err)
+                } else {
+                    let response = Response::Login;
+                    RequestResult::new(response, self.factory.create_menu_request_handler(username))
                 }
-
-                let response = Response::Login;
-                RequestResult::new(
-                    response,
-                    self.factory.create_menu_request_handler(username),
-                )
             }
 
             Request::Signup {
@@ -46,16 +51,21 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
                 address,
                 birth_date,
             } => {
+                let (username, password, email) = match parse_signup(&username, &password, &email) {
+                    Ok(tup) => tup,
+                    Err(err) => return Ok(RequestResult::new_error(err)),
+                };
+
                 if let Some(err) = login_manager
                     .write()
                     .unwrap()
                     .signup(username, password, email, phone, address, birth_date)?
                 {
-                    return Ok(RequestResult::new_error(err));
+                    RequestResult::new_error(err)
+                } else {
+                    let response = Response::Signup;
+                    RequestResult::without_handler(response) // no need to switch an handler
                 }
-
-                let response = Response::Signup;
-                RequestResult::without_handler(response) // no need to switch an handler
             }
 
             _ => RequestResult::new_error("Invalid request"),
@@ -63,4 +73,32 @@ impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
 
         Ok(result)
     }
+}
+
+fn parse_login(username: &str, password: &str) -> Result<(Username, Password), ParseError> {
+    let username = username.parse()?;
+    let password = password.parse()?;
+    Ok((username, password))
+}
+
+fn parse_signup(
+    username: &str,
+    password: &str,
+    email: &str,
+) -> Result<(Username, Password, Email), ParseError> {
+    let (username, password) = parse_login(username, password)?;
+    let email = email.parse()?;
+    Ok((username, password, email))
+}
+
+#[derive(Debug, thiserror::Error)]
+enum ParseError {
+    #[error("invalid username: {0}")]
+    Username(#[from] username::Error),
+
+    #[error("invalid password: {0}")]
+    Password(#[from] password::Error),
+
+    #[error("invalid email: {0}")]
+    Email(#[from] email::Error),
 }
