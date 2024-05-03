@@ -1,7 +1,7 @@
 // TODO(IMPORTANT): implement by hand deserialize for username, password, and email
-pub mod username;
-pub mod password;
 pub mod email;
+pub mod password;
+pub mod username;
 
 pub struct Constraint {
     pub regex: &'static str,

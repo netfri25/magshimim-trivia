@@ -4,6 +4,6 @@ pub mod managers;
 pub mod messages;
 
 pub mod constraint;
-pub use constraint::{username, password, email};
+pub use constraint::{email, password, username};
 
 pub use chrono::NaiveDate;

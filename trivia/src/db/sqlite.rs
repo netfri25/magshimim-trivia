@@ -228,7 +228,9 @@ impl Database for SqliteDatabase {
         let mut index = 0;
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {
-            let username = iter.read::<String, _>(User::Username.to_string().as_str())?.parse()?;
+            let username = iter
+                .read::<String, _>(User::Username.to_string().as_str())?
+                .parse()?;
             let score = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
             scores[index] = Some((username, score));
             index += 1;

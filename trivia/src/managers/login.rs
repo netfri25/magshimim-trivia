@@ -42,11 +42,7 @@ impl<'db> LoginManager<'db> {
         username: Username,
         password: Password,
     ) -> Result<Option<Error>, crate::db::Error> {
-        if self
-            .connected
-            .iter()
-            .any(|logged| logged == &username)
-        {
+        if self.connected.iter().any(|logged| logged == &username) {
             return Ok(Some(Error::UserAlreadyConnected(username)));
         }
 
@@ -63,11 +59,7 @@ impl<'db> LoginManager<'db> {
     }
 
     pub fn logut(&mut self, username: &Username) {
-        let Some(index) = self
-            .connected
-            .iter()
-            .position(|logged| logged == username)
-        else {
+        let Some(index) = self.connected.iter().position(|logged| logged == username) else {
             return;
         };
 
