@@ -19,15 +19,15 @@
  - [x] remove the need for locks for the DB
 
 ### Bonuses
- - [ ] password and email regex checking
-    * [ ] additional user info:
+ - [x] password and email regex checking
+    * [x] additional user info:
         - phone (prefix, number)
         - address (city, street, apartment)
         - birth date [feature: date_picker](https://github.com/iced-rs/iced_aw/tree/main/examples/date_picker/src/main.rs)
  - [x] page for adding questions
 
 ### my own additions
- - [ ] add more room info in the Join Room page
+ - [x] add more room info in the Join Room page
  - [ ] show the room settings in the Room page
     * [ ] (optional) allow editing of the current room settings
  - [ ] implement an easy way to go back a page / go back to the main menu
