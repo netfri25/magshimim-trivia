@@ -4,6 +4,7 @@ use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 
 use trivia::handler::{self, Handler, RequestHandlerFactory};
 use trivia::messages::{self, Request, RequestInfo, RequestResult};
+use trivia::username::Username;
 
 use crate::defer::Defer;
 
@@ -53,7 +54,7 @@ impl<'db, 'me: 'db> Communicator<'db> {
         handler: impl Handler<'db> + 'db,
     ) -> Result<(), Error> {
         let addr = client.peer_addr()?;
-        let login_username: Cell<Option<String>> = Cell::new(None);
+        let login_username: Cell<Option<Username>> = Cell::new(None);
 
         let handler = RefCell::from(Box::new(handler) as Box<dyn Handler>);
 
@@ -72,13 +73,22 @@ impl<'db, 'me: 'db> Communicator<'db> {
         });
 
         loop {
-            let request = Request::read_from(&mut client)?;
+            let request = match Request::read_from(&mut client) {
+                Ok(request) => request,
+                Err(messages::Error::Json(err)) => {
+                    RequestResult::new_error(err)
+                        .response
+                        .write_to(&mut client)?;
+                    continue;
+                }
+                err => err?,
+            };
             eprintln!("[REQ]:  {:?}", request);
             eprint!("[RESP]: ");
 
             // save the username, so it can be removed at the end of communication
             if let Request::Login { ref username, .. } = request {
-                login_username.set(Some(String::from(username)));
+                login_username.set(username.parse().ok());
             }
 
             let request_info = RequestInfo::new_now(request);

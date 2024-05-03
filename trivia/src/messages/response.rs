@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::db::question::QuestionData;
 use crate::handler::Handler;
 use crate::managers::game::calc_score;
-use crate::managers::login::LoggedUser;
 use crate::managers::room::{Room, RoomState};
 use crate::managers::statistics::{Highscores, Statistics};
+use crate::username::Username;
 
 use super::Error;
 
@@ -19,7 +19,7 @@ pub enum Response {
     Signup,
     Logout,
     RoomList(Vec<Room>),
-    PlayersInRoom(Vec<LoggedUser>),
+    PlayersInRoom(Vec<Username>),
     JoinRoom,
     CreateRoom,
     Statistics {
@@ -31,7 +31,7 @@ pub enum Response {
     RoomState {
         state: RoomState,
         name: String,
-        players: Vec<LoggedUser>,
+        players: Vec<Username>,
         question_count: usize,
         time_per_question: Duration,
     },
@@ -103,7 +103,7 @@ impl<'db> RequestResult<'db> {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PlayerResults {
-    pub username: String,
+    pub username: Username,
     pub correct_answers: u32,
     pub wrong_answers: u32,
     pub avg_time: Duration,
@@ -112,12 +112,11 @@ pub struct PlayerResults {
 
 impl PlayerResults {
     pub fn new(
-        username: impl Into<String>,
+        username: Username,
         correct_answers: u32,
         wrong_answers: u32,
         avg_time: Duration,
     ) -> Self {
-        let username = username.into();
         let score = calc_score(avg_time, correct_answers as i64);
         Self {
             username,

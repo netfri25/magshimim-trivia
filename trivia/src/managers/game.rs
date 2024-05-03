@@ -6,8 +6,8 @@ use anyhow::anyhow;
 
 use crate::db::question::QuestionData;
 use crate::db::{self, Database};
+use crate::username::Username;
 
-use super::login::LoggedUser;
 use super::room::{Room, RoomID};
 
 pub type Score = f64;
@@ -59,7 +59,7 @@ impl<'db> GameManager<'db> {
 
         game.players
             .into_iter()
-            .try_for_each(|(user, data)| self.db.submit_game_data(user.username(), data))
+            .try_for_each(|(user, data)| self.db.submit_game_data(&user, data))
     }
 }
 
@@ -67,13 +67,13 @@ pub struct Game {
     id: GameID,
     questions: Vec<QuestionData>,
     time_per_question: Duration,
-    players: HashMap<LoggedUser, GameData>,
+    players: HashMap<Username, GameData>,
 }
 
 impl Game {
     pub fn new(
         id: RoomID,
-        users: impl Iterator<Item = LoggedUser>,
+        users: impl Iterator<Item = Username>,
         questions: Vec<QuestionData>,
         time_per_question: Duration,
     ) -> Self {
@@ -91,7 +91,7 @@ impl Game {
         self.id
     }
 
-    pub fn get_question_for_user(&mut self, user: &LoggedUser) -> Option<&QuestionData> {
+    pub fn get_question_for_user(&mut self, user: &Username) -> Option<&QuestionData> {
         let game_data = self.players.get_mut(user)?;
         game_data.current_question_index += 1;
         let index = game_data.current_question_index - 1;
@@ -101,14 +101,14 @@ impl Game {
     // returns the correct answer index and goes to the next question
     pub fn submit_answer(
         &mut self,
-        user: LoggedUser,
+        user: Username,
         answer: String,
         answer_time: Duration,
     ) -> Result<&str, db::Error> {
         let game_data = self
             .players
             .get_mut(&user)
-            .ok_or(db::Error::UserDoesntExist(user.username))?;
+            .ok_or(db::Error::UserDoesntExist(user))?;
 
         // TODO: proper error
         let question = self
@@ -124,14 +124,14 @@ impl Game {
         Ok(question.correct_answer())
     }
 
-    pub fn remove_user(&mut self, user: &LoggedUser) {
+    pub fn remove_user(&mut self, user: &Username) {
         if let Some(data) = self.players.get_mut(user) {
             // mark as if the user has finished
             data.left = true;
         }
     }
 
-    pub fn users(&self) -> impl Iterator<Item = &LoggedUser> {
+    pub fn users(&self) -> impl Iterator<Item = &Username> {
         self.players.keys()
     }
 
@@ -147,7 +147,7 @@ impl Game {
             .all(|data| data.left || data.current_question_index > self.questions.len())
     }
 
-    pub fn results(&self) -> impl Iterator<Item = (&LoggedUser, &GameData)> {
+    pub fn results(&self) -> impl Iterator<Item = (&Username, &GameData)> {
         self.players.iter()
     }
 }

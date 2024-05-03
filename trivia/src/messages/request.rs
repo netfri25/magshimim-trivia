@@ -1,12 +1,15 @@
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
 use crate::managers::room::RoomID;
 
-use super::Error;
+use super::{Address, Error};
+
+pub const DATE_FORMAT: &str = "%d/%m/%Y";
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Request {
@@ -18,6 +21,9 @@ pub enum Request {
         username: String,
         password: String,
         email: String,
+        phone: String,
+        address: Address,
+        birth_date: NaiveDate,
     },
     JoinRoom(RoomID),
     CreateRoom {
@@ -82,6 +88,10 @@ impl RequestInfo {
 
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDate;
+
+    use crate::messages::{Address, DATE_FORMAT};
+
     #[test]
     fn serde() {
         use super::Request;
@@ -89,13 +99,16 @@ mod tests {
 
         let to_test = [
             Request::Signup {
-                username: "user1234".into(),
-                password: "pass1234".into(),
-                email: "example@mail.com".into(),
+                username: "user1234".parse().unwrap(),
+                password: "Pass@123".parse().unwrap(),
+                email: "example@mail.com".parse().unwrap(),
+                phone: "052-1122333".parse().unwrap(),
+                address: Address::new("Netanya", "Alonim", 69),
+                birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
             },
             Request::Login {
-                username: "user1234".into(),
-                password: "pass1234".into(),
+                username: "user1234".parse().unwrap(),
+                password: "Pass@123".parse().unwrap(),
             },
         ];
 

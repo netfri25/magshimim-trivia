@@ -1,10 +1,14 @@
-use serde::{Deserialize, Serialize};
+use chrono::NaiveDate;
 
 use crate::db::Database;
+use crate::email::Email;
+use crate::messages::{Address, PhoneNumber};
+use crate::password::Password;
+use crate::username::Username;
 
 pub struct LoginManager<'db> {
     db: &'db (dyn Database + Sync),
-    connected: Vec<LoggedUser>,
+    connected: Vec<Username>,
 }
 
 impl<'db> LoginManager<'db> {
@@ -17,31 +21,27 @@ impl<'db> LoginManager<'db> {
 
     pub fn signup(
         &mut self,
-        username: impl Into<String>,
-        password: &str,
-        email: &str,
+        username: Username,
+        password: Password,
+        email: Email,
+        phone: PhoneNumber,
+        address: Address,
+        birth_date: NaiveDate,
     ) -> Result<Option<Error>, crate::db::Error> {
-        let username = username.into();
-
         if self.db.user_exists(&username)? {
             return Ok(Some(Error::UserAlreadyExists(username))); // no error, but the user already exists
         }
-
-        self.db.add_user(&username, password, email)?;
+        self.db
+            .add_user(username, password, email, phone, address, birth_date)?;
         Ok(None) // everything is ok
     }
 
     pub fn login(
         &mut self,
-        username: impl Into<String>,
-        password: &str,
+        username: Username,
+        password: Password,
     ) -> Result<Option<Error>, crate::db::Error> {
-        let username = username.into();
-        if self
-            .connected
-            .iter()
-            .any(|user| user.username() == username)
-        {
+        if self.connected.iter().any(|logged| logged == &username) {
             return Ok(Some(Error::UserAlreadyConnected(username)));
         }
 
@@ -49,20 +49,16 @@ impl<'db> LoginManager<'db> {
             return Ok(Some(Error::UserDoesntExist(username)));
         }
 
-        if !self.db.password_matches(&username, password)? {
-            return Ok(Some(Error::InvalidPassword));
+        if !self.db.password_matches(&username, &password)? {
+            return Ok(Some(Error::WrongPassword));
         }
 
-        self.connected.push(LoggedUser::new(username));
+        self.connected.push(username);
         Ok(None)
     }
 
-    pub fn logut(&mut self, username: &str) {
-        let Some(index) = self
-            .connected
-            .iter()
-            .position(|user| username == user.username())
-        else {
+    pub fn logut(&mut self, username: &Username) {
+        let Some(index) = self.connected.iter().position(|logged| logged == username) else {
             return;
         };
 
@@ -71,39 +67,17 @@ impl<'db> LoginManager<'db> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct LoggedUser {
-    pub username: String,
-}
-
-impl LoggedUser {
-    pub fn new(username: impl Into<String>) -> Self {
-        let username = username.into();
-        Self { username }
-    }
-
-    pub fn username(&self) -> &str {
-        &self.username
-    }
-}
-
-impl PartialEq<str> for LoggedUser {
-    fn eq(&self, other: &str) -> bool {
-        self.username() == other
-    }
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("user {0:?} already connected")]
-    UserAlreadyConnected(String),
+    #[error("user {:?} already connected", .0.as_ref())]
+    UserAlreadyConnected(Username),
 
-    #[error("user {0:?} already exists")]
-    UserAlreadyExists(String),
+    #[error("user {:?} already exists", .0.as_ref())]
+    UserAlreadyExists(Username),
 
-    #[error("user {0:?} doesn't exist")]
-    UserDoesntExist(String),
+    #[error("user {:?} doesn't exist", .0.as_ref())]
+    UserDoesntExist(Username),
 
-    #[error("invalid password")]
-    InvalidPassword,
+    #[error("wrong password")]
+    WrongPassword,
 }

@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use crate::db::question::QuestionData;
-use crate::managers::login::LoggedUser;
 use crate::managers::room::{RoomData, RoomID, RoomState};
 use crate::managers::statistics::{Highscores, Statistics};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
+use crate::username::Username;
 
 use super::{Error, Handler, RequestHandlerFactory};
 
 pub struct MenuRequestHandler<'db, 'factory> {
-    user: LoggedUser,
+    user: Username,
     factory: &'factory RequestHandlerFactory<'db>,
 }
 
@@ -51,7 +51,7 @@ impl<'db, 'factory: 'db> Handler<'db> for MenuRequestHandler<'db, 'factory> {
 }
 
 impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
-    pub fn new(factory: &'factory RequestHandlerFactory<'db>, user: LoggedUser) -> Self {
+    pub fn new(factory: &'factory RequestHandlerFactory<'db>, user: Username) -> Self {
         Self { factory, user }
     }
 
@@ -86,7 +86,7 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
     fn get_personal_stats(&self) -> Result<Statistics, crate::db::Error> {
         let statistics_manager = self.factory.get_statistics_manager();
         let statistics_manager_lock = statistics_manager.read().unwrap();
-        statistics_manager_lock.get_user_statistics(self.user.username())
+        statistics_manager_lock.get_user_statistics(&self.user)
     }
 
     fn get_high_scores(&self) -> Result<Highscores, crate::db::Error> {

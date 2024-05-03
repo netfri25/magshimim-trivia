@@ -5,8 +5,9 @@ use serde::{Deserialize, Serialize};
 use crate::db::Database;
 
 use crate::managers::game::Score;
+use crate::username::Username;
 
-pub type Highscores = [Option<(String, Score)>; 5];
+pub type Highscores = [Option<(Username, Score)>; 5];
 
 pub struct StatisticsManager<'db> {
     db: &'db (dyn Database + Sync),
@@ -21,7 +22,7 @@ impl<'db> StatisticsManager<'db> {
         self.db.get_five_highscores()
     }
 
-    pub fn get_user_statistics(&self, username: &str) -> Result<Statistics, crate::db::Error> {
+    pub fn get_user_statistics(&self, username: &Username) -> Result<Statistics, crate::db::Error> {
         let correct_answers = self.db.get_correct_answers_count(username)?;
         let total_answers = self.db.get_total_answers_count(username)?;
         let average_answer_time = self.db.get_player_average_answer_time(username)?;
