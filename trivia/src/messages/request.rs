@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
@@ -12,22 +13,29 @@ use super::{Address, Error};
 pub const DATE_FORMAT: &str = "%d/%m/%Y";
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub enum Request {
+pub enum Request<'a> {
     Login {
-        username: String,
-        password: String,
+        #[serde(borrow)]
+        username: Cow<'a, str>,
+        #[serde(borrow)]
+        password: Cow<'a, str>,
     },
     Signup {
-        username: String,
-        password: String,
-        email: String,
-        phone: String,
+        #[serde(borrow)]
+        username: Cow<'a, str>,
+        #[serde(borrow)]
+        password: Cow<'a, str>,
+        #[serde(borrow)]
+        email: Cow<'a, str>,
+        #[serde(borrow)]
+        phone: Cow<'a, str>,
         address: Address,
         birth_date: NaiveDate,
     },
     JoinRoom(RoomID),
     CreateRoom {
-        name: String,
+        #[serde(borrow)]
+        name: Cow<'a, str>,
         max_users: usize,
         questions: usize,
         answer_timeout: Duration,
@@ -41,22 +49,23 @@ pub enum Request {
     LeaveRoom,
     LeaveGame,
     Question,
-    SubmitAnswer(String),
+    SubmitAnswer(Cow<'a, str>),
     GameResult,
     CreateQuestion(QuestionData),
 }
 
-impl Request {
-    pub fn read_from(reader: &mut impl Read) -> Result<Self, Error> {
+impl<'buf> Request<'buf> {
+    pub fn read_from(buf: &'buf mut Vec<u8>, reader: &mut impl Read) -> Result<Self, Error> {
         let mut buf_data_len = [0; 4];
         reader.read_exact(&mut buf_data_len)?;
         let data_len = u32::from_le_bytes(buf_data_len);
         let data_len = data_len as usize;
 
-        let mut buf = vec![0; data_len];
-        reader.read_exact(&mut buf)?;
+        buf.clear();
+        buf.resize(data_len, 0);
+        reader.read_exact(buf)?;
 
-        let request = serde_json::from_slice(&buf)?;
+        let request = serde_json::from_slice(buf)?;
         Ok(request)
     }
 
@@ -71,17 +80,17 @@ impl Request {
 }
 
 #[derive(Debug)]
-pub struct RequestInfo {
-    pub data: Request,
+pub struct RequestInfo<'a> {
+    pub data: Request<'a>,
     pub time: Instant,
 }
 
-impl RequestInfo {
-    pub fn new(data: Request, time: Instant) -> Self {
+impl<'a> RequestInfo<'a> {
+    pub fn new(data: Request<'a>, time: Instant) -> Self {
         Self { data, time }
     }
 
-    pub fn new_now(kind: Request) -> Self {
+    pub fn new_now(kind: Request<'a>) -> Self {
         Self::new(kind, Instant::now())
     }
 }
@@ -99,16 +108,16 @@ mod tests {
 
         let to_test = [
             Request::Signup {
-                username: "user1234".parse().unwrap(),
-                password: "Pass@123".parse().unwrap(),
-                email: "example@mail.com".parse().unwrap(),
-                phone: "052-1122333".parse().unwrap(),
+                username: "user1234".into(),
+                password: "Pass@123".into(),
+                email: "example@mail.com".into(),
+                phone: "052-1122333".into(),
                 address: Address::new("Netanya", "Alonim", 69),
                 birth_date: NaiveDate::parse_from_str("22/04/2038", DATE_FORMAT).unwrap(),
             },
             Request::Login {
-                username: "user1234".parse().unwrap(),
-                password: "Pass@123".parse().unwrap(),
+                username: "user1234".into(),
+                password: "Pass@123".into(),
             },
         ];
 
@@ -116,7 +125,8 @@ mod tests {
             let mut buf = Vec::new();
             original_response.write_to(&mut buf).unwrap();
             let mut reader = Cursor::new(buf);
-            let parsed_response = Request::read_from(&mut reader).unwrap();
+            let mut output = Vec::new();
+            let parsed_response = Request::read_from(&mut output, &mut reader).unwrap();
             assert_eq!(original_response, parsed_response);
         }
     }

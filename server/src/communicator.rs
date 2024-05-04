@@ -72,8 +72,9 @@ impl<'db, 'me: 'db> Communicator<'db> {
             handler.borrow_mut().handle(RequestInfo::new_now(req)).ok();
         });
 
+        let mut buf = Vec::new();
         loop {
-            let request = match Request::read_from(&mut client) {
+            let request = match Request::read_from(&mut buf, &mut client) {
                 Ok(request) => request,
                 Err(messages::Error::Json(err)) => {
                     RequestResult::new_error(err)

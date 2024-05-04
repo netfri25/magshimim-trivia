@@ -85,7 +85,7 @@ impl Page for GamePage {
             Msg::NextQuestion => Action::request(Request::Question),
             Msg::SelectAnswer(answer) => {
                 self.selected_answer = Some(answer.clone());
-                Action::request(Request::SubmitAnswer(answer))
+                Action::request(Request::SubmitAnswer(answer.into()))
             }
 
             Msg::Tick(tick) => {
