@@ -159,7 +159,7 @@ impl<A> Client<A>
 where
     A: ToSocketAddrs + Send + 'static,
 {
-    pub fn make_request(&mut self, req: Option<Request>) -> Command<Message> {
+    pub fn make_request(&mut self, req: Option<Request<'static>>) -> Command<Message> {
         let Some(req) = req else {
             return Command::none();
         };

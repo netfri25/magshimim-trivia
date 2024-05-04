@@ -103,7 +103,7 @@ impl Page for JoinRoomPage {
 }
 
 impl JoinRoomPage {
-    pub fn new() -> (Self, Request) {
+    pub fn new() -> (Self, Request<'static>) {
         (Self::default(), Request::RoomList)
     }
 }

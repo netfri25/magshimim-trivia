@@ -116,10 +116,10 @@ impl Page for RegisterPage {
             }
             Msg::AddressApartmentSubmit | Msg::Register => {
                 return Action::request(Request::Signup {
-                    username: self.username.clone(),
-                    password: self.password.clone(),
-                    email: self.email.clone(),
-                    phone: format!("{}-{}", self.phone_prefix, self.phone_number),
+                    username: self.username.clone().into(),
+                    password: self.password.clone().into(),
+                    email: self.email.clone().into(),
+                    phone: format!("{}-{}", self.phone_prefix, self.phone_number).into(),
                     address: Address::new(
                         self.address_city.clone(),
                         self.address_street.clone(),

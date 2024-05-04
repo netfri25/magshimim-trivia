@@ -51,8 +51,8 @@ impl Page for LoginPage {
             Msg::PasswordInput(password) => self.password = password,
             Msg::PasswordSubmit | Msg::Login => {
                 return Action::request(Request::Login {
-                    username: self.username.clone(),
-                    password: self.password.clone(),
+                    username: self.username.clone().into(),
+                    password: self.password.clone().into(),
                 });
             }
 

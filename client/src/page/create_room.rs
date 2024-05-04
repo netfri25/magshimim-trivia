@@ -67,7 +67,7 @@ impl Page for CreateRoomPage {
             Msg::AnswerTimeoutInput(answer_timeout) => self.answer_timeout = answer_timeout,
             Msg::Submit => {
                 return Action::request(Request::CreateRoom {
-                    name: self.name.clone(),
+                    name: self.name.clone().into(),
                     max_users: self.max_users as usize,
                     questions: self.questions as usize,
                     answer_timeout: Duration::from_secs(self.answer_timeout as u64),
