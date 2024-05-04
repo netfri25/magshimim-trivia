@@ -45,8 +45,8 @@ impl Page for RoomPage {
                     question_count,
                     ..
                 } => {
-                    self.room_name = name.clone();
-                    self.players = players.clone();
+                    self.room_name.clone_from(name);
+                    self.players.clone_from(players);
                     self.time_per_question = *time_per_question;
                     self.question_count = *question_count;
                 }
