@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::time::Duration;
 
 use crate::db::question::QuestionData;
@@ -126,7 +127,7 @@ impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
 
     fn create_room(
         &self,
-        room_name: String,
+        room_name: Cow<str>,
         max_users: usize,
         questions: usize,
         answer_timeout: Duration,

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::iter;
 use std::time::Duration;
@@ -102,7 +103,7 @@ impl Game {
     pub fn submit_answer(
         &mut self,
         user: Username,
-        answer: String,
+        answer: Cow<str>,
         answer_time: Duration,
     ) -> Result<&str, db::Error> {
         let game_data = self

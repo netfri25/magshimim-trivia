@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::time::{self, Duration, Instant, SystemTime};
 
 use tiny_rng::{Rand, Rng};
@@ -109,7 +110,7 @@ impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
     #[allow(redundant_semicolons, unused_parens)]
     fn submit_answer(
         &self,
-        answer: String,
+        answer: Cow<str>,
         answer_duration: Duration,
     ) -> Result<RequestResult<'db>, Error> {
         let game_manager = self.factory.get_game_manager();
