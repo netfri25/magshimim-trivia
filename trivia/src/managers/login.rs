@@ -13,7 +13,7 @@ pub struct LoginManager<'db, DB: ?Sized> {
 
 impl<'db, DB> LoginManager<'db, DB>
 where
-    DB: Database + Sync + ?Sized
+    DB: Database + Sync + ?Sized,
 {
     pub fn new(db: &'db DB) -> Self {
         Self {

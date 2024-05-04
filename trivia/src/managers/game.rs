@@ -21,7 +21,7 @@ pub struct GameManager<'db, DB: ?Sized> {
 
 impl<'db, DB> GameManager<'db, DB>
 where
-    DB: Database + Sync + ?Sized
+    DB: Database + Sync + ?Sized,
 {
     pub fn new(db: &'db DB) -> Self {
         Self {
