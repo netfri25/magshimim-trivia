@@ -1,17 +1,21 @@
+use crate::db::Database;
 use crate::managers::room::{RoomID, RoomState};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 use crate::username::Username;
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct RoomUserRequestHandler<'db, 'factory> {
+pub struct RoomUserRequestHandler<'db, 'factory, DB: ?Sized> {
     room_id: RoomID,
     user: Username,
     is_admin: bool,
-    factory: &'factory RequestHandlerFactory<'db>,
+    factory: &'factory RequestHandlerFactory<'db, DB>,
 }
 
-impl<'db, 'factory: 'db> Handler<'db> for RoomUserRequestHandler<'db, 'factory> {
+impl<'db, 'factory: 'db, DB> Handler<'db> for RoomUserRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -31,9 +35,12 @@ impl<'db, 'factory: 'db> Handler<'db> for RoomUserRequestHandler<'db, 'factory> 
     }
 }
 
-impl<'db, 'factory: 'db> RoomUserRequestHandler<'db, 'factory> {
+impl<'db, 'factory: 'db, DB> RoomUserRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
     pub fn new(
-        factory: &'factory RequestHandlerFactory<'db>,
+        factory: &'factory RequestHandlerFactory<'db, DB>,
         user: Username,
         is_admin: bool,
         room_id: RoomID,

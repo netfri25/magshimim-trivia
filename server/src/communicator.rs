@@ -2,21 +2,25 @@ use std::cell::{Cell, RefCell};
 use std::io;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 
+use trivia::db::Database;
 use trivia::handler::{self, Handler, RequestHandlerFactory};
 use trivia::messages::{self, Request, RequestInfo, RequestResult};
 use trivia::username::Username;
 
 use crate::defer::Defer;
 
-pub struct Communicator<'db> {
+pub struct Communicator<'db, DB: ?Sized> {
     socket: TcpListener,
-    factory: RequestHandlerFactory<'db>,
+    factory: RequestHandlerFactory<'db, DB>,
 }
 
-impl<'db, 'me: 'db> Communicator<'db> {
+impl<'db, 'me: 'db, DB> Communicator<'db, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
     pub fn build(
         addr: impl ToSocketAddrs,
-        factory: RequestHandlerFactory<'db>,
+        factory: RequestHandlerFactory<'db, DB>,
     ) -> Result<Self, Error> {
         let socket = TcpListener::bind(addr)?;
         Ok(Self { socket, factory })

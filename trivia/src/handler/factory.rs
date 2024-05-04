@@ -10,16 +10,19 @@ use super::{
     GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomUserRequestHandler,
 };
 
-pub struct RequestHandlerFactory<'db> {
-    login_manager: RwLock<LoginManager<'db>>,
+pub struct RequestHandlerFactory<'db, DB: ?Sized> {
+    login_manager: RwLock<LoginManager<'db, DB>>,
     room_manager: RwLock<RoomManager>,
-    statistics_manager: RwLock<StatisticsManager<'db>>,
-    game_manager: RwLock<GameManager<'db>>,
-    db: &'db (dyn Database + Sync),
+    statistics_manager: RwLock<StatisticsManager<'db, DB>>,
+    game_manager: RwLock<GameManager<'db, DB>>,
+    db: &'db DB,
 }
 
-impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
-    pub fn new(db: &'db (dyn Database + Sync)) -> Self {
+impl<'db, 'me: 'db, DB> RequestHandlerFactory<'db, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn new(db: &'db DB) -> Self {
         let login_manager = LoginManager::new(db);
         let login_manager = RwLock::new(login_manager);
         let room_manager = RoomManager::new();
@@ -37,7 +40,7 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
         }
     }
 
-    pub fn db(&'me self) -> &'db (dyn Database + Sync) {
+    pub fn db(&'me self) -> &'db DB {
         self.db
     }
 
@@ -69,7 +72,7 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
         GameRequestHandler::new(self, user, game_id)
     }
 
-    pub fn get_login_manager(&'me self) -> &'me RwLock<LoginManager<'db>> {
+    pub fn get_login_manager(&'me self) -> &'me RwLock<LoginManager<'db, DB>> {
         &self.login_manager
     }
 
@@ -77,11 +80,11 @@ impl<'db, 'me: 'db> RequestHandlerFactory<'db> {
         &self.room_manager
     }
 
-    pub fn get_statistics_manager(&'me self) -> &'me RwLock<StatisticsManager<'db>> {
+    pub fn get_statistics_manager(&'me self) -> &'me RwLock<StatisticsManager<'db, DB>> {
         &self.statistics_manager
     }
 
-    pub fn get_game_manager(&'me self) -> &'me RwLock<GameManager<'db>> {
+    pub fn get_game_manager(&'me self) -> &'me RwLock<GameManager<'db, DB>> {
         &self.game_manager
     }
 }

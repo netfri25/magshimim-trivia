@@ -3,20 +3,24 @@ use std::time::{self, Duration, Instant, SystemTime};
 
 use tiny_rng::{Rand, Rng};
 
+use crate::db::Database;
 use crate::managers::game::GameID;
 use crate::messages::{PlayerResults, Request, RequestInfo, RequestResult, Response};
 use crate::username::Username;
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct GameRequestHandler<'db, 'factory> {
+pub struct GameRequestHandler<'db, 'factory, DB: ?Sized> {
     game_id: GameID,
     user: Username,
     question_sent_at: Instant,
-    factory: &'factory RequestHandlerFactory<'db>,
+    factory: &'factory RequestHandlerFactory<'db, DB>,
 }
 
-impl<'db, 'factory: 'db> Handler<'db> for GameRequestHandler<'db, 'factory> {
+impl<'db, 'factory: 'db, DB> Handler<'db> for GameRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -42,9 +46,12 @@ impl<'db, 'factory: 'db> Handler<'db> for GameRequestHandler<'db, 'factory> {
     }
 }
 
-impl<'db, 'factory: 'db> GameRequestHandler<'db, 'factory> {
+impl<'db, 'factory: 'db, DB> GameRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
     pub fn new(
-        factory: &'factory RequestHandlerFactory<'db>,
+        factory: &'factory RequestHandlerFactory<'db, DB>,
         user: Username,
         game_id: GameID,
     ) -> Self {

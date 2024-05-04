@@ -9,12 +9,15 @@ use crate::username::Username;
 
 pub type Highscores = [Option<(Username, Score)>; 5];
 
-pub struct StatisticsManager<'db> {
-    db: &'db (dyn Database + Sync),
+pub struct StatisticsManager<'db, DB: ?Sized> {
+    db: &'db DB,
 }
 
-impl<'db> StatisticsManager<'db> {
-    pub fn new(db: &'db (dyn Database + Sync)) -> Self {
+impl<'db, DB> StatisticsManager<'db, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn new(db: &'db DB) -> Self {
         Self { db }
     }
 
