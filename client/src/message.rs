@@ -1,5 +1,4 @@
 use derive_more::From;
-use iced::font;
 use std::sync::Arc;
 use trivia::messages::Response;
 
@@ -14,7 +13,6 @@ use crate::page::{
 pub enum Message {
     Quit,
     Connect,
-    FontLoaded(Result<(), font::Error>),
 
     Connected(Arc<connection::Connection>),
     Error(Arc<connection::Error>),

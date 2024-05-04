@@ -2,7 +2,7 @@ use std::{net::ToSocketAddrs, sync::Arc, time::Duration};
 
 use iced::{
     alignment::Horizontal,
-    font, keyboard,
+    keyboard,
     widget::{column, container, text},
     Application, Command, Font, Length, Settings,
 };
@@ -26,6 +26,10 @@ fn main() {
     let mut settings = Settings::default();
     settings.window.size = iced::Size::new(800., 600.);
     settings.window.position = iced::window::Position::Centered;
+    settings.fonts = vec![
+        include_bytes!("../assets/VarelaRound-Regular.ttf").into(),
+        iced_aw::BOOTSTRAP_FONT_BYTES.into(),
+    ];
     settings.flags = "127.0.0.1:6969";
     settings.default_font = Font::with_name("Varela Round");
     Client::run(settings).unwrap();
@@ -58,10 +62,7 @@ where
                 addr,
                 err: String::default(),
             },
-            Command::batch([
-                cmd,
-                font::load(iced_aw::BOOTSTRAP_FONT_BYTES).map(Message::FontLoaded),
-            ]),
+            cmd,
         )
     }
 
