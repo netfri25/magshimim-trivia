@@ -1,3 +1,4 @@
+use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -19,9 +20,9 @@ impl PhoneNumber {
     }
 }
 
-impl ToString for PhoneNumber {
-    fn to_string(&self) -> String {
-        format!("{}-{}", self.prefix, self.number)
+impl fmt::Display for PhoneNumber {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{}", self.prefix, self.number)
     }
 }
 

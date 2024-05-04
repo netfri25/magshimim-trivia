@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -43,9 +44,9 @@ impl Deref for Password {
     }
 }
 
-impl ToString for Password {
-    fn to_string(&self) -> String {
-        self.0.to_string()
+impl fmt::Display for Password {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 

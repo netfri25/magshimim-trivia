@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -31,8 +33,8 @@ impl Address {
     }
 }
 
-impl ToString for Address {
-    fn to_string(&self) -> String {
-        format!("{}, {} {}", self.city, self.street, self.apartment)
+impl fmt::Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}, {} {}", self.city, self.street, self.apartment)
     }
 }
