@@ -14,13 +14,16 @@ use super::room::{Room, RoomID};
 pub type Score = f64;
 pub type GameID = RoomID;
 
-pub struct GameManager<'db> {
-    db: &'db (dyn Database + Sync),
+pub struct GameManager<'db, DB: ?Sized> {
+    db: &'db DB,
     games: HashMap<GameID, Game>,
 }
 
-impl<'db> GameManager<'db> {
-    pub fn new(db: &'db (dyn Database + Sync)) -> Self {
+impl<'db, DB> GameManager<'db, DB>
+where
+    DB: Database + Sync + ?Sized
+{
+    pub fn new(db: &'db DB) -> Self {
         Self {
             db,
             games: Default::default(),

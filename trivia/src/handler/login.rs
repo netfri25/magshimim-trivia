@@ -1,3 +1,4 @@
+use crate::db::Database;
 use crate::email::{self, Email};
 use crate::messages::phone_number::PhoneNumber;
 use crate::messages::{phone_number, Request, RequestInfo, RequestResult, Response};
@@ -6,17 +7,20 @@ use crate::username::{self, Username};
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct LoginRequestHandler<'db, 'factory> {
-    factory: &'factory RequestHandlerFactory<'db>,
+pub struct LoginRequestHandler<'db, 'factory, DB: ?Sized> {
+    factory: &'factory RequestHandlerFactory<'db, DB>,
 }
 
-impl<'db, 'factory> LoginRequestHandler<'db, 'factory> {
-    pub fn new(factory: &'factory RequestHandlerFactory<'db>) -> Self {
+impl<'db, 'factory, DB: ?Sized> LoginRequestHandler<'db, 'factory, DB> {
+    pub fn new(factory: &'factory RequestHandlerFactory<'db, DB>) -> Self {
         Self { factory }
     }
 }
 
-impl<'db, 'factory: 'db> Handler<'db> for LoginRequestHandler<'db, 'factory> {
+impl<'db, 'factory: 'db, DB> Handler<'db> for LoginRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(request_info.data, Login { .. } | Signup { .. })

@@ -6,13 +6,16 @@ use crate::messages::{Address, PhoneNumber};
 use crate::password::Password;
 use crate::username::Username;
 
-pub struct LoginManager<'db> {
-    db: &'db (dyn Database + Sync),
+pub struct LoginManager<'db, DB: ?Sized> {
+    db: &'db DB,
     connected: Vec<Username>,
 }
 
-impl<'db> LoginManager<'db> {
-    pub fn new(db: &'db (dyn Database + Sync)) -> Self {
+impl<'db, DB> LoginManager<'db, DB>
+where
+    DB: Database + Sync + ?Sized
+{
+    pub fn new(db: &'db DB) -> Self {
         Self {
             db,
             connected: Default::default(),

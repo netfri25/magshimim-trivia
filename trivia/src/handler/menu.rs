@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::time::Duration;
 
 use crate::db::question::QuestionData;
+use crate::db::Database;
 use crate::managers::room::{RoomData, RoomID, RoomState};
 use crate::managers::statistics::{Highscores, Statistics};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
@@ -9,12 +10,15 @@ use crate::username::Username;
 
 use super::{Error, Handler, RequestHandlerFactory};
 
-pub struct MenuRequestHandler<'db, 'factory> {
+pub struct MenuRequestHandler<'db, 'factory, DB: ?Sized> {
     user: Username,
-    factory: &'factory RequestHandlerFactory<'db>,
+    factory: &'factory RequestHandlerFactory<'db, DB>,
 }
 
-impl<'db, 'factory: 'db> Handler<'db> for MenuRequestHandler<'db, 'factory> {
+impl<'db, 'factory: 'db, DB> Handler<'db> for MenuRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
     fn relevant(&self, request_info: &RequestInfo) -> bool {
         use Request::*;
         matches!(
@@ -51,8 +55,11 @@ impl<'db, 'factory: 'db> Handler<'db> for MenuRequestHandler<'db, 'factory> {
     }
 }
 
-impl<'db, 'factory: 'db> MenuRequestHandler<'db, 'factory> {
-    pub fn new(factory: &'factory RequestHandlerFactory<'db>, user: Username) -> Self {
+impl<'db, 'factory: 'db, DB> MenuRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn new(factory: &'factory RequestHandlerFactory<'db, DB>, user: Username) -> Self {
         Self { factory, user }
     }
 

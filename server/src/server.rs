@@ -5,12 +5,15 @@ use crate::communicator::{self, Communicator};
 use trivia::db::{self, Database};
 use trivia::handler::RequestHandlerFactory;
 
-pub struct Server<'db> {
-    comm: Communicator<'db>,
+pub struct Server<'db, DB: ?Sized> {
+    comm: Communicator<'db, DB>,
 }
 
-impl<'db, 'me: 'db> Server<'db> {
-    pub fn build(addr: impl ToSocketAddrs, db: &'db (impl Database + Sync)) -> Result<Self, Error> {
+impl<'db, 'me: 'db, DB> Server<'db, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn build(addr: impl ToSocketAddrs, db: &'db DB) -> Result<Self, Error> {
         let factory = RequestHandlerFactory::new(db);
         let comm = Communicator::build(addr, factory)?;
         Ok(Self { comm })
