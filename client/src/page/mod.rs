@@ -44,4 +44,6 @@ pub trait Page {
     fn subscription(&self) -> iced::Subscription<Message> {
         iced::Subscription::none()
     }
+
+    fn quit(&mut self) -> Action;
 }

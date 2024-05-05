@@ -110,6 +110,10 @@ impl Page for ResultsPage {
             Subscription::none()
         }
     }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
+    }
 }
 
 pub fn result_elem(result: &PlayerResults) -> iced::Element<Message> {

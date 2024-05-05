@@ -186,6 +186,10 @@ impl Page for CreateQuestionPage {
             .center_y()
             .into()
     }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
+    }
 }
 
 fn answer(

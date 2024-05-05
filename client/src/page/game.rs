@@ -12,7 +12,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{Page, ResultsPage};
+use super::{MainMenuPage, Page, ResultsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -190,6 +190,10 @@ impl Page for GamePage {
         } else {
             iced::Subscription::none()
         }
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch_and_request(MainMenuPage, Request::LeaveGame)
     }
 }
 

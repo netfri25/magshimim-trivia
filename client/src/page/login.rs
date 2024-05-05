@@ -118,6 +118,10 @@ impl Page for LoginPage {
             .center_y()
             .into()
     }
+
+    fn quit(&mut self) -> Action {
+        std::process::exit(0)
+    }
 }
 
 impl LoginPage {

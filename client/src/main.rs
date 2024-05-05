@@ -92,33 +92,17 @@ where
                 eprintln!("[RECV]: {:?}", response);
             }
 
-            Message::Quit => std::process::exit(0),
+            Message::Quit => {
+                let action = self.page.quit();
+                return self.handle_action(action);
+            }
 
             _ => {}
         };
 
         self.err.clear();
-
         let action = self.page.update(message);
-        match action {
-            Action::Switch(new_page, req) => {
-                self.page = new_page;
-                return self.make_request(req);
-            }
-
-            Action::MakeRequest(req) => {
-                eprintln!("[SEND]: {:?}", req);
-                return self.make_request(Some(req));
-            }
-
-            Action::Command(cmd) => return cmd,
-
-            Action::Quit => std::process::exit(0),
-
-            Action::Nothing => {}
-        }
-
-        Command::none()
+        self.handle_action(action)
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
@@ -182,6 +166,26 @@ where
                 Err(err) => Message::Error(Arc::new(err)),
             },
         )
+    }
+
+    pub fn handle_action(&mut self, action: Action) -> Command<Message> {
+        match action {
+            Action::Switch(new_page, req) => {
+                self.page = new_page;
+                return self.make_request(req);
+            }
+
+            Action::MakeRequest(req) => {
+                eprintln!("[SEND]: {:?}", req);
+                return self.make_request(Some(req));
+            }
+
+            Action::Command(cmd) => return cmd,
+
+            Action::Nothing => {}
+        }
+
+        Command::none()
     }
 }
 

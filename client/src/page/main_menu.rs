@@ -34,7 +34,7 @@ impl Page for MainMenuPage {
             }
             Msg::Statistics => Action::switch(StatisticsPage::default()),
             Msg::CreateQuestion => Action::switch(CreateQuestionPage::default()),
-            Msg::Quit => Action::quit(),
+            Msg::Quit => self.quit()
         }
     }
 
@@ -73,6 +73,10 @@ impl Page for MainMenuPage {
         .center_x()
         .center_y()
         .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        std::process::exit(0)
     }
 }
 

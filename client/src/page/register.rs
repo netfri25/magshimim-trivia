@@ -279,6 +279,10 @@ impl Page for RegisterPage {
             .center_y()
             .into()
     }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(LoginPage::default())
+    }
 }
 
 impl Default for RegisterPage {

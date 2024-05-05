@@ -8,7 +8,6 @@ pub enum Action {
     Switch(Box<dyn Page>, Option<Request<'static>>),
     MakeRequest(Request<'static>),
     Command(Command<Message>), // focus a text input
-    Quit,
     Nothing,
 }
 
@@ -27,10 +26,6 @@ impl Action {
 
     pub fn cmd(cmd: Command<Message>) -> Self {
         Self::Command(cmd)
-    }
-
-    pub fn quit() -> Self {
-        Self::Quit
     }
 
     pub fn none() -> Self {

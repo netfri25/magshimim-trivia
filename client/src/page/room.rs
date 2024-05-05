@@ -135,6 +135,15 @@ impl Page for RoomPage {
     fn subscription(&self) -> iced::Subscription<Message> {
         iced::time::every(Duration::from_secs(3)).map(|_| Msg::UpdatePlayers.into())
     }
+
+    fn quit(&mut self) -> Action {
+        let req = if self.is_admin {
+            Request::CloseRoom
+        } else {
+            Request::LeaveRoom
+        };
+        Action::switch_and_request(MainMenuPage, req)
+    }
 }
 
 impl RoomPage {

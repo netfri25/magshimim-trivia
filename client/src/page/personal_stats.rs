@@ -7,7 +7,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{Page, StatisticsPage};
 
 pub struct PersonalStatsPage {
     stats: Statistics,
@@ -56,6 +56,10 @@ impl Page for PersonalStatsPage {
         .center_x()
         .center_y()
         .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(StatisticsPage::default())
     }
 }
 

@@ -6,7 +6,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{Page, StatisticsPage};
 
 use trivia::managers::game::Score;
 use trivia::managers::statistics::Highscores;
@@ -56,6 +56,10 @@ impl Page for HighScoresPage {
         .center_x()
         .center_y()
         .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(StatisticsPage::default())
     }
 }
 

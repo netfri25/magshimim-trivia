@@ -7,7 +7,7 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{HighScoresPage, Page, PersonalStatsPage};
+use super::{HighScoresPage, MainMenuPage, Page, PersonalStatsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -82,6 +82,10 @@ impl Page for StatisticsPage {
         .center_x()
         .center_y()
         .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
     }
 }
 

@@ -11,7 +11,7 @@ use crate::consts;
 use crate::message::Message;
 use crate::page::RoomPage;
 
-use super::Page;
+use super::{MainMenuPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -140,6 +140,10 @@ impl Page for CreateRoomPage {
             .center_x()
             .center_y()
             .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
     }
 }
 

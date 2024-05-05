@@ -15,7 +15,7 @@ use trivia::managers::room::{Room, RoomData, RoomID, RoomState};
 use trivia::messages::{Request, Response};
 
 use super::room::RoomPage;
-use super::Page;
+use super::{MainMenuPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -99,6 +99,10 @@ impl Page for JoinRoomPage {
 
     fn subscription(&self) -> iced::Subscription<Message> {
         iced::time::every(Duration::from_secs(3)).map(|_| Msg::UpdateRooms.into())
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
     }
 }
 
