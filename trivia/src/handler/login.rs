@@ -1,7 +1,7 @@
 use crate::db::Database;
 use crate::email::{self, Email};
 use crate::messages::phone_number::PhoneNumber;
-use crate::messages::{phone_number, Request, RequestInfo, RequestResult, Response};
+use crate::messages::{phone_number, Address, Request, RequestInfo, RequestResult, Response};
 use crate::password::{self, Password};
 use crate::username::{self, Username};
 
@@ -9,12 +9,6 @@ use super::{Error, Handler, RequestHandlerFactory};
 
 pub struct LoginRequestHandler<'db, 'factory, DB: ?Sized> {
     factory: &'factory RequestHandlerFactory<'db, DB>,
-}
-
-impl<'db, 'factory, DB: ?Sized> LoginRequestHandler<'db, 'factory, DB> {
-    pub fn new(factory: &'factory RequestHandlerFactory<'db, DB>) -> Self {
-        Self { factory }
-    }
 }
 
 impl<'db, 'factory: 'db, DB> Handler<'db> for LoginRequestHandler<'db, 'factory, DB>
@@ -27,25 +21,14 @@ where
     }
 
     fn handle(&mut self, request: RequestInfo) -> Result<RequestResult<'db>, Error> {
-        let login_manager = self.factory.get_login_manager();
-
-        let result = match request.data {
+        match request.data {
             Request::Login { username, password } => {
                 let (username, password) = match parse_login(&username, &password) {
                     Ok(tup) => tup,
                     Err(err) => return Ok(RequestResult::new_error(err)),
                 };
 
-                if let Some(err) = login_manager
-                    .write()
-                    .unwrap()
-                    .login(username.clone(), password)?
-                {
-                    RequestResult::new_error(err)
-                } else {
-                    let response = Response::Login;
-                    RequestResult::new(response, self.factory.create_menu_request_handler(username))
-                }
+                self.login(username, password)
             }
 
             Request::Signup {
@@ -62,22 +45,59 @@ where
                         Err(err) => return Ok(RequestResult::new_error(err)),
                     };
 
-                if let Some(err) = login_manager
-                    .write()
-                    .unwrap()
-                    .signup(username, password, email, phone, address, birth_date)?
-                {
-                    RequestResult::new_error(err)
-                } else {
-                    let response = Response::Signup;
-                    RequestResult::without_handler(response) // no need to switch an handler
-                }
+                self.signup(username, password, email, phone, address, birth_date)
             }
 
-            _ => RequestResult::new_error("Invalid request"),
-        };
+            _ => Ok(RequestResult::new_error("Invalid request")),
+        }
+    }
+}
 
-        Ok(result)
+impl<'db, 'factory: 'db, DB> LoginRequestHandler<'db, 'factory, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn new(factory: &'factory RequestHandlerFactory<'db, DB>) -> Self {
+        Self { factory }
+    }
+
+    fn login(&self, username: Username, password: Password) -> Result<RequestResult<'db>, Error> {
+        let login_manager = self.factory.get_login_manager();
+        if let Some(err) = login_manager
+            .write()
+            .unwrap()
+            .login(username.clone(), password)?
+        {
+            Ok(RequestResult::new_error(err))
+        } else {
+            let response = Response::Login;
+            Ok(RequestResult::new(
+                response,
+                self.factory.create_menu_request_handler(username),
+            ))
+        }
+    }
+
+    fn signup(
+        &self,
+        username: Username,
+        password: Password,
+        email: Email,
+        phone: PhoneNumber,
+        address: Address,
+        birth_date: chrono::NaiveDate,
+    ) -> Result<RequestResult<'db>, Error> {
+        let login_manager = self.factory.get_login_manager();
+        if let Some(err) = login_manager
+            .write()
+            .unwrap()
+            .signup(username, password, email, phone, address, birth_date)?
+        {
+            Ok(RequestResult::new_error(err))
+        } else {
+            let response = Response::Signup;
+            Ok(RequestResult::without_handler(response)) // no need to switch an handler
+        }
     }
 }
 
