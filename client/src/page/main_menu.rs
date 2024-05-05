@@ -34,7 +34,7 @@ impl Page for MainMenuPage {
             }
             Msg::Statistics => Action::switch(StatisticsPage::default()),
             Msg::CreateQuestion => Action::switch(CreateQuestionPage::default()),
-            Msg::Quit => self.quit()
+            Msg::Quit => self.quit(),
         }
     }
 
