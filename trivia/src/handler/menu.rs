@@ -71,7 +71,7 @@ where
     }
 
     fn get_rooms(&self) -> RequestResult<'db> {
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         let room_manager_lock = room_manager.read().unwrap();
         let rooms = room_manager_lock.rooms().cloned().collect();
         let response = Response::RoomList(rooms);
@@ -80,7 +80,7 @@ where
 
     #[allow(unused)]
     fn get_players_in_room(&self, id: RoomID) -> RequestResult {
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         let room_manager_lock = room_manager.read().unwrap();
         if let Some(room) = room_manager_lock.room(id) {
             let users = room.users().to_vec();
@@ -92,19 +92,17 @@ where
     }
 
     fn get_personal_stats(&self) -> Result<Statistics, crate::db::Error> {
-        let statistics_manager = self.factory.get_statistics_manager();
-        let statistics_manager_lock = statistics_manager.read().unwrap();
-        statistics_manager_lock.get_user_statistics(&self.user)
+        self.factory
+            .statistics_manager()
+            .get_user_statistics(&self.user)
     }
 
     fn get_high_scores(&self) -> Result<Highscores, crate::db::Error> {
-        let statistics_manager = self.factory.get_statistics_manager();
-        let statistics_manager_lock = statistics_manager.read().unwrap();
-        statistics_manager_lock.get_high_scores()
+        self.factory.statistics_manager().get_high_scores()
     }
 
     fn join_room(&self, id: RoomID) -> RequestResult<'db> {
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         let room_manager_lock = room_manager.read().unwrap();
         let Some(room) = room_manager_lock.room(id) else {
             return RequestResult::new_error("invalid room ID");
@@ -141,7 +139,7 @@ where
     ) -> RequestResult<'db> {
         let room_data = RoomData::new(room_name, max_users, questions, answer_timeout);
         let id = room_data.room_id;
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         let mut room_manager_lock = room_manager.write().unwrap();
         room_manager_lock.create_room(self.user.clone(), room_data);
         let resp = Response::CreateRoom;

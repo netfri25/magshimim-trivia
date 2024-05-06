@@ -13,7 +13,7 @@ use super::{
 pub struct RequestHandlerFactory<'db, DB: ?Sized> {
     login_manager: RwLock<LoginManager<'db, DB>>,
     room_manager: RwLock<RoomManager>,
-    statistics_manager: RwLock<StatisticsManager<'db, DB>>,
+    statistics_manager: StatisticsManager<'db, DB>,
     game_manager: RwLock<GameManager<'db, DB>>,
     db: &'db DB,
 }
@@ -28,7 +28,6 @@ where
         let room_manager = RoomManager::new();
         let room_manager = RwLock::new(room_manager);
         let statistics_manager = StatisticsManager::new(db);
-        let statistics_manager = RwLock::new(statistics_manager);
         let game_manager = GameManager::new(db);
         let game_manager = RwLock::new(game_manager);
         Self {
@@ -72,19 +71,19 @@ where
         GameRequestHandler::new(self, user, game_id)
     }
 
-    pub fn get_login_manager(&'me self) -> &'me RwLock<LoginManager<'db, DB>> {
+    pub fn login_manager(&'me self) -> &'me RwLock<LoginManager<'db, DB>> {
         &self.login_manager
     }
 
-    pub fn get_room_manager(&'me self) -> &'me RwLock<RoomManager> {
+    pub fn room_manager(&'me self) -> &'me RwLock<RoomManager> {
         &self.room_manager
     }
 
-    pub fn get_statistics_manager(&'me self) -> &'me RwLock<StatisticsManager<'db, DB>> {
+    pub fn statistics_manager(&'me self) -> &'me StatisticsManager<'db, DB> {
         &self.statistics_manager
     }
 
-    pub fn get_game_manager(&'me self) -> &'me RwLock<GameManager<'db, DB>> {
+    pub fn game_manager(&'me self) -> &'me RwLock<GameManager<'db, DB>> {
         &self.game_manager
     }
 }

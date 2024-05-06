@@ -66,7 +66,7 @@ where
             if let Some(ref username) = login_username.take() {
                 eprintln!("[LOG] {:?} disconnected", username);
                 self.factory
-                    .get_login_manager()
+                    .login_manager()
                     .write()
                     .unwrap()
                     .logut(username);

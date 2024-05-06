@@ -54,7 +54,7 @@ where
     }
 
     fn leave_room(&mut self) -> Result<RequestResult<'db>, Error> {
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         let mut room_manager_lock = room_manager.write().unwrap();
         if let Some(room) = room_manager_lock.room_mut(self.room_id) {
             room.remove_user(&self.user);
@@ -71,7 +71,7 @@ where
     }
 
     fn room_state(&mut self) -> Result<RequestResult<'db>, Error> {
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         let Some(room) = room_manager.read().unwrap().room(self.room_id).cloned() else {
             return self.leave_room();
         };
@@ -100,7 +100,7 @@ where
             ));
         }
 
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         room_manager.write().unwrap().delete_room(self.room_id);
         let resp = Response::CloseRoom;
         let handler = self.factory.create_menu_request_handler(self.user.clone());
@@ -114,7 +114,7 @@ where
             ));
         }
 
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         if !room_manager
             .write()
             .unwrap()
@@ -123,7 +123,7 @@ where
             return Ok(RequestResult::new_error("Room doesn't exist"));
         }
 
-        let room_manager = self.factory.get_room_manager();
+        let room_manager = self.factory.room_manager();
         let room_manager_lock = room_manager.read().unwrap();
 
         let Some(room) = room_manager_lock.room(self.room_id) else {
@@ -132,7 +132,7 @@ where
 
         let game_id = self
             .factory
-            .get_game_manager()
+            .game_manager()
             .write()
             .unwrap()
             .create_game(room)?

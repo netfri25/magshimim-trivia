@@ -62,7 +62,7 @@ where
     }
 
     fn login(&self, username: Username, password: Password) -> Result<RequestResult<'db>, Error> {
-        let login_manager = self.factory.get_login_manager();
+        let login_manager = self.factory.login_manager();
         if let Some(err) = login_manager
             .write()
             .unwrap()
@@ -87,7 +87,7 @@ where
         address: Address,
         birth_date: chrono::NaiveDate,
     ) -> Result<RequestResult<'db>, Error> {
-        let login_manager = self.factory.get_login_manager();
+        let login_manager = self.factory.login_manager();
         if let Some(err) = login_manager
             .write()
             .unwrap()
