@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::time::Duration;
 
 use crate::db::question::QuestionData;
-use crate::db::Database;
+use crate::db::{self, Database};
 use crate::managers::room::{RoomData, RoomID, RoomState};
 use crate::managers::statistics::{Highscores, Statistics};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
@@ -37,8 +37,14 @@ where
                 answer_timeout,
             } => Ok(self.create_room(name, max_users, questions, answer_timeout)),
             Request::Statistics => {
-                let user_statistics = self.get_personal_stats()?;
-                let high_scores = self.get_high_scores()?;
+                // TODO: seperate the user_statistics from the high_scores in some way, instead of
+                // making them dependent on each other
+                // there's no reason to limit the user from getting the highscores if he didn't
+                // play at least one game, only the personal stats should be limited
+                let Ok((user_statistics, high_scores)) = self.get_all_stats() else {
+                    return Ok(RequestResult::new_error("play a game first"));
+                };
+
                 let response = Response::Statistics {
                     user_statistics,
                     high_scores,
@@ -91,14 +97,20 @@ where
         }
     }
 
-    fn get_personal_stats(&self) -> Result<Statistics, crate::db::Error> {
+    fn get_personal_stats(&self) -> Result<Statistics, db::Error> {
         self.factory
             .statistics_manager()
             .get_user_statistics(&self.user)
     }
 
-    fn get_high_scores(&self) -> Result<Highscores, crate::db::Error> {
+    fn get_high_scores(&self) -> Result<Highscores, db::Error> {
         self.factory.statistics_manager().get_high_scores()
+    }
+
+    fn get_all_stats(&self) -> Result<(Statistics, Highscores), db::Error> {
+        let personal = self.get_personal_stats()?;
+        let highscores = self.get_high_scores()?;
+        Ok((personal, highscores))
     }
 
     fn join_room(&self, id: RoomID) -> RequestResult<'db> {
