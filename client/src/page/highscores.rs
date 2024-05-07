@@ -59,7 +59,7 @@ impl Page for HighScoresPage {
     }
 
     fn quit(&mut self) -> Action {
-        Action::switch(StatisticsPage::default())
+        Action::switch(StatisticsPage)
     }
 }
 

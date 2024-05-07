@@ -22,10 +22,8 @@ pub enum Response {
     PlayersInRoom(Vec<Username>),
     JoinRoom,
     CreateRoom,
-    Statistics {
-        user_statistics: Statistics,
-        high_scores: Highscores,
-    },
+    PersonalStats(Statistics),
+    Highscores(Highscores),
     CloseRoom,
     StartGame,
     RoomState {

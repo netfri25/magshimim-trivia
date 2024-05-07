@@ -23,7 +23,13 @@ where
         use Request::*;
         matches!(
             request_info.data,
-            CreateRoom { .. } | RoomList | JoinRoom(_) | Statistics | CreateQuestion(_) | Logout
+            CreateRoom { .. }
+                | RoomList
+                | JoinRoom(_)
+                | PersonalStats
+                | Highscores
+                | CreateQuestion(_)
+                | Logout
         )
     }
 
@@ -36,20 +42,19 @@ where
                 questions,
                 answer_timeout,
             } => Ok(self.create_room(name, max_users, questions, answer_timeout)),
-            Request::Statistics => {
-                // TODO: seperate the user_statistics from the high_scores in some way, instead of
-                // making them dependent on each other
-                // there's no reason to limit the user from getting the highscores if he didn't
-                // play at least one game, only the personal stats should be limited
-                let Ok((user_statistics, high_scores)) = self.get_all_stats() else {
+            Request::PersonalStats => {
+                let Ok(stats) = self.get_personal_stats() else {
                     return Ok(RequestResult::new_error("play a game first"));
                 };
 
-                let response = Response::Statistics {
-                    user_statistics,
-                    high_scores,
-                };
-                let result = RequestResult::without_handler(response);
+                let resp = Response::PersonalStats(stats);
+                let result = RequestResult::without_handler(resp);
+                Ok(result)
+            }
+            Request::Highscores => {
+                let highscores = self.get_high_scores()?;
+                let resp = Response::Highscores(highscores);
+                let result = RequestResult::without_handler(resp);
                 Ok(result)
             }
             Request::Logout => Ok(self.logout()),
@@ -105,12 +110,6 @@ where
 
     fn get_high_scores(&self) -> Result<Highscores, db::Error> {
         self.factory.statistics_manager().get_high_scores()
-    }
-
-    fn get_all_stats(&self) -> Result<(Statistics, Highscores), db::Error> {
-        let personal = self.get_personal_stats()?;
-        let highscores = self.get_high_scores()?;
-        Ok((personal, highscores))
     }
 
     fn join_room(&self, id: RoomID) -> RequestResult<'db> {

@@ -32,7 +32,7 @@ impl Page for MainMenuPage {
                 let (page, req) = JoinRoomPage::new();
                 Action::switch_and_request(page, req)
             }
-            Msg::Statistics => Action::switch(StatisticsPage::default()),
+            Msg::Statistics => Action::switch(StatisticsPage),
             Msg::CreateQuestion => Action::switch(CreateQuestionPage::default()),
             Msg::Quit => self.quit(),
         }

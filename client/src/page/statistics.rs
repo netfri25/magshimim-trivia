@@ -12,32 +12,21 @@ use super::{HighScoresPage, MainMenuPage, Page, PersonalStatsPage};
 #[derive(Debug, Clone)]
 pub enum Msg {
     PersonalStats,
-    HighScores,
+    Highscores,
 }
 
-#[derive(Default)]
-pub struct StatisticsPage {
-    switch_to: Option<Msg>,
-}
+pub struct StatisticsPage;
 
 impl Page for StatisticsPage {
     fn update(&mut self, message: Message) -> Action {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::Statistics {
-                    user_statistics,
-                    high_scores,
-                } => {
-                    let Some(ref switch_to) = self.switch_to else {
-                        return Action::none();
-                    };
+                Response::PersonalStats(stats) => {
+                    return Action::switch(PersonalStatsPage::new(stats.clone()))
+                }
 
-                    return match switch_to {
-                        Msg::PersonalStats => {
-                            Action::switch(PersonalStatsPage::new(user_statistics.clone()))
-                        }
-                        Msg::HighScores => Action::switch(HighScoresPage::new(high_scores.clone())),
-                    };
+                Response::Highscores(highscores) => {
+                    return Action::switch(HighScoresPage::new(highscores.clone()));
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
@@ -50,8 +39,10 @@ impl Page for StatisticsPage {
             return Action::none();
         };
 
-        self.switch_to = Some(msg);
-        Action::request(Request::Statistics)
+        match msg {
+            Msg::PersonalStats => Action::request(Request::PersonalStats),
+            Msg::Highscores => Action::request(Request::Highscores),
+        }
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -61,7 +52,7 @@ impl Page for StatisticsPage {
             .horizontal_alignment(Horizontal::Center);
 
         let personal_stats_button = menu_button("My Statistics", Msg::PersonalStats);
-        let high_scores_button = menu_button("High Scores", Msg::HighScores);
+        let high_scores_button = menu_button("High Scores", Msg::Highscores);
 
         let buttons = container(
             column![personal_stats_button, high_scores_button,]
