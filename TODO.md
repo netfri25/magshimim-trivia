@@ -30,5 +30,5 @@
  - [x] add more room info in the Join Room page
  - [ ] show the room settings in the Room page
     * [ ] (optional) allow editing of the current room settings
- - [ ] implement an easy way to go back a page / go back to the main menu
+ - [x] implement an easy way to go back a page / go back to the main menu
  - [ ] cards + models for errors [features: card, model](https://github.com/iced-rs/iced_aw/tree/main/examples/model/src/main.rs)
