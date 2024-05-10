@@ -40,9 +40,11 @@ impl Page for CreateQuestionPage {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::CreateQuestion(res) => {
-                    return res
-                        .map_err(ToString::to_string)
-                        .map(|()| Action::switch(MainMenuPage))
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        Ok(Action::switch(MainMenuPage))
+                    }
                 }
                 _ => eprintln!("response ignored: {:?}", response),
             }
