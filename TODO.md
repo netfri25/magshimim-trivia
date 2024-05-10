@@ -1,4 +1,5 @@
 # TODO
+ - [ ] IMPORTANT: use proper types to repressent error responses
  - [ ] comment obscure parts of the code
  - [ ] change README.md
  - [x] change the statistics table in the database so that `statistics.id == user.id`

@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 use std::time::Duration;
 
+use serde::{Deserialize, Serialize};
+
 use crate::db::question::QuestionData;
 use crate::db::{self, Database};
 use crate::managers::room::{RoomData, RoomID, RoomState};
@@ -8,7 +10,7 @@ use crate::managers::statistics::{Highscores, Statistics};
 use crate::messages::{Request, RequestInfo, RequestResult, Response};
 use crate::username::Username;
 
-use super::{Error, Handler, RequestHandlerFactory};
+use super::{Handler, RequestHandlerFactory};
 
 pub struct MenuRequestHandler<'db, 'factory, DB: ?Sized> {
     user: Username,
@@ -33,7 +35,7 @@ where
         )
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, Error> {
+    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, super::Error> {
         match request_info.data {
             Request::JoinRoom(id) => Ok(self.join_room(id)),
             Request::CreateRoom {
@@ -43,12 +45,9 @@ where
                 answer_timeout,
             } => Ok(self.create_room(name, max_users, questions, answer_timeout)),
             Request::PersonalStats => {
-                let Ok(stats) = self.get_personal_stats() else {
-                    return Ok(RequestResult::new_error("play a game first"));
-                };
-
-                let resp = Response::PersonalStats(stats);
-                let result = RequestResult::without_handler(resp);
+                let resp = self.get_personal_stats().map_err(|_| Error::NoGamesPlayed);
+                let response = Response::PersonalStats(resp);
+                let result = RequestResult::without_handler(response);
                 Ok(result)
             }
             Request::Highscores => {
@@ -91,15 +90,15 @@ where
 
     #[allow(unused)]
     fn get_players_in_room(&self, id: RoomID) -> RequestResult {
-        let room_manager = self.factory.room_manager();
-        let room_manager_lock = room_manager.read().unwrap();
-        if let Some(room) = room_manager_lock.room(id) {
-            let users = room.users().to_vec();
-            let response = Response::PlayersInRoom(users);
-            RequestResult::without_handler(response)
-        } else {
-            RequestResult::new_error("invalid room ID")
-        }
+        let users = self
+            .factory
+            .room_manager()
+            .read()
+            .unwrap()
+            .room(id)
+            .map(|r| r.users().to_vec())
+            .ok_or(Error::UnknownRoomID(id));
+        RequestResult::without_handler(Response::PlayersInRoom(users))
     }
 
     fn get_personal_stats(&self) -> Result<Statistics, db::Error> {
@@ -113,28 +112,30 @@ where
     }
 
     fn join_room(&self, id: RoomID) -> RequestResult<'db> {
+        let mk = Response::JoinRoom;
+
         let room_manager = self.factory.room_manager();
         let room_manager_lock = room_manager.read().unwrap();
         let Some(room) = room_manager_lock.room(id) else {
-            return RequestResult::new_error("invalid room ID");
+            return RequestResult::without_handler(mk(Err(Error::UnknownRoomID(id))));
         };
 
         if room.is_full() {
-            return RequestResult::new_error("room is full");
+            return RequestResult::without_handler(mk(Err(Error::RoomFull)));
         }
 
         if room.room_data().state == RoomState::InGame {
-            return RequestResult::new_error("can't join a room that is already in game");
+            return RequestResult::without_handler(mk(Err(Error::RoomInGame)));
         }
 
         drop(room_manager_lock);
         let mut room_manager_lock = room_manager.write().unwrap();
         let Some(room) = room_manager_lock.room_mut(id) else {
-            return RequestResult::new_error("invalid room ID"); // should never reach here
+            return RequestResult::without_handler(mk(Err(Error::UnknownRoomID(id))));
         };
 
         room.add_user(self.user.clone());
-        let resp = Response::JoinRoom;
+        let resp = mk(Ok(()));
         let handler = self
             .factory
             .create_room_user_request_handler(self.user.clone(), false, id);
@@ -160,13 +161,32 @@ where
         RequestResult::new(resp, handler)
     }
 
-    fn create_question(&self, question: QuestionData) -> Result<RequestResult<'db>, Error> {
-        let added = self.factory.db().add_question(&question)?;
-        if !added {
-            Ok(RequestResult::new_error("question already exists"))
-        } else {
-            let resp = Response::CreateQuestion;
-            Ok(RequestResult::without_handler(resp))
-        }
+    fn create_question(&self, question: QuestionData) -> Result<RequestResult<'db>, super::Error> {
+        let resp = self
+            .factory
+            .db()
+            .add_question(&question)?
+            .then_some(())
+            .ok_or(Error::QuestionAlreadyExists);
+        let response = Response::CreateQuestion(resp);
+        Ok(RequestResult::without_handler(response))
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, thiserror::Error)]
+pub enum Error {
+    #[error("play a game first")]
+    NoGamesPlayed,
+
+    #[error("question already exists")]
+    QuestionAlreadyExists,
+
+    #[error("unknown room id {0}")]
+    UnknownRoomID(RoomID),
+
+    #[error("room is full")]
+    RoomFull,
+
+    #[error("room has started already")]
+    RoomInGame,
 }
