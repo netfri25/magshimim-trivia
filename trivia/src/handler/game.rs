@@ -173,7 +173,7 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, thiserror::Error)]
+#[derive(Debug, Serialize, Deserialize, thiserror::Error, PartialEq)]
 pub enum Error {
     #[error("unknown game id {0}")]
     UnknownGameID(GameID),

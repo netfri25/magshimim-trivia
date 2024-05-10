@@ -146,7 +146,7 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, thiserror::Error)]
+#[derive(Debug, Serialize, Deserialize, thiserror::Error, PartialEq)]
 pub enum Error {
     #[error("admin only action")]
     NotAdmin,
