@@ -24,8 +24,8 @@ pub enum Response {
     CreateRoom,
     PersonalStats(Result<Statistics, handler::menu::Error>),
     Highscores(Highscores),
-    CloseRoom,
-    StartGame,
+    CloseRoom(Result<(), handler::room_user::Error>),
+    StartGame(Result<(), handler::room_user::Error>),
     RoomState {
         state: RoomState,
         name: String,
