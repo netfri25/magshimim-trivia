@@ -18,7 +18,7 @@ impl Email {
             .is_match(&text)
             .is_ok_and(|b| b)
             .then(|| Self(text))
-            .ok_or(Error(super::EMAIL.error))
+            .ok_or(Error(super::EMAIL.error.into()))
     }
 }
 
@@ -50,6 +50,6 @@ impl fmt::Display for Email {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, thiserror::Error)]
 #[error("{0}")]
-pub struct Error(&'static str);
+pub struct Error(String);

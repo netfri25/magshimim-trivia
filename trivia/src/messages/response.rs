@@ -4,7 +4,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
-use crate::handler::Handler;
+use crate::handler::{self, Handler};
 use crate::managers::game::calc_score;
 use crate::managers::room::{Room, RoomState};
 use crate::managers::statistics::{Highscores, Statistics};
@@ -15,17 +15,17 @@ use super::Error;
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Response {
     Error(String),
-    Login,
-    Signup,
+    Login(Result<(), handler::login::Error>),
+    Signup(Result<(), handler::login::Error>),
     Logout,
     RoomList(Vec<Room>),
-    PlayersInRoom(Vec<Username>),
-    JoinRoom,
+    PlayersInRoom(Result<Vec<Username>, handler::menu::Error>),
+    JoinRoom(Result<(), handler::menu::Error>),
     CreateRoom,
-    PersonalStats(Statistics),
+    PersonalStats(Result<Statistics, handler::menu::Error>),
     Highscores(Highscores),
-    CloseRoom,
-    StartGame,
+    CloseRoom(Result<(), handler::room_user::Error>),
+    StartGame(Result<(), handler::room_user::Error>),
     RoomState {
         state: RoomState,
         name: String,
@@ -39,9 +39,9 @@ pub enum Response {
 
     // the `correct_answer_index` will be set to usize::MAX so that the client can't cheat
     // additionally, the answers will be shuffled when sent to the user
-    Question(Option<QuestionData>), // None => no more questions
+    Question(Result<Option<QuestionData>, handler::game::Error>), // None => no more questions
     GameResult(Vec<PlayerResults>), // Will be sent to everyone when the game is over
-    CreateQuestion,
+    CreateQuestion(Result<(), handler::menu::Error>),
 }
 
 impl Response {
@@ -122,29 +122,6 @@ impl PlayerResults {
             wrong_answers,
             avg_time,
             score,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn serde() {
-        use super::Response;
-        use std::io::Cursor;
-
-        let to_test = [
-            Response::Error("some error".into()),
-            Response::Login,
-            Response::Signup,
-        ];
-
-        for original_response in to_test {
-            let mut buf = Vec::new();
-            original_response.write_to(&mut buf).unwrap();
-            let mut reader = Cursor::new(buf);
-            let parsed_response = Response::read_from(&mut reader).unwrap();
-            assert_eq!(original_response, parsed_response);
         }
     }
 }

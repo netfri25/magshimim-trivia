@@ -26,7 +26,7 @@ pub struct ResultsPage {
 }
 
 impl Page for ResultsPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 // the results are sent sorted
@@ -35,17 +35,17 @@ impl Page for ResultsPage {
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Results(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        match msg {
+        Ok(match msg {
             Msg::GetResults => Action::request(Request::GameResult),
             Msg::Cry => Action::switch(MainMenuPage),
-        }
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {

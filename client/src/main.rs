@@ -101,8 +101,13 @@ where
         };
 
         self.err.clear();
-        let action = self.page.update(message);
-        self.handle_action(action)
+        match self.page.update(message) {
+            Ok(action) => self.handle_action(action),
+            Err(err) => {
+                self.err = err;
+                Command::none()
+            }
+        }
     }
 
     fn view(&self) -> iced::Element<Self::Message> {

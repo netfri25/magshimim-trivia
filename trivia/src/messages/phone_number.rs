@@ -60,7 +60,7 @@ impl FromStr for PhoneNumber {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, thiserror::Error)]
 pub enum Error {
     #[error("unable to find the phone prefix")]
     NoPrefix,

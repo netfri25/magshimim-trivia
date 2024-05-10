@@ -49,7 +49,9 @@ mod tests {
 
     use trivia::db::question::QuestionData;
     use trivia::db::SqliteDatabase;
-    use trivia::managers::login;
+    use trivia::handler::login::Error::*;
+    use trivia::handler::menu::Error::*;
+    use trivia::managers::login::Error::*;
     use trivia::messages::{Address, Request, Response, DATE_FORMAT};
     use trivia::NaiveDate;
 
@@ -87,8 +89,7 @@ mod tests {
 
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected =
-            Response::new_error(login::Error::UserDoesntExist("user1234".parse().unwrap()));
+        let expected = Response::Login(Err(Manager(UserDoesntExist("user1234".parse().unwrap()))));
 
         assert_eq!(response, expected);
     }
@@ -109,7 +110,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup;
+        let expected = Response::Signup(Ok(()));
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -118,7 +119,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login;
+        let expected = Response::Login(Ok(()));
         assert_eq!(response, expected);
     }
 
@@ -138,7 +139,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup;
+        let expected = Response::Signup(Ok(()));
         assert_eq!(response, expected);
 
         let request = Request::Signup {
@@ -151,8 +152,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected =
-            Response::new_error(login::Error::UserAlreadyExists("double".parse().unwrap()));
+        let expected = Response::Signup(Err(Manager(UserAlreadyExists("double".parse().unwrap()))));
         assert_eq!(response, expected);
     }
 
@@ -172,7 +172,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup;
+        let expected = Response::Signup(Ok(()));
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -181,7 +181,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login;
+        let expected = Response::Login(Ok(()));
         assert_eq!(response, expected);
 
         // disconnect from the server
@@ -195,7 +195,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login;
+        let expected = Response::Login(Ok(()));
         assert_eq!(response, expected);
     }
 
@@ -215,7 +215,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup;
+        let expected = Response::Signup(Ok(()));
         assert_eq!(response, expected);
 
         let request = Request::Login {
@@ -224,7 +224,7 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login;
+        let expected = Response::Login(Ok(()));
         assert_eq!(response, expected);
 
         let mut client = TcpStream::connect(ADDR).unwrap();
@@ -235,9 +235,9 @@ mod tests {
         };
         request.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error(login::Error::UserAlreadyConnected(
+        let expected = Response::Login(Err(Manager(UserAlreadyConnected(
             "loginAbuser".parse().unwrap(),
-        ));
+        ))));
         assert_eq!(response, expected);
     }
 
@@ -257,7 +257,7 @@ mod tests {
 
         signup.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Signup;
+        let expected = Response::Signup(Ok(()));
         assert_eq!(response, expected);
 
         let login = Request::Login {
@@ -267,7 +267,7 @@ mod tests {
 
         login.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::Login;
+        let expected = Response::Login(Ok(()));
         assert_eq!(response, expected);
 
         let question = "9 + 10 = ?".to_string();
@@ -284,13 +284,13 @@ mod tests {
         // shouldn't exists, new question
         create_question.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::CreateQuestion;
+        let expected = Response::CreateQuestion(Ok(()));
         assert_eq!(response, expected);
 
         // the same question as before, should already exist
         create_question.write_to(&mut client).unwrap();
         let response = Response::read_from(&mut client).unwrap();
-        let expected = Response::new_error("question already exists");
+        let expected = Response::CreateQuestion(Err(QuestionAlreadyExists));
         assert_eq!(response, expected);
     }
 }

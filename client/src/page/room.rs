@@ -35,7 +35,7 @@ pub struct RoomPage {
 }
 
 impl Page for RoomPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::RoomState {
@@ -51,31 +51,35 @@ impl Page for RoomPage {
                     self.question_count = *question_count;
                 }
 
-                Response::StartGame => {
-                    return Action::switch_and_request(
-                        GamePage::new(self.time_per_question, self.question_count),
-                        Request::Question,
-                    )
+                Response::StartGame(res) => {
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        Ok(Action::switch_and_request(
+                            GamePage::new(self.time_per_question, self.question_count),
+                            Request::Question,
+                        ))
+                    }
                 }
 
-                Response::LeaveRoom => return Action::switch(MainMenuPage),
+                Response::LeaveRoom => return Ok(Action::switch(MainMenuPage)),
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Room(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        match msg {
+        Ok(match msg {
             Msg::UpdatePlayers => Action::request(Request::RoomState),
             Msg::StartGame => Action::request(Request::StartGame),
             Msg::CloseRoom => Action::switch_and_request(MainMenuPage, Request::CloseRoom),
             Msg::LeaveRoom => Action::switch_and_request(MainMenuPage, Request::LeaveRoom),
-        }
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {

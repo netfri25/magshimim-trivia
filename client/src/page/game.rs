@@ -46,7 +46,7 @@ impl GamePage {
 }
 
 impl Page for GamePage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::CorrectAnswer(correct_answer_index) => {
@@ -57,31 +57,31 @@ impl Page for GamePage {
                 }
 
                 Response::Question(question) => {
-                    if let Some(question) = question {
+                    if let Some(question) = question.as_ref().map_err(|e| e.to_string())? {
                         self.question = Some(question.clone());
                         self.time_left = self.time_per_question;
                         self.selected_answer = None;
                         self.correct_answer = None;
                         self.questions_left = self.questions_left.saturating_sub(1);
                     } else {
-                        return Action::switch_and_request(
+                        return Ok(Action::switch_and_request(
                             ResultsPage::default(),
                             Request::GameResult,
-                        );
+                        ));
                     }
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Game(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        match msg {
+        Ok(match msg {
             Msg::NextQuestion => Action::request(Request::Question),
             Msg::SelectAnswer(answer) => {
                 self.selected_answer = Some(answer.clone());
@@ -97,7 +97,7 @@ impl Page for GamePage {
                     Action::none()
                 }
             }
-        }
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {

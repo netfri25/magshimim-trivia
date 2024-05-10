@@ -29,7 +29,7 @@ pub struct JoinRoomPage {
 }
 
 impl Page for JoinRoomPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::RoomList(rooms) => {
@@ -40,25 +40,29 @@ impl Page for JoinRoomPage {
                         .collect()
                 }
 
-                &Response::JoinRoom => {
-                    let page = RoomPage::new(false);
-                    let req = Request::RoomState;
-                    return Action::switch_and_request(page, req);
+                Response::JoinRoom(res) => {
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        let page = RoomPage::new(false);
+                        let req = Request::RoomState;
+                        Ok(Action::switch_and_request(page, req))
+                    }
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::JoinRoom(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
-            Msg::UpdateRooms => Action::request(Request::RoomList),
-            Msg::EnterRoom(id) => Action::request(Request::JoinRoom(id)),
+            Msg::UpdateRooms => Ok(Action::request(Request::RoomList)),
+            Msg::EnterRoom(id) => Ok(Action::request(Request::JoinRoom(id))),
         }
     }
 

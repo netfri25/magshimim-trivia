@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
 
 use crate::db::Database;
 use crate::email::Email;
@@ -30,34 +31,34 @@ where
         phone: PhoneNumber,
         address: Address,
         birth_date: NaiveDate,
-    ) -> Result<Option<Error>, crate::db::Error> {
+    ) -> Result<Result<(), Error>, crate::db::Error> {
         if self.db.user_exists(&username)? {
-            return Ok(Some(Error::UserAlreadyExists(username))); // no error, but the user already exists
+            return Ok(Err(Error::UserAlreadyExists(username))); // no error, but the user already exists
         }
         self.db
             .add_user(username, password, email, phone, address, birth_date)?;
-        Ok(None) // everything is ok
+        Ok(Ok(())) // everything is ok
     }
 
     pub fn login(
         &mut self,
         username: Username,
         password: Password,
-    ) -> Result<Option<Error>, crate::db::Error> {
+    ) -> Result<Result<(), Error>, crate::db::Error> {
         if self.connected.iter().any(|logged| logged == &username) {
-            return Ok(Some(Error::UserAlreadyConnected(username)));
+            return Ok(Err(Error::UserAlreadyConnected(username)));
         }
 
         if !self.db.user_exists(&username)? {
-            return Ok(Some(Error::UserDoesntExist(username)));
+            return Ok(Err(Error::UserDoesntExist(username)));
         }
 
         if !self.db.password_matches(&username, &password)? {
-            return Ok(Some(Error::WrongPassword));
+            return Ok(Err(Error::WrongPassword));
         }
 
         self.connected.push(username);
-        Ok(None)
+        Ok(Ok(()))
     }
 
     pub fn logut(&mut self, username: &Username) {
@@ -70,7 +71,7 @@ where
     }
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, thiserror::Error)]
 pub enum Error {
     #[error("user {:?} already connected", .0.as_ref())]
     UserAlreadyConnected(Username),
