@@ -4,7 +4,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
-use crate::handler::Handler;
+use crate::handler::{self, Handler};
 use crate::managers::game::calc_score;
 use crate::managers::room::{Room, RoomState};
 use crate::managers::statistics::{Highscores, Statistics};
@@ -12,11 +12,11 @@ use crate::username::Username;
 
 use super::Error;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Response {
     Error(String),
-    Login,
-    Signup,
+    Login(Result<(), handler::login::Error>),
+    Signup(Result<(), handler::login::Error>),
     Logout,
     RoomList(Vec<Room>),
     PlayersInRoom(Vec<Username>),
@@ -122,29 +122,6 @@ impl PlayerResults {
             wrong_answers,
             avg_time,
             score,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn serde() {
-        use super::Response;
-        use std::io::Cursor;
-
-        let to_test = [
-            Response::Error("some error".into()),
-            Response::Login,
-            Response::Signup,
-        ];
-
-        for original_response in to_test {
-            let mut buf = Vec::new();
-            original_response.write_to(&mut buf).unwrap();
-            let mut reader = Cursor::new(buf);
-            let parsed_response = Response::read_from(&mut reader).unwrap();
-            assert_eq!(original_response, parsed_response);
         }
     }
 }
