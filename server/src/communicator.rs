@@ -5,7 +5,6 @@ use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use trivia::db::Database;
 use trivia::handler::{self, Handler, RequestHandlerFactory};
 use trivia::messages::{self, Request, RequestInfo, RequestResult, Response};
-use trivia::username::Username;
 
 use crate::defer::Defer;
 
@@ -58,9 +57,8 @@ where
         handler: impl Handler<'db> + 'db,
     ) -> Result<(), Error> {
         let addr = client.peer_addr()?;
-        let login_username: Cell<Option<Username>> = Cell::new(None);
-
-        let handler = RefCell::from(Box::new(handler) as Box<dyn Handler>);
+        let login_username = Cell::new(None);
+        let handler = RefCell::new(Box::new(handler) as Box<dyn Handler>);
 
         let _defer = Defer(|| {
             if let Some(ref username) = login_username.take() {
@@ -78,7 +76,10 @@ where
 
         let mut buf = Vec::new();
         loop {
-            let request = match Request::read_from(&mut buf, &mut client) {
+            let request = Request::read_from(&mut buf, &mut client);
+            eprintln!("[REQ]:  {:?}", request);
+
+            let request = match request {
                 Ok(request) => request,
                 Err(messages::Error::Json(err)) => {
                     return Response::new_error(err)
@@ -87,7 +88,6 @@ where
                 }
                 err => err?,
             };
-            eprintln!("[REQ]:  {:?}", request);
             eprint!("[RESP]: ");
 
             // save the username, so it can be removed at the end of communication
