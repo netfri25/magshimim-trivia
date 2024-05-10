@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::time::{self, Duration, Instant, SystemTime};
 
+use serde::{Deserialize, Serialize};
 use tiny_rng::{Rand, Rng};
 
 use crate::db::Database;
@@ -8,7 +9,7 @@ use crate::managers::game::GameID;
 use crate::messages::{PlayerResults, Request, RequestInfo, RequestResult, Response};
 use crate::username::Username;
 
-use super::{Error, Handler, RequestHandlerFactory};
+use super::{Handler, RequestHandlerFactory};
 
 pub struct GameRequestHandler<'db, 'factory, DB: ?Sized> {
     game_id: GameID,
@@ -29,7 +30,7 @@ where
         )
     }
 
-    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, Error> {
+    fn handle(&mut self, request_info: RequestInfo) -> Result<RequestResult<'db>, super::Error> {
         match request_info.data {
             Request::Question => {
                 self.question_sent_at = Instant::now();
@@ -63,11 +64,12 @@ where
         }
     }
 
-    fn get_question(&self) -> Result<RequestResult<'db>, Error> {
+    fn get_question(&self) -> Result<RequestResult<'db>, super::Error> {
         let game_manager = self.factory.game_manager();
         let mut game_manager_lock = game_manager.write().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
-            return Ok(RequestResult::new_error("Invalid Game ID".to_string()));
+            let resp = Response::Question(Err(Error::UnknownGameID(self.game_id)));
+            return Ok(RequestResult::without_handler(resp));
         };
 
         let mut question = game.get_question_for_user(&self.user).cloned();
@@ -86,10 +88,12 @@ where
             rng.shuffle(question.answers.as_mut_slice())
         }
 
-        Ok(RequestResult::without_handler(Response::Question(question)))
+        Ok(RequestResult::without_handler(Response::Question(Ok(
+            question,
+        ))))
     }
 
-    fn leave_game(&self) -> Result<RequestResult<'db>, Error> {
+    fn leave_game(&self) -> Result<RequestResult<'db>, super::Error> {
         let game_manager = self.factory.game_manager();
         let mut game_manager_lock = game_manager.write().unwrap();
         if let Some(game) = game_manager_lock.game_mut(&self.game_id) {
@@ -119,11 +123,12 @@ where
         &self,
         answer: Cow<str>,
         answer_duration: Duration,
-    ) -> Result<RequestResult<'db>, Error> {
+    ) -> Result<RequestResult<'db>, super::Error> {
         let game_manager = self.factory.game_manager();
         let mut game_manager_lock = game_manager.write().unwrap();
         let Some(game) = game_manager_lock.game_mut(&self.game_id) else {
-            return Ok(RequestResult::new_error("Invalid Game ID".to_string()));
+            let resp = Response::Question(Err(Error::UnknownGameID(self.game_id)));
+            return Ok(RequestResult::without_handler(resp));
         };
 
         let correct_answer = game
@@ -134,7 +139,7 @@ where
         Ok(RequestResult::without_handler(resp))
     }
 
-    fn game_results(&self) -> Result<RequestResult<'db>, Error> {
+    fn game_results(&self) -> Result<RequestResult<'db>, super::Error> {
         let game_manager = self.factory.game_manager();
         let game_manager_lock = game_manager.read().unwrap();
         let Some(game) = game_manager_lock.game(&self.game_id) else {
@@ -166,4 +171,10 @@ where
             Ok(RequestResult::without_handler(resp))
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, thiserror::Error)]
+pub enum Error {
+    #[error("unknown game id {0}")]
+    UnknownGameID(GameID),
 }

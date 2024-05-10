@@ -39,7 +39,7 @@ pub enum Response {
 
     // the `correct_answer_index` will be set to usize::MAX so that the client can't cheat
     // additionally, the answers will be shuffled when sent to the user
-    Question(Option<QuestionData>), // None => no more questions
+    Question(Result<Option<QuestionData>, handler::game::Error>), // None => no more questions
     GameResult(Vec<PlayerResults>), // Will be sent to everyone when the game is over
     CreateQuestion(Result<(), handler::menu::Error>),
 }
