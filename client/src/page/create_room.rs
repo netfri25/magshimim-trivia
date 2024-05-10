@@ -41,23 +41,23 @@ impl Default for CreateRoomPage {
 }
 
 impl Page for CreateRoomPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 &Response::CreateRoom => {
                     let page = RoomPage::new(true);
                     let req = Request::RoomState;
-                    return Action::switch_and_request(page, req);
+                    return Ok(Action::switch_and_request(page, req));
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         };
 
         let Message::CreateRoom(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
@@ -66,16 +66,16 @@ impl Page for CreateRoomPage {
             Msg::QuestionsInput(questions) => self.questions = questions,
             Msg::AnswerTimeoutInput(answer_timeout) => self.answer_timeout = answer_timeout,
             Msg::Submit => {
-                return Action::request(Request::CreateRoom {
+                return Ok(Action::request(Request::CreateRoom {
                     name: self.name.clone().into(),
                     max_users: self.max_users as usize,
                     questions: self.questions as usize,
                     answer_timeout: Duration::from_secs(self.answer_timeout as u64),
-                })
+                }))
             }
         }
 
-        Action::none()
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {

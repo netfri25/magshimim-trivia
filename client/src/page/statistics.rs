@@ -18,31 +18,34 @@ pub enum Msg {
 pub struct StatisticsPage;
 
 impl Page for StatisticsPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::PersonalStats(stats) => {
-                    return Action::switch(PersonalStatsPage::new(stats.clone()))
+                Response::PersonalStats(res) => {
+                    return match res {
+                        Err(err) => Err(err.to_string()),
+                        Ok(stats) => Ok(Action::switch(PersonalStatsPage::new(stats.clone()))),
+                    }
                 }
 
                 Response::Highscores(highscores) => {
-                    return Action::switch(HighScoresPage::new(highscores.clone()));
+                    return Ok(Action::switch(HighScoresPage::new(highscores.clone())));
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Statistics(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        match msg {
+        Ok(match msg {
             Msg::PersonalStats => Action::request(Request::PersonalStats),
             Msg::Highscores => Action::request(Request::Highscores),
-        }
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {

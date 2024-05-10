@@ -51,60 +51,76 @@ pub struct RegisterPage {
 }
 
 impl Page for RegisterPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::Signup => {
-                    return Action::switch(LoginPage::new(
-                        self.username.clone(),
-                        self.password.clone(),
-                    ))
+                Response::Signup(res) => {
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        Ok(Action::switch(LoginPage::new(
+                            self.username.clone(),
+                            self.password.clone(),
+                        )))
+                    }
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         };
 
         let Message::Register(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
             Msg::UsernameSubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("password")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "password",
+                ))))
             }
 
             Msg::PasswordInput(password) => self.password = password,
             Msg::PasswordSubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("email")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new("email"))))
             }
 
             Msg::EmailInput(email) => self.email = email,
             Msg::EmailSubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("phone-prefix")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "phone-prefix",
+                ))))
             }
 
             Msg::PhonePrefixInput(phone_prefix) => self.phone_prefix = phone_prefix,
             Msg::PhonePrefixSubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("phone-number")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "phone-number",
+                ))))
             }
 
             Msg::PhoneNumberInput(phone_number) => self.phone_number = phone_number,
             Msg::PhoneNumberSubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("address-city")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "address-city",
+                ))))
             }
 
             Msg::AddressCityInput(address_city) => self.address_city = address_city,
             Msg::AddressCitySubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("address-street")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "address-street",
+                ))))
             }
 
             Msg::AddressStreetInput(address_street) => self.address_street = address_street,
             Msg::AddressStreetSubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("address-apartment")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "address-apartment",
+                ))))
             }
 
             Msg::AddressApartmentInput(address_apartment) => {
@@ -115,7 +131,7 @@ impl Page for RegisterPage {
                 }
             }
             Msg::AddressApartmentSubmit | Msg::Register => {
-                return Action::request(Request::Signup {
+                return Ok(Action::request(Request::Signup {
                     username: self.username.clone().into(),
                     password: self.password.clone().into(),
                     email: self.email.clone().into(),
@@ -131,7 +147,7 @@ impl Page for RegisterPage {
                         self.birth_date.day,
                     )
                     .expect("date from date-picker is always valid"),
-                });
+                }));
             }
 
             Msg::PickDate(date) => {
@@ -142,10 +158,10 @@ impl Page for RegisterPage {
             Msg::OpenPicker => self.choosing_date = true,
             Msg::ClosePicker => self.choosing_date = false,
 
-            Msg::Login => return Action::switch(LoginPage::default()),
+            Msg::Login => return Ok(Action::switch(LoginPage::default())),
         }
 
-        Action::none()
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {

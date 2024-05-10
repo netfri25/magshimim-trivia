@@ -36,18 +36,22 @@ pub struct CreateQuestionPage {
 }
 
 impl Page for CreateQuestionPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::CreateQuestion => return Action::switch(MainMenuPage),
+                Response::CreateQuestion(res) => {
+                    return res
+                        .map_err(ToString::to_string)
+                        .map(|()| Action::switch(MainMenuPage))
+                }
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::CreateQuestion(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
@@ -72,7 +76,7 @@ impl Page for CreateQuestionPage {
                     self.answers.push(String::default());
                 }
 
-                return Action::cmd(text_input::focus(answer_id(focus_index)));
+                return Ok(Action::cmd(text_input::focus(answer_id(focus_index))));
             }
 
             Msg::SubmitQuestion => {
@@ -80,7 +84,7 @@ impl Page for CreateQuestionPage {
                     self.answers.push(String::default())
                 }
 
-                return Action::cmd(text_input::focus(answer_id(0)));
+                return Ok(Action::cmd(text_input::focus(answer_id(0))));
             }
 
             Msg::Create => {
@@ -91,11 +95,11 @@ impl Page for CreateQuestionPage {
                     self.answers.clone(),
                     self.correct_answer_index.unwrap(),
                 );
-                return Action::request(Request::CreateQuestion(question));
+                return Ok(Action::request(Request::CreateQuestion(question)));
             }
         }
 
-        Action::none()
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {

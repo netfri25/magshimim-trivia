@@ -21,12 +21,12 @@ pub enum Msg {
 pub struct MainMenuPage;
 
 impl Page for MainMenuPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         let Message::MainMenu(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        match msg {
+        Ok(match msg {
             Msg::CreateRoom => Action::switch(CreateRoomPage::default()),
             Msg::JoinRoom => {
                 let (page, req) = JoinRoomPage::new();
@@ -35,7 +35,7 @@ impl Page for MainMenuPage {
             Msg::Statistics => Action::switch(StatisticsPage),
             Msg::CreateQuestion => Action::switch(CreateQuestionPage::default()),
             Msg::Quit => self.quit(),
-        }
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {

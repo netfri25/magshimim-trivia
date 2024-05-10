@@ -38,7 +38,7 @@ pub mod create_question;
 pub use create_question::CreateQuestionPage;
 
 pub trait Page {
-    fn update(&mut self, message: Message) -> Action;
+    fn update(&mut self, message: Message) -> Result<Action, String>;
     fn view(&self) -> iced::Element<Message>;
 
     fn subscription(&self) -> iced::Subscription<Message> {

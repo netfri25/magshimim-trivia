@@ -26,40 +26,46 @@ pub struct LoginPage {
 }
 
 impl Page for LoginPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::Login => {
-                    return Action::switch(MainMenuPage);
+                Response::Login(res) => {
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        Ok(Action::switch(MainMenuPage))
+                    }
                 }
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Login(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
             Msg::UsernameSubmit => {
-                return Action::cmd(text_input::focus(text_input::Id::new("password")))
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "password",
+                ))))
             }
 
             Msg::PasswordInput(password) => self.password = password,
             Msg::PasswordSubmit | Msg::Login => {
-                return Action::request(Request::Login {
+                return Ok(Action::request(Request::Login {
                     username: self.username.clone().into(),
                     password: self.password.clone().into(),
-                });
+                }));
             }
 
-            Msg::Register => return Action::switch(RegisterPage::default()),
+            Msg::Register => return Ok(Action::switch(RegisterPage::default())),
         }
 
-        Action::none()
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {

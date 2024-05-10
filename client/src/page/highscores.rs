@@ -16,8 +16,8 @@ pub struct HighScoresPage {
 }
 
 impl Page for HighScoresPage {
-    fn update(&mut self, _message: Message) -> Action {
-        Action::none()
+    fn update(&mut self, _message: Message) -> Result<Action, String> {
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {
