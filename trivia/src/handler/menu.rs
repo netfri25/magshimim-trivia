@@ -134,7 +134,10 @@ where
             return RequestResult::without_handler(mk(Err(Error::UnknownRoomID(id))));
         };
 
-        room.add_user(self.user.clone());
+        if !room.add_user(self.user.clone()) {
+            return RequestResult::without_handler(mk(Err(Error::UserAlreadyInRoom)));
+        }
+
         let resp = mk(Ok(()));
         let handler = self
             .factory
@@ -189,4 +192,7 @@ pub enum Error {
 
     #[error("room has started already")]
     RoomInGame,
+
+    #[error("user is already in the room")]
+    UserAlreadyInRoom,
 }

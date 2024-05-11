@@ -64,16 +64,22 @@ impl Room {
         Self { data, users }
     }
 
-    pub fn add_user(&mut self, user: Username) {
-        self.users.push(user)
+    pub fn add_user(&mut self, user: Username) -> bool {
+        if self.users.contains(&user) {
+            false
+        } else {
+            self.users.push(user);
+            true
+        }
     }
 
-    pub fn remove_user(&mut self, user: &Username) {
+    pub fn remove_user(&mut self, user: &Username) -> bool {
         let Some(index) = self.users.iter().position(|u| u == user) else {
-            return;
+            return false;
         };
 
         self.users.swap_remove(index);
+        true
     }
 
     pub fn users(&self) -> &[Username] {
