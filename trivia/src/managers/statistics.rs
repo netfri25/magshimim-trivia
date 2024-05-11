@@ -7,7 +7,7 @@ use crate::db::Database;
 use crate::managers::game::Score;
 use crate::username::Username;
 
-pub type Highscores = [Option<(Username, Score)>; 5];
+pub type Highscores = Vec<(Username, Score)>;
 
 pub struct StatisticsManager<'db, DB: ?Sized> {
     db: &'db DB,

@@ -29,7 +29,6 @@ impl Page for HighScoresPage {
         let users_col = Column::from_vec(
             self.scores
                 .iter()
-                .flatten()
                 .map(|(username, score)| user_score(username, *score))
                 .collect(),
         )

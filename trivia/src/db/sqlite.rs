@@ -225,15 +225,13 @@ impl Database for SqliteDatabase {
             .to_string(query::SqliteQueryBuilder);
 
         let mut scores: Highscores = Default::default();
-        let mut index = 0;
         let mut iter = self.conn.prepare(statement)?;
         while let Ok(State::Row) = iter.next() {
             let username = iter
                 .read::<String, _>(User::Username.to_string().as_str())?
                 .parse()?;
             let score = iter.read::<Score, _>(Statistics::OverallScore.to_string().as_str())?;
-            scores[index] = Some((username, score));
-            index += 1;
+            scores.push((username, score));
         }
 
         Ok(scores)
@@ -614,11 +612,10 @@ mod tests {
         assert_eq!(
             highscores,
             [
-                Some(("user2".parse().unwrap(), scores[1])),
-                Some(("user3".parse().unwrap(), scores[2])),
-                Some(("user4".parse().unwrap(), scores[3])),
-                Some(("user1".parse().unwrap(), scores[0])),
-                None
+                ("user2".parse().unwrap(), scores[1]),
+                ("user3".parse().unwrap(), scores[2]),
+                ("user4".parse().unwrap(), scores[3]),
+                ("user1".parse().unwrap(), scores[0]),
             ]
         );
 
