@@ -79,11 +79,17 @@ where
             .unwrap()
             .login(username.clone(), password)?
             .map_err(Error::Manager);
-        let response = Response::Login(resp);
-        Ok(RequestResult::new(
-            response,
-            self.factory.create_menu_request_handler(username),
-        ))
+
+        let result = if resp.is_err() {
+            RequestResult::without_handler(Response::Login(resp))
+        } else {
+            RequestResult::new(
+                Response::Login(resp),
+                self.factory.create_menu_request_handler(username),
+            )
+        };
+
+        Ok(result)
     }
 
     fn signup(
