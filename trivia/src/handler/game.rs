@@ -84,7 +84,6 @@ where
                     .expect("clock can't go back from 0")
                     .as_secs(),
             );
-            question.correct_answer_index = usize::MAX;
             rng.shuffle(question.answers.as_mut_slice())
         }
 

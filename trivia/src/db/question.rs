@@ -57,6 +57,7 @@ pub enum QuestionKind {
 pub struct QuestionData {
     pub question: String,
     pub answers: Vec<String>,
+    #[serde(skip)]
     pub correct_answer_index: usize,
 }
 
