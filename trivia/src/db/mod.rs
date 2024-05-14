@@ -9,8 +9,8 @@ use crate::messages::{Address, PhoneNumber};
 use crate::password::Password;
 use crate::username::Username;
 
-pub mod sqlite;
-pub use sqlite::SqliteDatabase;
+pub mod turbosql;
+pub use turbosql::TurboSqliteDatabase;
 
 pub mod question;
 pub use question::QuestionData;
@@ -43,6 +43,12 @@ pub trait Database {
 
     // the Ok variant tells if the question was added
     fn add_question(&self, question: &QuestionData) -> Result<bool, Error>;
+
+    fn populate_questions(&self, amount: u8) -> Result<(), Error> {
+        opentdb::get_questions(amount)?
+            .into_iter()
+            .try_for_each(|question| self.add_question(&QuestionData::from(question)).map(drop))
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -57,7 +63,7 @@ pub enum Error {
     },
 
     #[error("DB: {0}")]
-    InternalDBError(#[from] ::sqlite::Error),
+    InternalDBError(#[from] ::turbosql::Error),
 
     #[error("OpenTDB: {0}")]
     OpenTDB(#[from] opentdb::Error),

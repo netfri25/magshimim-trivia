@@ -1,2 +1,4 @@
 /target
 trivia-db.sqlite
+*/test-db.sqlite*
+/.cargo

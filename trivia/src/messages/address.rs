@@ -6,11 +6,11 @@ use serde::{Deserialize, Serialize};
 pub struct Address {
     city: Box<str>,
     street: Box<str>,
-    apartment: u64,
+    apartment: u32,
 }
 
 impl Address {
-    pub fn new(city: impl Into<Box<str>>, street: impl Into<Box<str>>, apartment: u64) -> Self {
+    pub fn new(city: impl Into<Box<str>>, street: impl Into<Box<str>>, apartment: u32) -> Self {
         let city = city.into();
         let street = street.into();
         Self {
@@ -28,7 +28,7 @@ impl Address {
         &self.street
     }
 
-    pub fn apartment(&self) -> u64 {
+    pub fn apartment(&self) -> u32 {
         self.apartment
     }
 }

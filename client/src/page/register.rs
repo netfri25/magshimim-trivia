@@ -45,7 +45,7 @@ pub struct RegisterPage {
     phone_number: String,
     address_city: String,
     address_street: String,
-    address_apartment: Option<u64>,
+    address_apartment: Option<u32>,
     birth_date: Date,
     choosing_date: bool,
 }

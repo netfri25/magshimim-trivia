@@ -45,10 +45,11 @@ where
 #[cfg(test)]
 mod tests {
     use std::net::TcpStream;
+    use std::path::Path;
     use std::sync::{mpsc, OnceLock};
 
     use trivia::db::question::QuestionData;
-    use trivia::db::SqliteDatabase;
+    use trivia::db::TurboSqliteDatabase;
     use trivia::handler::login::Error::*;
     use trivia::handler::menu::Error::*;
     use trivia::managers::login::Error::*;
@@ -66,7 +67,13 @@ mod tests {
             let (send, recv) = mpsc::sync_channel(1);
 
             std::thread::spawn(move || {
-                let db = SqliteDatabase::connect(":memory:").unwrap();
+                let path = Path::new("test-db.sqlite");
+                if path.exists() {
+                    std::fs::remove_file(path).ok();
+                    std::fs::remove_file(path.with_extension("sqlite-shm")).ok();
+                    std::fs::remove_file(path.with_extension("sqlite-wal")).ok();
+                }
+                let db = TurboSqliteDatabase::connect(path).unwrap();
                 let server = Server::build(ADDR, &db).unwrap();
                 // notify that the server has started running
                 send.send(()).unwrap();

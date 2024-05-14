@@ -1,4 +1,4 @@
-use trivia::db::SqliteDatabase;
+use trivia::db::{Database, TurboSqliteDatabase};
 
 mod communicator;
 mod defer;
@@ -8,7 +8,7 @@ use server::Server;
 
 fn main() {
     eprintln!("[INFO] starting...");
-    let db = match SqliteDatabase::connect("trivia-db.sqlite") {
+    let db = match TurboSqliteDatabase::connect("trivia-db.sqlite") {
         Ok(db) => db,
         Err(err) => {
             eprintln!("[FATAL ERROR] unable to initialize db: {}", err);
