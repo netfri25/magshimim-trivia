@@ -229,26 +229,9 @@ mod tests {
         Ok(())
     }
 
-    fn insert_stats(
-        db: &mut TurboSqliteDatabase,
-        correct: u32,
-        wrong: u32,
-        avg_time: f64,
-        username: &Username,
-    ) -> anyhow::Result<()> {
-        let game_data = GameData {
-            correct_answers: correct,
-            wrong_answers: wrong,
-            avg_time: Duration::from_secs_f64(avg_time),
-            ..Default::default()
-        };
-        db.submit_game_data(username, game_data)?;
-        Ok(())
-    }
-
     #[test]
     fn top_four() -> anyhow::Result<()> {
-        let mut db = TurboSqliteDatabase {};
+        let db = TurboSqliteDatabase {};
 
         for user_id in 1..=4 {
             let username = format!("user{}", user_id);
@@ -267,7 +250,13 @@ mod tests {
         for (user_id, stat) in stats.iter().enumerate() {
             let user_id = user_id + 1;
             let username = format!("user{}", user_id).parse().unwrap();
-            insert_stats(&mut db, stat.0, stat.1, stat.2, &username)?;
+            let data = GameData {
+                correct_answers: stat.0,
+                wrong_answers: stat.1,
+                avg_time: Duration::from_secs_f64(stat.2),
+                ..Default::default()
+            };
+            db.submit_game_data(&username, data)?;
         }
 
         let scores = stats.map(|stat| calc_score(Duration::from_secs_f64(stat.2), stat.0 as i64));
