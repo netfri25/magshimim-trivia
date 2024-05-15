@@ -74,6 +74,11 @@ where
     }
 
     fn logout(&self) -> RequestResult<'db> {
+        self.factory
+            .login_manager()
+            .write()
+            .unwrap()
+            .logout(&self.user);
         RequestResult::new(
             Response::Logout,
             self.factory.create_login_request_handler(),

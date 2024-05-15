@@ -67,7 +67,7 @@ where
                     .login_manager()
                     .write()
                     .unwrap()
-                    .logut(username);
+                    .logout(username);
             }
 
             let req = Request::Logout;

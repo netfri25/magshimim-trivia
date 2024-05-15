@@ -61,7 +61,7 @@ where
         Ok(Ok(()))
     }
 
-    pub fn logut(&mut self, username: &Username) {
+    pub fn logout(&mut self, username: &Username) {
         let Some(index) = self.connected.iter().position(|logged| logged == username) else {
             return;
         };
