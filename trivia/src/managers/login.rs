@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +11,7 @@ use crate::username::Username;
 
 pub struct LoginManager<'db, DB: ?Sized> {
     db: &'db DB,
-    connected: Vec<Username>,
+    connected: HashSet<Username>,
 }
 
 impl<'db, DB> LoginManager<'db, DB>
@@ -45,10 +47,6 @@ where
         username: Username,
         password: Password,
     ) -> Result<Result<(), Error>, crate::db::Error> {
-        if self.connected.iter().any(|logged| logged == &username) {
-            return Ok(Err(Error::UserAlreadyConnected(username)));
-        }
-
         if !self.db.user_exists(&username)? {
             return Ok(Err(Error::UserDoesntExist(username)));
         }
@@ -57,17 +55,15 @@ where
             return Ok(Err(Error::WrongPassword));
         }
 
-        self.connected.push(username);
+        if let Some(username) = self.connected.replace(username) {
+            return Ok(Err(Error::UserAlreadyConnected(username)));
+        }
+
         Ok(Ok(()))
     }
 
     pub fn logout(&mut self, username: &Username) {
-        let Some(index) = self.connected.iter().position(|logged| logged == username) else {
-            return;
-        };
-
-        // O(1) removal, but doesn't preserve ordering
-        self.connected.swap_remove(index);
+        self.connected.remove(username);
     }
 }
 
