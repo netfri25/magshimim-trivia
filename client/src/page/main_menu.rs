@@ -1,12 +1,13 @@
 use iced::alignment::{Horizontal, Vertical};
 use iced::widget::{button, column, container, horizontal_space, row, text, vertical_space};
 use iced::{Alignment, Length};
+use trivia::messages::Request;
 
 use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{CreateQuestionPage, CreateRoomPage, JoinRoomPage, Page, StatisticsPage};
+use super::{CreateQuestionPage, CreateRoomPage, JoinRoomPage, LoginPage, Page, StatisticsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -76,7 +77,7 @@ impl Page for MainMenuPage {
     }
 
     fn quit(&mut self) -> Action {
-        std::process::exit(0)
+        Action::switch_and_request(LoginPage::default(), Request::Logout)
     }
 }
 
