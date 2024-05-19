@@ -65,7 +65,7 @@ impl Room {
     }
 
     pub fn add_user(&mut self, user: Username) -> bool {
-        if self.users.contains(&user) {
+        if self.users.contains(&user) || self.is_full() {
             false
         } else {
             self.users.push(user);
