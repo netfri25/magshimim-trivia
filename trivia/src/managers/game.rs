@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::f64::consts;
 use std::iter;
 use std::time::Duration;
 
