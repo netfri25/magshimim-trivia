@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::f64::consts;
 use std::iter;
 use std::time::Duration;
 
@@ -183,9 +184,9 @@ impl GameData {
 }
 
 pub fn calc_score(answer_time: Duration, correct_answers: i64) -> Score {
-    // TODO: the user can just spam wrong answers and still get a really good score
-    //       find a way to prevent this, meaning a new score evaluation algorithm
-    let score = correct_answers as f64 / answer_time.as_secs_f64();
+    let time = answer_time.as_secs_f64();
+    let phi = (1. + 5f64.sqrt()) / 2.;
+    let score = correct_answers as f64 * (1. + 1. / phi.powf(time));
 
     if score.is_normal() {
         score
