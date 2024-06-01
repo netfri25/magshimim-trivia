@@ -1,31 +1,37 @@
-use std::sync::{Arc, Mutex};
+use std::sync::RwLock;
 
 use crate::db::Database;
 use crate::managers::game::GameID;
-use crate::managers::login::LoggedUser;
 use crate::managers::room::RoomID;
 use crate::managers::{GameManager, LoginManager, RoomManager, StatisticsManager};
+use crate::username::Username;
 
-use super::{GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomAdminRequestHandler, RoomMemberRequestHandler};
+use super::{
+    GameRequestHandler, Handler, LoginRequestHandler, MenuRequestHandler, RoomUserRequestHandler,
+};
 
-pub struct RequestHandlerFactory {
-    login_manager: Arc<Mutex<LoginManager>>,
-    room_manager: Arc<Mutex<RoomManager>>,
-    statistics_manager: Arc<Mutex<StatisticsManager>>,
-    game_manager: Arc<Mutex<GameManager>>,
+pub struct RequestHandlerFactory<'db, DB: ?Sized> {
+    login_manager: RwLock<LoginManager<'db, DB>>,
+    room_manager: RwLock<RoomManager>,
+    statistics_manager: StatisticsManager<'db, DB>,
+    game_manager: RwLock<GameManager<'db, DB>>,
+    db: &'db DB,
 }
 
-impl RequestHandlerFactory {
-    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
-        let login_manager = LoginManager::new(db.clone());
-        let login_manager = Arc::new(Mutex::new(login_manager));
+impl<'db, 'me: 'db, DB> RequestHandlerFactory<'db, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn new(db: &'db DB) -> Self {
+        let login_manager = LoginManager::new(db);
+        let login_manager = RwLock::new(login_manager);
         let room_manager = RoomManager::new();
-        let room_manager = Arc::new(Mutex::new(room_manager));
-        let statistics_manager = StatisticsManager::new(db.clone());
-        let statistics_manager = Arc::new(Mutex::new(statistics_manager));
-        let game_manager = GameManager::new(db.clone());
-        let game_manager = Arc::new(Mutex::new(game_manager));
+        let room_manager = RwLock::new(room_manager);
+        let statistics_manager = StatisticsManager::new(db);
+        let game_manager = GameManager::new(db);
+        let game_manager = RwLock::new(game_manager);
         Self {
+            db,
             login_manager,
             room_manager,
             statistics_manager,
@@ -33,39 +39,51 @@ impl RequestHandlerFactory {
         }
     }
 
-    pub fn create_login_request_handler(self: &Arc<Self>) -> Box<dyn Handler> {
-        Box::new(LoginRequestHandler::new(self.clone()))
+    pub fn db(&'me self) -> &'db DB {
+        self.db
     }
 
-    pub fn create_menu_request_handler(self: &Arc<Self>, logged_user: LoggedUser) -> Box<dyn Handler> {
-        Box::new(MenuRequestHandler::new(self.clone(), logged_user))
+    pub fn create_login_request_handler(&'me self) -> impl Handler<'db> + 'me {
+        LoginRequestHandler::new(self)
     }
 
-    pub fn create_room_admin_request_handler(self: &Arc<Self>, admin: LoggedUser, room_id: RoomID) -> Box<dyn Handler> {
-        Box::new(RoomAdminRequestHandler::new(self.clone(), admin, room_id))
+    pub fn create_menu_request_handler(
+        &'me self,
+        logged_user: Username,
+    ) -> impl Handler<'db> + 'me {
+        MenuRequestHandler::new(self, logged_user)
     }
 
-    pub fn create_room_member_request_handler(self: &Arc<Self>, member: LoggedUser, room_id: RoomID) -> Box<dyn Handler> {
-        Box::new(RoomMemberRequestHandler::new(self.clone(), member, room_id))
+    pub fn create_room_user_request_handler(
+        &'me self,
+        user: Username,
+        is_admin: bool,
+        room_id: RoomID,
+    ) -> impl Handler<'db> + 'me {
+        RoomUserRequestHandler::new(self, user, is_admin, room_id)
     }
 
-    pub fn create_game_request_handler(self: &Arc<Self>, user: LoggedUser, game_id: GameID) -> Box<dyn Handler> {
-        Box::new(GameRequestHandler::new(self.clone(), user, game_id))
+    pub fn create_game_request_handler(
+        &'me self,
+        user: Username,
+        game_id: GameID,
+    ) -> impl Handler<'db> + 'me {
+        GameRequestHandler::new(self, user, game_id)
     }
 
-    pub fn get_login_manager(&self) -> Arc<Mutex<LoginManager>> {
-        self.login_manager.clone()
+    pub fn login_manager(&'me self) -> &'me RwLock<LoginManager<'db, DB>> {
+        &self.login_manager
     }
 
-    pub fn get_room_manager(&self) -> Arc<Mutex<RoomManager>> {
-        self.room_manager.clone()
+    pub fn room_manager(&'me self) -> &'me RwLock<RoomManager> {
+        &self.room_manager
     }
 
-    pub fn get_statistics_manager(&self) -> Arc<Mutex<StatisticsManager>> {
-        self.statistics_manager.clone()
+    pub fn statistics_manager(&'me self) -> &'me StatisticsManager<'db, DB> {
+        &self.statistics_manager
     }
 
-    pub fn get_game_manager(&self) -> Arc<Mutex<GameManager>> {
-        self.game_manager.clone()
+    pub fn game_manager(&'me self) -> &'me RwLock<GameManager<'db, DB>> {
+        &self.game_manager
     }
 }

@@ -7,49 +7,45 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::{HighScoresPage, Page, PersonalStatsPage};
+use super::{HighScoresPage, MainMenuPage, Page, PersonalStatsPage};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
     PersonalStats,
-    HighScores,
+    Highscores,
 }
 
-#[derive(Default)]
-pub struct StatisticsPage {
-    switch_to: Option<Msg>,
-}
+pub struct StatisticsPage;
 
 impl Page for StatisticsPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::Statistics {
-                    user_statistics,
-                    high_scores
-                } => {
-                    let Some(ref switch_to) = self.switch_to else {
-                        return Action::none();
-                    };
-
-                    return match switch_to {
-                        Msg::PersonalStats => Action::switch(PersonalStatsPage::new(user_statistics.clone())),
-                        Msg::HighScores => Action::switch(HighScoresPage::new(high_scores.clone())),
+                Response::PersonalStats(res) => {
+                    return match res {
+                        Err(err) => Err(err.to_string()),
+                        Ok(stats) => Ok(Action::switch(PersonalStatsPage::new(stats.clone()))),
                     }
-                },
+                }
+
+                Response::Highscores(highscores) => {
+                    return Ok(Action::switch(HighScoresPage::new(highscores.clone())));
+                }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none()
+            return Ok(Action::none());
         }
 
         let Message::Statistics(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        self.switch_to = Some(msg);
-        Action::request(Request::Statistics)
+        Ok(match msg {
+            Msg::PersonalStats => Action::request(Request::PersonalStats),
+            Msg::Highscores => Action::request(Request::Highscores),
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -59,7 +55,7 @@ impl Page for StatisticsPage {
             .horizontal_alignment(Horizontal::Center);
 
         let personal_stats_button = menu_button("My Statistics", Msg::PersonalStats);
-        let high_scores_button = menu_button("High Scores", Msg::HighScores);
+        let high_scores_button = menu_button("High Scores", Msg::Highscores);
 
         let buttons = container(
             column![personal_stats_button, high_scores_button,]
@@ -80,6 +76,10 @@ impl Page for StatisticsPage {
         .center_x()
         .center_y()
         .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
     }
 }
 

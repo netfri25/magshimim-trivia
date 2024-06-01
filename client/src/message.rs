@@ -3,12 +3,14 @@ use std::sync::Arc;
 use trivia::messages::Response;
 
 use crate::connection;
-use crate::page::{createroom, joinroom, login, mainmenu, register, room, statistics, game, results};
+use crate::page::{
+    create_question, create_room, game, join_room, login, main_menu, register, results, room,
+    statistics,
+};
 
 #[derive(From, Debug, Clone)]
 #[non_exhaustive]
 pub enum Message {
-    Nothing,
     Quit,
     Connect,
 
@@ -23,13 +25,13 @@ pub enum Message {
     Register(register::Msg),
 
     #[from]
-    MainMenu(mainmenu::Msg),
+    MainMenu(main_menu::Msg),
 
     #[from]
-    CreateRoom(createroom::Msg),
+    CreateRoom(create_room::Msg),
 
     #[from]
-    JoinRoom(joinroom::Msg),
+    JoinRoom(join_room::Msg),
 
     #[from]
     Room(room::Msg),
@@ -41,5 +43,8 @@ pub enum Message {
     Game(game::Msg),
 
     #[from]
-    Results(results::Msg)
+    Results(results::Msg),
+
+    #[from]
+    CreateQuestion(create_question::Msg),
 }

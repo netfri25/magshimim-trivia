@@ -20,7 +20,7 @@ impl Connection {
 
     pub fn send(&self, msg: Request) -> Result<(), Error> {
         let Some(mut stream) = self.stream.as_ref() else {
-            return Err(Error::NotConnected)
+            return Err(Error::NotConnected);
         };
 
         msg.write_to(&mut stream)?;
@@ -30,7 +30,7 @@ impl Connection {
 
     pub fn recv(&self) -> Result<Response, Error> {
         let Some(mut stream) = self.stream.as_ref() else {
-            return Err(Error::NotConnected)
+            return Err(Error::NotConnected);
         };
 
         let response = Response::read_from(&mut stream)?;
@@ -38,7 +38,7 @@ impl Connection {
         Ok(response)
     }
 
-    pub async fn send_and_recv(&self, msg: Request) -> Result<Response, Error> {
+    pub async fn send_and_recv(&self, msg: Request<'static>) -> Result<Response, Error> {
         async { self.send(msg) }.await?;
         async { self.recv() }.await
     }

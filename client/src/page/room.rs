@@ -6,8 +6,8 @@ use iced::widget::{
     button, column, container, horizontal_space, row, scrollable, text, vertical_space, Column,
 };
 use iced::{theme, Alignment, Length};
-use trivia::managers::login::LoggedUser;
 use trivia::messages::{Request, Response};
+use trivia::username::Username;
 
 use crate::action::Action;
 use crate::consts;
@@ -28,46 +28,58 @@ pub enum Msg {
 
 pub struct RoomPage {
     room_name: String,
-    players: Vec<LoggedUser>,
+    players: Vec<Username>,
     time_per_question: Duration,
     is_admin: bool, // true when the current user is the admin
+    question_count: usize,
 }
 
 impl Page for RoomPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::RoomState {
                     name,
                     players,
                     time_per_question,
+                    question_count,
                     ..
                 } => {
-                    self.room_name = name.clone();
-                    self.players = players.clone();
+                    self.room_name.clone_from(name);
+                    self.players.clone_from(players);
                     self.time_per_question = *time_per_question;
-                },
+                    self.question_count = *question_count;
+                }
 
-                Response::StartGame => return Action::switch_and_request(GamePage::new(self.time_per_question), Request::Question),
+                Response::StartGame(res) => {
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        Ok(Action::switch_and_request(
+                            GamePage::new(self.time_per_question, self.question_count),
+                            Request::Question,
+                        ))
+                    }
+                }
 
-                Response::LeaveRoom => return Action::switch(MainMenuPage),
+                Response::LeaveRoom => return Ok(Action::switch(MainMenuPage)),
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Room(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        match msg {
+        Ok(match msg {
             Msg::UpdatePlayers => Action::request(Request::RoomState),
-            Msg::StartGame => Action::request(Request::StartGame), // TODO: switch to the game page
+            Msg::StartGame => Action::request(Request::StartGame),
             Msg::CloseRoom => Action::switch_and_request(MainMenuPage, Request::CloseRoom),
             Msg::LeaveRoom => Action::switch_and_request(MainMenuPage, Request::LeaveRoom),
-        }
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -127,6 +139,15 @@ impl Page for RoomPage {
     fn subscription(&self) -> iced::Subscription<Message> {
         iced::time::every(Duration::from_secs(3)).map(|_| Msg::UpdatePlayers.into())
     }
+
+    fn quit(&mut self) -> Action {
+        let req = if self.is_admin {
+            Request::CloseRoom
+        } else {
+            Request::LeaveRoom
+        };
+        Action::switch_and_request(MainMenuPage, req)
+    }
 }
 
 impl RoomPage {
@@ -136,12 +157,13 @@ impl RoomPage {
             players: vec![],
             time_per_question: Default::default(),
             is_admin,
+            question_count: 0,
         }
     }
 }
 
-fn player_element(user: &LoggedUser) -> iced::Element<Message> {
-    let user = text(user.username()).size(30);
+fn player_element(user: &Username) -> iced::Element<Message> {
+    let user = text(user.as_ref()).size(30);
 
     container(column![user].align_items(Alignment::Center))
         .style(theme::Container::Box)

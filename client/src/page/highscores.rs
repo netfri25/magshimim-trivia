@@ -6,17 +6,18 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{Page, StatisticsPage};
 
 use trivia::managers::game::Score;
+use trivia::managers::statistics::Highscores;
 
 pub struct HighScoresPage {
-    scores: [Option<(String, Score)>; 5],
+    scores: Highscores,
 }
 
 impl Page for HighScoresPage {
-    fn update(&mut self, _message: Message) -> Action {
-        Action::none()
+    fn update(&mut self, _message: Message) -> Result<Action, String> {
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -28,7 +29,6 @@ impl Page for HighScoresPage {
         let users_col = Column::from_vec(
             self.scores
                 .iter()
-                .flatten()
                 .map(|(username, score)| user_score(username, *score))
                 .collect(),
         )
@@ -56,10 +56,14 @@ impl Page for HighScoresPage {
         .center_y()
         .into()
     }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(StatisticsPage)
+    }
 }
 
 impl HighScoresPage {
-    pub fn new(scores: [Option<(String, Score)>; 5]) -> Self {
+    pub fn new(scores: Highscores) -> Self {
         Self { scores }
     }
 }

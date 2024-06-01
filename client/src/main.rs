@@ -4,7 +4,7 @@ use iced::{
     alignment::Horizontal,
     keyboard,
     widget::{column, container, text},
-    Application, Command, Length, Settings,
+    Application, Command, Font, Length, Settings,
 };
 
 mod message;
@@ -26,7 +26,12 @@ fn main() {
     let mut settings = Settings::default();
     settings.window.size = iced::Size::new(800., 600.);
     settings.window.position = iced::window::Position::Centered;
+    settings.fonts = vec![
+        include_bytes!("../assets/VarelaRound-Regular.ttf").into(),
+        iced_aw::BOOTSTRAP_FONT_BYTES.into(),
+    ];
     settings.flags = "127.0.0.1:6969";
+    settings.default_font = Font::with_name("Varela Round");
     Client::run(settings).unwrap();
 }
 
@@ -39,7 +44,7 @@ struct Client<A> {
 
 impl<A> Application for Client<A>
 where
-    A: ToSocketAddrs + Send + Clone + 'static
+    A: ToSocketAddrs + Send + Clone + 'static,
 {
     type Message = Message;
     type Executor = iced::executor::Default;
@@ -68,9 +73,7 @@ where
     fn update(&mut self, message: Message) -> Command<Message> {
         // log the messages that relate to the server
         match message {
-            Message::Connect => {
-                return Self::connect(self.addr.clone())
-            }
+            Message::Connect => return Self::connect(self.addr.clone()),
 
             Message::Connected(conn) => {
                 eprintln!("connected to server!");
@@ -89,35 +92,22 @@ where
                 eprintln!("[RECV]: {:?}", response);
             }
 
-            Message::Quit => std::process::exit(0),
-
-            Message::Nothing => return Command::none(),
+            Message::Quit => {
+                let action = self.page.quit();
+                return self.handle_action(action);
+            }
 
             _ => {}
         };
 
         self.err.clear();
-
-        let action = self.page.update(message);
-        match action {
-            Action::Switch(new_page, req) => {
-                self.page = new_page;
-                return self.make_request(req);
+        match self.page.update(message) {
+            Ok(action) => self.handle_action(action),
+            Err(err) => {
+                self.err = err;
+                Command::none()
             }
-
-            Action::MakeRequest(req) => {
-                eprintln!("[SEND]: {:?}", req);
-                return self.make_request(Some(req));
-            }
-
-            Action::Command(cmd) => return cmd,
-
-            Action::Quit => std::process::exit(0),
-
-            Action::Nothing => {}
         }
-
-        Command::none()
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
@@ -144,7 +134,7 @@ where
     fn subscription(&self) -> iced::Subscription<Message> {
         let mut subs = Vec::with_capacity(3);
         subs.push(self.page.subscription());
-        subs.push(iced::event::listen().map(handle_event));
+        subs.push(iced::event::listen_with(handle_event));
 
         if !self.conn.is_connected() {
             let sub = iced::time::every(Duration::from_secs(5)).map(|_| Message::Connect);
@@ -157,9 +147,9 @@ where
 
 impl<A> Client<A>
 where
-    A: ToSocketAddrs + Send + 'static
+    A: ToSocketAddrs + Send + 'static,
 {
-    pub fn make_request(&mut self, req: Option<Request>) -> Command<Message> {
+    pub fn make_request(&mut self, req: Option<Request<'static>>) -> Command<Message> {
         let Some(req) = req else {
             return Command::none();
         };
@@ -182,25 +172,43 @@ where
             },
         )
     }
+
+    pub fn handle_action(&mut self, action: Action) -> Command<Message> {
+        match action {
+            Action::Switch(new_page, req) => {
+                self.page = new_page;
+                return self.make_request(req);
+            }
+
+            Action::MakeRequest(req) => {
+                eprintln!("[SEND]: {:?}", req);
+                return self.make_request(Some(req));
+            }
+
+            Action::Command(cmd) => return cmd,
+
+            Action::Nothing => {}
+        }
+
+        Command::none()
+    }
 }
 
 fn response_as_message(resp: Result<Response, connection::Error>) -> Message {
     match resp {
-        Ok(Response::Error { msg }) => {
-            Message::Error(Arc::new(connection::Error::ResponseErr(msg)))
-        }
+        Ok(Response::Error(msg)) => Message::Error(Arc::new(connection::Error::ResponseErr(msg))),
         Ok(response) => Message::Response(Arc::new(response)),
         Err(err) => Message::Error(Arc::new(err)),
     }
 }
 
-fn handle_event(event: iced::Event) -> Message {
+fn handle_event(event: iced::Event, _status: iced::event::Status) -> Option<Message> {
     match event {
         iced::Event::Keyboard(keyboard::Event::KeyPressed {
             key: keyboard::Key::Named(keyboard::key::Named::Escape),
             ..
-        }) => Message::Quit,
+        }) => Some(Message::Quit),
 
-        _ => Message::Nothing,
+        _ => None,
     }
 }

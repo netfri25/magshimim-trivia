@@ -7,15 +7,15 @@ use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use super::Page;
+use super::{Page, StatisticsPage};
 
 pub struct PersonalStatsPage {
     stats: Statistics,
 }
 
 impl Page for PersonalStatsPage {
-    fn update(&mut self, _message: Message) -> Action {
-        Action::none()
+    fn update(&mut self, _message: Message) -> Result<Action, String> {
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -56,6 +56,10 @@ impl Page for PersonalStatsPage {
         .center_x()
         .center_y()
         .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(StatisticsPage)
     }
 }
 

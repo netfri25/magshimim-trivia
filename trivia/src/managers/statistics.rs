@@ -1,32 +1,36 @@
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
 use crate::db::Database;
 
 use crate::managers::game::Score;
+use crate::username::Username;
 
+pub type Highscores = Vec<(Username, Score)>;
 
-pub struct StatisticsManager {
-    db: Arc<Mutex<dyn Database>>
+pub struct StatisticsManager<'db, DB: ?Sized> {
+    db: &'db DB,
 }
 
-impl StatisticsManager {
-    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
+impl<'db, DB> StatisticsManager<'db, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn new(db: &'db DB) -> Self {
         Self { db }
     }
 
-    pub fn get_high_scores(&self) -> Result<[Option<(String, Score)>; 5], crate::db::Error> {
-        self.db.lock().unwrap().get_five_highscores()
+    pub fn get_high_scores(&self) -> Result<Highscores, crate::db::Error> {
+        self.db.get_five_highscores()
     }
 
-    pub fn get_user_statistics(&self, username: &str) -> Result<Statistics, crate::db::Error> {
-        let correct_answers = self.db.lock().unwrap().get_correct_answers_count(username)?;
-        let total_answers = self.db.lock().unwrap().get_total_answers_count(username)?;
-        let average_answer_time = self.db.lock().unwrap().get_player_average_answer_time(username)?;
-        let total_games = self.db.lock().unwrap().get_games_count(username)?;
-        let score = self.db.lock().unwrap().get_score(username)?;
+    pub fn get_user_statistics(&self, username: &Username) -> Result<Statistics, crate::db::Error> {
+        let correct_answers = self.db.get_correct_answers_count(username)?;
+        let total_answers = self.db.get_total_answers_count(username)?;
+        let average_answer_time = self.db.get_player_average_answer_time(username)?;
+        let total_games = self.db.get_games_count(username)?;
+        let score = self.db.get_score(username)?;
 
         Ok(Statistics {
             correct_answers,

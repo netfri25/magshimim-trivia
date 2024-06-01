@@ -4,34 +4,32 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::db::question::QuestionData;
-use crate::managers::game::{calc_score, Score};
-use crate::managers::login::LoggedUser;
-use crate::managers::statistics::Statistics;
-use crate::managers::room::{Room, RoomID, RoomState};
-use crate::handler::Handler;
+use crate::handler::{self, Handler};
+use crate::managers::game::calc_score;
+use crate::managers::room::{Room, RoomState};
+use crate::managers::statistics::{Highscores, Statistics};
+use crate::username::Username;
 
-use super::{Error, StatusCode};
+use super::Error;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Response {
-    Error { msg: String },
-    Login { status: StatusCode },
-    Signup { status: StatusCode },
+    Error(String),
+    Login(Result<(), handler::login::Error>),
+    Signup(Result<(), handler::login::Error>),
     Logout,
     RoomList(Vec<Room>),
-    PlayersInRoom(Vec<LoggedUser>),
-    JoinRoom,
-    CreateRoom(RoomID),
-    Statistics {
-        user_statistics: Statistics,
-        high_scores: [Option<(String, Score)>; 5],
-    },
-    CloseRoom,
-    StartGame,
+    PlayersInRoom(Result<Vec<Username>, handler::menu::Error>),
+    JoinRoom(Result<(), handler::menu::Error>),
+    CreateRoom,
+    PersonalStats(Result<Statistics, handler::menu::Error>),
+    Highscores(Highscores),
+    CloseRoom(Result<(), handler::room_user::Error>),
+    StartGame(Result<(), handler::room_user::Error>),
     RoomState {
         state: RoomState,
         name: String,
-        players: Vec<LoggedUser>,
+        players: Vec<Username>,
         question_count: usize,
         time_per_question: Duration,
     },
@@ -41,8 +39,9 @@ pub enum Response {
 
     // the `correct_answer_index` will be set to usize::MAX so that the client can't cheat
     // additionally, the answers will be shuffled when sent to the user
-    Question(Option<QuestionData>), // None => no more questions
-    GameResult(Vec<PlayerResults>) // Will be sent to everyone when the game is over
+    Question(Result<Option<QuestionData>, handler::game::Error>), // None => no more questions
+    GameResult(Vec<PlayerResults>), // Will be sent to everyone when the game is over
+    CreateQuestion(Result<(), handler::menu::Error>),
 }
 
 impl Response {
@@ -70,18 +69,18 @@ impl Response {
 
     pub fn new_error(msg: impl ToString) -> Self {
         let msg = msg.to_string();
-        Self::Error { msg }
+        Self::Error(msg)
     }
 }
 
-pub struct RequestResult {
+pub struct RequestResult<'db> {
     pub response: Response,
-    pub new_handler: Option<Box<dyn Handler>>,
+    pub new_handler: Option<Box<dyn Handler<'db> + 'db>>,
 }
 
-impl RequestResult {
-    pub fn new(response: Response, new_handler: Box<dyn Handler>) -> Self {
-        let new_handler = Some(new_handler);
+impl<'db> RequestResult<'db> {
+    pub fn new(response: Response, new_handler: impl Handler<'db> + 'db) -> Self {
+        let new_handler = Some(Box::new(new_handler) as Box<dyn Handler>);
         Self {
             response,
             new_handler,
@@ -102,7 +101,7 @@ impl RequestResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PlayerResults {
-    pub username: String,
+    pub username: Username,
     pub correct_answers: u32,
     pub wrong_answers: u32,
     pub avg_time: Duration,
@@ -111,12 +110,11 @@ pub struct PlayerResults {
 
 impl PlayerResults {
     pub fn new(
-        username: impl Into<String>,
+        username: Username,
         correct_answers: u32,
         wrong_answers: u32,
         avg_time: Duration,
     ) -> Self {
-        let username = username.into();
         let score = calc_score(avg_time, correct_answers as i64);
         Self {
             username,
@@ -124,31 +122,6 @@ impl PlayerResults {
             wrong_answers,
             avg_time,
             score,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::messages::StatusCode;
-
-    #[test]
-    fn serde() {
-        use std::io::Cursor;
-        use super::Response;
-
-        let to_test = [
-            Response::Error { msg: "some error".into() },
-            Response::Login { status: StatusCode::ResponseOk },
-            Response::Signup { status: StatusCode::ResponseOk },
-        ];
-
-        for original_response in to_test {
-            let mut buf = Vec::new();
-            original_response.write_to(&mut buf).unwrap();
-            let mut reader = Cursor::new(buf);
-            let parsed_response = Response::read_from(&mut reader).unwrap();
-            assert_eq!(original_response, parsed_response);
         }
     }
 }

@@ -1,10 +1,7 @@
-use iced::{
-    alignment::Horizontal,
-    theme,
-    widget::{button, column, container, horizontal_space, row, text, text_input},
-    Alignment, Length,
-};
-use trivia::messages::{Request, Response, StatusCode};
+use iced::alignment::Horizontal;
+use iced::widget::{button, column, container, horizontal_space, row, text, text_input};
+use iced::{theme, Alignment, Length};
+use trivia::messages::{Request, Response};
 
 use crate::action::Action;
 use crate::consts;
@@ -29,40 +26,46 @@ pub struct LoginPage {
 }
 
 impl Page for LoginPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                Response::Login {
-                    status: StatusCode::ResponseOk
-                } => {
-                    return Action::switch(MainMenuPage::default());
+                Response::Login(res) => {
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        Ok(Action::switch(MainMenuPage))
+                    }
                 }
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Login(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
             Msg::UsernameInput(username) => self.username = username,
-            Msg::UsernameSubmit => return Action::cmd(text_input::focus(text_input::Id::new("password"))),
+            Msg::UsernameSubmit => {
+                return Ok(Action::cmd(text_input::focus(text_input::Id::new(
+                    "password",
+                ))))
+            }
 
             Msg::PasswordInput(password) => self.password = password,
             Msg::PasswordSubmit | Msg::Login => {
-                return Action::request(Request::Login {
-                    username: self.username.clone(),
-                    password: self.password.clone(),
-                });
+                return Ok(Action::request(Request::Login {
+                    username: self.username.clone().into(),
+                    password: self.password.clone().into(),
+                }));
             }
 
-            Msg::Register => return Action::switch(RegisterPage::default()),
+            Msg::Register => return Ok(Action::switch(RegisterPage::default())),
         }
 
-        Action::none()
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -121,13 +124,14 @@ impl Page for LoginPage {
             .center_y()
             .into()
     }
+
+    fn quit(&mut self) -> Action {
+        std::process::exit(0)
+    }
 }
 
 impl LoginPage {
     pub fn new(username: String, password: String) -> Self {
-        Self {
-            username,
-            password,
-        }
+        Self { username, password }
     }
 }

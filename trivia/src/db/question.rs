@@ -9,7 +9,7 @@ pub struct Question {
     category: String,
     question: String,
     correct_answer: String,
-    incorrect_answers: Vec<String>
+    incorrect_answers: Vec<String>,
 }
 
 impl Question {
@@ -62,10 +62,35 @@ pub struct QuestionData {
 
 impl QuestionData {
     pub fn new(question: String, answers: Vec<String>, correct_answer_index: usize) -> Self {
-        Self { question, answers, correct_answer_index }
+        Self {
+            question,
+            answers,
+            correct_answer_index,
+        }
     }
 
     pub(crate) fn correct_answer(&self) -> &str {
         &self.answers[self.correct_answer_index]
+    }
+}
+
+impl From<Question> for QuestionData {
+    fn from(question: Question) -> Self {
+        let Question {
+            question,
+            correct_answer,
+            incorrect_answers,
+            ..
+        } = question;
+
+        let correct_answer_index = incorrect_answers.len();
+
+        let answers = {
+            let mut answers = incorrect_answers;
+            answers.push(correct_answer);
+            answers
+        };
+
+        Self::new(question, answers, correct_answer_index)
     }
 }

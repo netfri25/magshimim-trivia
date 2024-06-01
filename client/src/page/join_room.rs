@@ -2,18 +2,20 @@ use std::time::Duration;
 
 use iced::alignment::Horizontal;
 use iced::widget::scrollable::Properties;
-use iced::widget::{button, column, container, horizontal_space, row, scrollable, text, Column};
-use iced::{Alignment, Length};
+use iced::widget::{
+    button, column, container, horizontal_space, row, scrollable, text, tooltip, Column,
+};
+use iced::{theme, Alignment, Length};
 
 use crate::action::Action;
 use crate::consts;
 use crate::message::Message;
 
-use trivia::managers::room::{Room, RoomData, RoomID};
+use trivia::managers::room::{Room, RoomData, RoomID, RoomState};
 use trivia::messages::{Request, Response};
 
 use super::room::RoomPage;
-use super::Page;
+use super::{MainMenuPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -27,33 +29,40 @@ pub struct JoinRoomPage {
 }
 
 impl Page for JoinRoomPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 Response::RoomList(rooms) => {
-                    println!("rooms have been set!");
-                    self.rooms = rooms.clone();
+                    self.rooms = rooms
+                        .iter()
+                        .filter(|r| r.room_data().state == RoomState::Waiting)
+                        .cloned()
+                        .collect()
                 }
 
-                &Response::JoinRoom => {
-                    let page = RoomPage::new(false);
-                    let req = Request::RoomState;
-                    return Action::switch_and_request(page, req)
+                Response::JoinRoom(res) => {
+                    return if let Err(err) = res {
+                        Err(err.to_string())
+                    } else {
+                        let page = RoomPage::new(false);
+                        let req = Request::RoomState;
+                        Ok(Action::switch_and_request(page, req))
+                    }
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::JoinRoom(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
-            Msg::UpdateRooms => Action::request(Request::RoomList),
-            Msg::EnterRoom(id) => Action::request(Request::JoinRoom(id))
+            Msg::UpdateRooms => Ok(Action::request(Request::RoomList)),
+            Msg::EnterRoom(id) => Ok(Action::request(Request::JoinRoom(id))),
         }
     }
 
@@ -63,15 +72,10 @@ impl Page for JoinRoomPage {
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center);
 
-        let rooms_col = Column::from_vec(
-            self.rooms
-                .iter()
-                .map(room_element)
-                .collect(),
-        )
-        .align_items(Alignment::Center)
-        .padding(2)
-        .width(Length::Fill);
+        let rooms_col = Column::from_vec(self.rooms.iter().map(room_element).collect())
+            .align_items(Alignment::Center)
+            .padding(2)
+            .width(Length::Fill);
 
         let rooms = container(row![
             horizontal_space().width(Length::FillPortion(1)),
@@ -100,10 +104,14 @@ impl Page for JoinRoomPage {
     fn subscription(&self) -> iced::Subscription<Message> {
         iced::time::every(Duration::from_secs(3)).map(|_| Msg::UpdateRooms.into())
     }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
+    }
 }
 
 impl JoinRoomPage {
-    pub fn new() -> (Self, Request) {
+    pub fn new() -> (Self, Request<'static>) {
         (Self::default(), Request::RoomList)
     }
 }
@@ -122,7 +130,7 @@ pub fn room_element<'a>(room: &Room) -> iced::Element<'a, Message, iced::Theme> 
 
     // the first user is the admin
     let users = room.users();
-    let admin = users.first().map(|u| u.username()).unwrap_or_default();
+    let admin = users.first().map(|u| u.as_ref()).unwrap_or_default();
 
     let name = text(name).size(20);
     let players = text(format!("players: {}/{}", users.len(), max_players)).size(10);
@@ -136,11 +144,21 @@ pub fn room_element<'a>(room: &Room) -> iced::Element<'a, Message, iced::Theme> 
         .center_x()
         .center_y();
 
-    button(room_container)
+    let room = button(room_container)
         .style(iced::theme::Button::Text)
         .on_press(Msg::EnterRoom(*room_id).into())
         .height(100)
-        .padding(5)
+        .padding(5);
+
+    let users = Column::from_vec(
+        users
+            .iter()
+            .map(|u| text(u.as_ref()).size(10).into())
+            .collect(),
+    );
+
+    tooltip(room, users, tooltip::Position::FollowCursor)
+        .style(theme::Container::Box)
         .into()
 }
 

@@ -1,12 +1,12 @@
-use std::time::Duration;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use super::login::LoggedUser;
+use crate::username::Username;
 
-pub type RoomID = i64;
+pub type RoomID = usize;
 
 #[derive(Default)]
 pub struct RoomManager {
@@ -18,7 +18,7 @@ impl RoomManager {
         Self::default()
     }
 
-    pub fn create_room(&mut self, user: LoggedUser, data: RoomData) {
+    pub fn create_room(&mut self, user: Username, data: RoomData) {
         let mut room = Room::new(data);
         room.add_user(user);
         self.rooms.insert(room.data.room_id, room);
@@ -33,7 +33,10 @@ impl RoomManager {
     }
 
     pub fn set_state(&mut self, id: RoomID, state: RoomState) -> bool {
-        self.rooms.get_mut(&id).map(|room| room.data.state = state).is_some()
+        self.rooms
+            .get_mut(&id)
+            .map(|room| room.data.state = state)
+            .is_some()
     }
 
     pub fn room(&self, id: RoomID) -> Option<&Room> {
@@ -52,7 +55,7 @@ impl RoomManager {
 #[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Room {
     data: RoomData,
-    users: Vec<LoggedUser>,
+    users: Vec<Username>,
 }
 
 impl Room {
@@ -61,19 +64,25 @@ impl Room {
         Self { data, users }
     }
 
-    pub fn add_user(&mut self, user: LoggedUser) {
-        self.users.push(user)
+    pub fn add_user(&mut self, user: Username) -> bool {
+        if self.users.contains(&user) || self.is_full() {
+            false
+        } else {
+            self.users.push(user);
+            true
+        }
     }
 
-    pub fn remove_user(&mut self, user: &LoggedUser) {
+    pub fn remove_user(&mut self, user: &Username) -> bool {
         let Some(index) = self.users.iter().position(|u| u == user) else {
-            return;
+            return false;
         };
 
         self.users.swap_remove(index);
+        true
     }
 
-    pub fn users(&self) -> &[LoggedUser] {
+    pub fn users(&self) -> &[Username] {
         &self.users
     }
 
@@ -104,7 +113,7 @@ pub struct RoomData {
     pub max_players: usize,
     pub questions_count: usize,
     pub time_per_question: Duration,
-    pub state: RoomState
+    pub state: RoomState,
 }
 
 impl RoomData {
@@ -112,16 +121,10 @@ impl RoomData {
         name: impl Into<String>,
         max_players: usize,
         questions_count: usize,
-        time_per_question: Duration
+        time_per_question: Duration,
     ) -> Self {
-        static ROOM_ID_COUNTER: Mutex<RoomID> = Mutex::new(0);
-        let room_id;
-        {
-            let mut id_lock = ROOM_ID_COUNTER.lock().unwrap();
-            room_id = *id_lock;
-            *id_lock += 1;
-        }
-
+        static ROOM_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+        let room_id = ROOM_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
         let name = name.into();
 
         Self {

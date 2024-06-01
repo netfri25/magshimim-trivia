@@ -1,2 +1,4 @@
 /target
-trivia/test.sqlite
+trivia-db.sqlite
+*/test-db.sqlite*
+/.cargo

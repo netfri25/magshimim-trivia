@@ -26,7 +26,7 @@ pub struct ResultsPage {
 }
 
 impl Page for ResultsPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
                 // the results are sent sorted
@@ -35,17 +35,17 @@ impl Page for ResultsPage {
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         }
 
         let Message::Results(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
-        match msg {
+        Ok(match msg {
             Msg::GetResults => Action::request(Request::GameResult),
             Msg::Cry => Action::switch(MainMenuPage),
-        }
+        })
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -110,6 +110,10 @@ impl Page for ResultsPage {
             Subscription::none()
         }
     }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
+    }
 }
 
 pub fn result_elem(result: &PlayerResults) -> iced::Element<Message> {
@@ -122,7 +126,7 @@ pub fn result_elem(result: &PlayerResults) -> iced::Element<Message> {
     } = result;
 
     column![
-        text(username)
+        text(username.as_ref())
             .size(20)
             .width(Length::Fill)
             .horizontal_alignment(Horizontal::Center),

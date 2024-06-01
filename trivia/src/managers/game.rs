@@ -1,26 +1,29 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::iter;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use anyhow::anyhow;
 
 use crate::db::question::QuestionData;
 use crate::db::{self, Database};
+use crate::username::Username;
 
-use super::login::LoggedUser;
 use super::room::{Room, RoomID};
 
 pub type Score = f64;
 pub type GameID = RoomID;
 
-pub struct GameManager {
-    db: Arc<Mutex<dyn Database>>,
+pub struct GameManager<'db, DB: ?Sized> {
+    db: &'db DB,
     games: HashMap<GameID, Game>,
 }
 
-impl GameManager {
-    pub fn new(db: Arc<Mutex<dyn Database>>) -> Self {
+impl<'db, DB> GameManager<'db, DB>
+where
+    DB: Database + Sync + ?Sized,
+{
+    pub fn new(db: &'db DB) -> Self {
         Self {
             db,
             games: Default::default(),
@@ -28,11 +31,7 @@ impl GameManager {
     }
 
     pub fn create_game(&mut self, room: &Room) -> Result<&Game, db::Error> {
-        let questions = self
-            .db
-            .lock()
-            .unwrap()
-            .get_questions(room.room_data().questions_count)?;
+        let questions = self.db.get_questions(room.room_data().questions_count)?;
         let game = Game::new(
             room.room_data().room_id,
             room.users().iter().cloned(),
@@ -48,6 +47,10 @@ impl GameManager {
         self.games.remove(id);
     }
 
+    pub fn game(&self, game_id: &GameID) -> Option<&Game> {
+        self.games.get(game_id)
+    }
+
     pub fn game_mut(&mut self, game_id: &GameID) -> Option<&mut Game> {
         self.games.get_mut(game_id)
     }
@@ -58,12 +61,9 @@ impl GameManager {
             .remove(game_id)
             .ok_or(anyhow!("game {game_id} doesn't exist"))?; // TODO: proper error
 
-        game.players.into_iter().try_for_each(|(user, data)| {
-            self.db
-                .lock()
-                .unwrap()
-                .submit_game_data(user.username(), data)
-        })
+        game.players
+            .into_iter()
+            .try_for_each(|(user, data)| self.db.submit_game_data(&user, data))
     }
 }
 
@@ -71,13 +71,13 @@ pub struct Game {
     id: GameID,
     questions: Vec<QuestionData>,
     time_per_question: Duration,
-    players: HashMap<LoggedUser, GameData>,
+    players: HashMap<Username, GameData>,
 }
 
 impl Game {
     pub fn new(
         id: RoomID,
-        users: impl Iterator<Item = LoggedUser>,
+        users: impl Iterator<Item = Username>,
         questions: Vec<QuestionData>,
         time_per_question: Duration,
     ) -> Self {
@@ -95,7 +95,7 @@ impl Game {
         self.id
     }
 
-    pub fn get_question_for_user(&mut self, user: &LoggedUser) -> Option<&QuestionData> {
+    pub fn get_question_for_user(&mut self, user: &Username) -> Option<&QuestionData> {
         let game_data = self.players.get_mut(user)?;
         game_data.current_question_index += 1;
         let index = game_data.current_question_index - 1;
@@ -105,14 +105,14 @@ impl Game {
     // returns the correct answer index and goes to the next question
     pub fn submit_answer(
         &mut self,
-        user: LoggedUser,
-        answer: String,
+        user: Username,
+        answer: Cow<str>,
         answer_time: Duration,
     ) -> Result<&str, db::Error> {
         let game_data = self
             .players
             .get_mut(&user)
-            .ok_or(db::Error::UserDoesntExist(user.username))?;
+            .ok_or(db::Error::UserDoesntExist(user))?;
 
         // TODO: proper error
         let question = self
@@ -128,14 +128,14 @@ impl Game {
         Ok(question.correct_answer())
     }
 
-    pub fn remove_user(&mut self, user: &LoggedUser) {
+    pub fn remove_user(&mut self, user: &Username) {
         if let Some(data) = self.players.get_mut(user) {
             // mark as if the user has finished
             data.left = true;
         }
     }
 
-    pub fn users(&self) -> impl Iterator<Item = &LoggedUser> {
+    pub fn users(&self) -> impl Iterator<Item = &Username> {
         self.players.keys()
     }
 
@@ -151,7 +151,7 @@ impl Game {
             .all(|data| data.left || data.current_question_index > self.questions.len())
     }
 
-    pub fn results(&self) -> impl Iterator<Item = (&LoggedUser, &GameData)> {
+    pub fn results(&self) -> impl Iterator<Item = (&Username, &GameData)> {
         self.players.iter()
     }
 }
@@ -183,9 +183,9 @@ impl GameData {
 }
 
 pub fn calc_score(answer_time: Duration, correct_answers: i64) -> Score {
-    // TODO: the user can just spam wrong answers and still get a really good score
-    //       find a way to prevent this, meaning a new score evaluation algorithm
-    let score = correct_answers as f64 / answer_time.as_secs_f64();
+    let time = answer_time.as_secs_f64();
+    let phi = (1. + 5f64.sqrt()) / 2.;
+    let score = correct_answers as f64 * (1. + 1. / phi.powf(time));
 
     if score.is_normal() {
         score

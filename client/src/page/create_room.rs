@@ -2,9 +2,7 @@ use std::ops::RangeInclusive;
 use std::time::Duration;
 
 use iced::alignment::{Horizontal, Vertical};
-use iced::widget::{
-    button, column, container, horizontal_space, row, slider, text, text_input,
-};
+use iced::widget::{button, column, container, horizontal_space, row, slider, text, text_input};
 use iced::{Alignment, Length};
 use trivia::messages::{Request, Response};
 
@@ -13,7 +11,7 @@ use crate::consts;
 use crate::message::Message;
 use crate::page::RoomPage;
 
-use super::Page;
+use super::{MainMenuPage, Page};
 
 #[derive(Debug, Clone)]
 pub enum Msg {
@@ -43,24 +41,23 @@ impl Default for CreateRoomPage {
 }
 
 impl Page for CreateRoomPage {
-    fn update(&mut self, message: Message) -> Action {
+    fn update(&mut self, message: Message) -> Result<Action, String> {
         if let Message::Response(response) = message {
             match response.as_ref() {
-                &Response::CreateRoom(id) => {
-                    eprintln!("room created: id={}", id);
+                &Response::CreateRoom => {
                     let page = RoomPage::new(true);
                     let req = Request::RoomState;
-                    return Action::switch_and_request(page, req)
+                    return Ok(Action::switch_and_request(page, req));
                 }
 
                 _ => eprintln!("response ignored: {:?}", response),
             }
 
-            return Action::none();
+            return Ok(Action::none());
         };
 
         let Message::CreateRoom(msg) = message else {
-            return Action::none();
+            return Ok(Action::none());
         };
 
         match msg {
@@ -69,16 +66,16 @@ impl Page for CreateRoomPage {
             Msg::QuestionsInput(questions) => self.questions = questions,
             Msg::AnswerTimeoutInput(answer_timeout) => self.answer_timeout = answer_timeout,
             Msg::Submit => {
-                return Action::request(Request::CreateRoom {
-                    name: self.name.clone(),
+                return Ok(Action::request(Request::CreateRoom {
+                    name: self.name.clone().into(),
                     max_users: self.max_users as usize,
                     questions: self.questions as usize,
                     answer_timeout: Duration::from_secs(self.answer_timeout as u64),
-                })
+                }))
             }
         }
 
-        Action::none()
+        Ok(Action::none())
     }
 
     fn view(&self) -> iced::Element<Message> {
@@ -91,15 +88,8 @@ impl Page for CreateRoomPage {
         .padding(consts::TITLES_PADDING);
 
         let inputs = column![
-            text_input("room name:", &self.name)
-                .on_input(|input| Msg::NameInput(input).into()),
-            input_field(
-                "users count",
-                1..=20,
-                self.max_users,
-                1,
-                Msg::MaxUsersInput
-            ),
+            text_input("room name:", &self.name).on_input(|input| Msg::NameInput(input).into()),
+            input_field("users count", 1..=20, self.max_users, 1, Msg::MaxUsersInput),
             input_field(
                 "questions count",
                 1..=30,
@@ -150,6 +140,10 @@ impl Page for CreateRoomPage {
             .center_x()
             .center_y()
             .into()
+    }
+
+    fn quit(&mut self) -> Action {
+        Action::switch(MainMenuPage)
     }
 }
 
